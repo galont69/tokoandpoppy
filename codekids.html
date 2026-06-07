@@ -27,12 +27,12 @@
   </header>
 
   <main>
-    <section class="map-select-view" id="mapSelectView">
+    <section class="mission-select-view" id="missionSelectView">
       <div class="select-hero">
         <div class="hero-copy">
           <span class="hero-kicker">CODEKIDS STORY TRAIL</span>
-          <h1>ภารกิจที่ 1<br><em>พา Toko เก็บดาว!</em></h1>
-          <p>ฝึกวางคำสั่งจากง่ายไปยาก ผ่าน 10 แผนที่ย่อย แล้วพา Toko เก็บดาวให้ครบ</p>
+          <h1>เลือกภารกิจ<br><em>แล้วออกผจญภัย!</em></h1>
+          <p>แต่ละภารกิจมี 10 แผนที่ย่อย ให้เด็กๆ ฝึกคิด วางแผน และเรียนรู้ทีละขั้น</p>
           <div class="skill-chips">
             <span>🧠 ฝึกคิดเป็นลำดับ</span>
             <span>🧩 แก้ปัญหา</span>
@@ -40,17 +40,55 @@
           </div>
         </div>
         <div class="hero-toko">
-          <div class="story-bubble">ช่วยพาเราไป<br><strong>เก็บดาวกันเถอะ!</strong></div>
+          <div class="story-bubble">วันนี้หนูอยากทำ<br><strong>ภารกิจไหนดี?</strong></div>
           <img src="assets/codekids/toko-front-a.png" alt="Toko">
           <span class="hero-leaf leaf-one">🍃</span>
           <span class="hero-leaf leaf-two">🍂</span>
         </div>
       </div>
 
-      <section class="maps-section">
+      <section class="missions-section">
         <div class="section-heading">
           <div>
-            <span>10 STORY MAPS</span>
+            <span>STORY MISSIONS</span>
+            <h2>ภารกิจของ Toko</h2>
+            <p>กดเลือกภารกิจ แล้วเข้าไปพิชิตแผนที่ย่อยทั้ง 10 แผนที่</p>
+          </div>
+          <div class="star-wallet"><span>★</span><strong id="missionTotalStars">0</strong><small>ดาวสะสม</small></div>
+        </div>
+        <div class="mission-grid">
+          <button class="mission-card mission-card-active" id="openMissionOne" type="button">
+            <span class="mission-number">ภารกิจที่ 1</span>
+            <div class="mission-visual">
+              <span>⭐</span>
+              <img src="assets/codekids/toko-front-a.png" alt="">
+            </div>
+            <div class="mission-copy">
+              <h3>พา Toko เก็บดาว</h3>
+              <p>เรียนรู้คำสั่งทิศทาง ผ่าน 10 แผนที่ จากการเดินตรงไปจนถึงการหลบอุปสรรค</p>
+              <div class="mission-progress-row">
+                <span><i id="missionProgressBar"></i></span>
+                <strong id="missionProgressText">0/10 แผนที่</strong>
+              </div>
+              <b>เริ่มภารกิจ →</b>
+            </div>
+          </button>
+          <article class="mission-card mission-card-coming">
+            <span class="mission-number">ภารกิจที่ 2</span>
+            <div class="coming-icon">🔒</div>
+            <h3>เรื่องราวใหม่เร็วๆ นี้</h3>
+            <p>พื้นที่สำหรับเพิ่มภารกิจและแผนที่ชุดถัดไป</p>
+          </article>
+        </div>
+      </section>
+    </section>
+
+    <section class="map-select-view" id="mapSelectView" hidden>
+      <section class="maps-section">
+        <button class="back-to-missions" id="backToMissions" type="button">← เลือกภารกิจ</button>
+        <div class="section-heading">
+          <div>
+            <span>ภารกิจที่ 1 · 10 STORY MAPS</span>
             <h2>พา Toko เก็บดาว</h2>
             <p>เริ่มจากเดินตรง 3 ช่อง แล้วค่อยเรียนรู้เส้นทางที่ท้าทายขึ้น</p>
           </div>

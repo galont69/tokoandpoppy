@@ -1,3 +1,4 @@
+const missionSelectView = document.querySelector("#missionSelectView");
 const mapSelectView = document.querySelector("#mapSelectView");
 const gameView = document.querySelector("#gameView");
 const mapGrid = document.querySelector("#mapGrid");
@@ -135,6 +136,11 @@ function renderMaps() {
   document.querySelector("#courseProgress").style.width = `${completedCount * 10}%`;
   document.querySelector("#courseProgressText").textContent = `${completedCount}/10`;
   document.querySelector("#totalStars").textContent = totalStars;
+  document.querySelector("#missionTotalStars").textContent = totalStars;
+  document.querySelector("#missionProgressBar").style.width =
+    `${completedCount * 10}%`;
+  document.querySelector("#missionProgressText").textContent =
+    `${completedCount}/10 แผนที่`;
 }
 
 function hasPosition(list, row, col) {
@@ -352,6 +358,7 @@ function openMap(mapNumber) {
     `${currentLevel.rocks.length || currentLevel.trees.length ? "หลบอุปสรรคและ" : ""}เดิน ${currentLevel.moves} ช่อง เพื่อเก็บดาวให้ครบ`;
   document.querySelector("#commandLimitText").textContent =
     `ใช้ ${currentLevel.moves} คำสั่ง`;
+  missionSelectView.hidden = true;
   mapSelectView.hidden = true;
   gameView.hidden = false;
   window.scrollTo({ top: 0 });
@@ -368,6 +375,20 @@ function closeResult() {
 mapGrid.addEventListener("click", (event) => {
   const card = event.target.closest("[data-map]");
   if (card) openMap(Number(card.dataset.map));
+});
+document.querySelector("#openMissionOne").addEventListener("click", () => {
+  missionSelectView.hidden = true;
+  mapSelectView.hidden = false;
+  gameView.hidden = true;
+  renderMaps();
+  window.scrollTo({ top: 0 });
+});
+document.querySelector("#backToMissions").addEventListener("click", () => {
+  mapSelectView.hidden = true;
+  gameView.hidden = true;
+  missionSelectView.hidden = false;
+  renderMaps();
+  window.scrollTo({ top: 0 });
 });
 document.querySelectorAll("[data-command]").forEach((button) => {
   button.addEventListener("click", () => addCommand(button.dataset.command));
@@ -390,6 +411,7 @@ runButton.addEventListener("click", runProgram);
 document.querySelector("#resetMap").addEventListener("click", () => resetMap());
 document.querySelector("#backToMaps").addEventListener("click", () => {
   if (running) return;
+  missionSelectView.hidden = true;
   gameView.hidden = true;
   mapSelectView.hidden = false;
   renderMaps();
@@ -401,6 +423,7 @@ document.querySelector("#tryAgain").addEventListener("click", () => {
 });
 document.querySelector("#finishMap").addEventListener("click", () => {
   closeResult();
+  missionSelectView.hidden = true;
   gameView.hidden = true;
   mapSelectView.hidden = false;
   renderMaps();
