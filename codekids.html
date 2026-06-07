@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#dff2e0">
+  <title>Codekids | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="codekids.css">
+</head>
+<body>
+  <div class="paper-noise" aria-hidden="true"></div>
+
+  <header class="ck-header">
+    <a class="ck-brand" href="index.html">
+      <img src="logo.png" alt="">
+      <span><strong>Codekids</strong><small>คิด วางแผน แล้วออกเดินทาง!</small></span>
+    </a>
+    <div class="ck-progress">
+      <span>เส้นทางของฉัน</span>
+      <div><i id="courseProgress"></i></div>
+      <strong id="courseProgressText">0/10</strong>
+    </div>
+    <a class="home-link" href="index.html">กลับหน้าแรก</a>
+  </header>
+
+  <main>
+    <section class="map-select-view" id="mapSelectView">
+      <div class="select-hero">
+        <div class="hero-copy">
+          <span class="hero-kicker">CODEKIDS STORY TRAIL</span>
+          <h1>มาช่วย Toko<br><em>หาทางกลับบ้านกัน!</em></h1>
+          <p>เลือกแผนที่ วางคำสั่งล่วงหน้า แล้วดู Toko เดินตามแผนของหนูทีละก้าว</p>
+          <div class="skill-chips">
+            <span>🧠 ฝึกคิดเป็นลำดับ</span>
+            <span>🧩 แก้ปัญหา</span>
+            <span>🌟 เรียนผ่านเรื่องราว</span>
+          </div>
+        </div>
+        <div class="hero-toko">
+          <div class="story-bubble">วันนี้เราจะไป<br><strong>ทางไหนดีนะ?</strong></div>
+          <img src="assets/codekids/toko-front-a.png" alt="Toko">
+          <span class="hero-leaf leaf-one">🍃</span>
+          <span class="hero-leaf leaf-two">🍂</span>
+        </div>
+      </div>
+
+      <section class="maps-section">
+        <div class="section-heading">
+          <div>
+            <span>10 STORY MAPS</span>
+            <h2>เลือกบทเรียนของหนู</h2>
+            <p>ผ่าน Map แรกเพื่อปลดล็อกการผจญภัยบทต่อไป</p>
+          </div>
+          <div class="star-wallet"><span>★</span><strong id="totalStars">0</strong><small>ดาวสะสม</small></div>
+        </div>
+        <div class="map-grid" id="mapGrid"></div>
+      </section>
+    </section>
+
+    <section class="game-view" id="gameView" hidden>
+      <div class="game-topbar">
+        <button class="back-to-maps" id="backToMaps" type="button">← เลือกแผนที่</button>
+        <div class="level-title">
+          <span>MAP 1 / 10</span>
+          <h1>ทางกลับบ้านของ Toko</h1>
+        </div>
+        <div class="level-stars"><span>★</span><strong id="levelStarCount">0/3</strong></div>
+      </div>
+
+      <div class="game-layout">
+        <aside class="command-panel">
+          <div class="mission-story">
+            <span class="story-icon">📖</span>
+            <div>
+              <small>ภารกิจวันนี้</small>
+              <h2>เก็บดาวแล้วกลับบ้าน</h2>
+              <p>ช่วย Toko เดินผ่านสวน เก็บดาว 3 ดวง และไปถึงบ้านโดยไม่ชนก้อนหิน</p>
+            </div>
+          </div>
+
+          <section class="queue-section">
+            <div class="queue-heading">
+              <div><span>ชุดคำสั่งของหนู</span><small>สูงสุด 12 คำสั่ง</small></div>
+              <strong id="commandCount">0/12</strong>
+            </div>
+            <div class="command-queue" id="commandQueue">
+              <div class="queue-empty" id="queueEmpty">แตะลูกศรด้านล่าง<br>เพื่อวางแผนการเดิน</div>
+            </div>
+          </section>
+
+          <section class="arrow-pad" aria-label="ปุ่มคำสั่ง">
+            <button type="button" data-command="up" aria-label="เดินขึ้น"><span>↑</span><small>ขึ้น</small></button>
+            <button type="button" data-command="left" aria-label="เดินซ้าย"><span>←</span><small>ซ้าย</small></button>
+            <button type="button" data-command="down" aria-label="เดินลง"><span>↓</span><small>ลง</small></button>
+            <button type="button" data-command="right" aria-label="เดินขวา"><span>→</span><small>ขวา</small></button>
+          </section>
+
+          <div class="command-actions">
+            <button class="undo-button" id="undoCommand" type="button">↶ ย้อน 1 คำสั่ง</button>
+            <button class="clear-button" id="clearCommands" type="button">ล้างทั้งหมด</button>
+          </div>
+          <button class="run-button" id="runProgram" type="button"><span>▶</span> เริ่มเดินตามคำสั่ง</button>
+          <button class="reset-button" id="resetMap" type="button">↻ เริ่มแผนที่ใหม่</button>
+        </aside>
+
+        <section class="game-board-wrap">
+          <div class="board-banner">
+            <div><span>🌳</span><strong>สวนเล่านิทาน</strong></div>
+            <p id="gameHint">วางแผนให้ดีก่อนกดเริ่มนะ!</p>
+          </div>
+          <div class="game-board" id="gameBoard" aria-label="ตารางเกม Codekids"></div>
+          <div class="board-legend">
+            <span>⭐ ดาวที่ต้องเก็บ</span>
+            <span>🪨 ห้ามเดินชน</span>
+            <span>🏡 จุดหมาย</span>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <div class="result-backdrop" id="resultModal" aria-hidden="true">
+    <div class="result-card">
+      <div class="result-confetti">✦ ★ ● ✦ ★</div>
+      <img id="resultToko" src="assets/codekids/toko-front-a.png" alt="">
+      <span id="resultKicker">MAP COMPLETE</span>
+      <h2 id="resultTitle">เยี่ยมมาก นักวางแผน!</h2>
+      <p id="resultMessage">Toko เก็บดาวครบและกลับถึงบ้านแล้ว</p>
+      <div class="result-stars" id="resultStars">★★★</div>
+      <div class="result-actions">
+        <button id="tryAgain" type="button">เล่นอีกครั้ง</button>
+        <button id="finishMap" type="button">กลับไปเลือก Map</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ck-toast" id="codekidsToast" role="status"></div>
+  <script src="codekids.js"></script>
+</body>
+</html>

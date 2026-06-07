@@ -147,6 +147,7 @@ button { cursor: pointer; }
 .course-card p { margin: 0; color: #806e61; font-size: 14px; line-height: 1.75; }
 .course-card ul { display: grid; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; color: #655448; font-size: 12px; }
 .course-entry { position: relative; z-index: 2; display: inline-flex; margin-top: 20px; border-radius: 99px; padding: 8px 12px; color: #517548; background: #e7f1df; font-size: 10px; font-weight: 700; text-decoration: none; }
+.codekids-entry { color: #3f7180; background: #dff0f2; }
 .robot-card li::first-letter { color: #689154; }
 .join-section { position: relative; overflow: hidden; background: #f5eecf; }
 .join-section:before, .join-section:after { content: "✦"; position: absolute; color: rgba(222,165,55,.5); font-size: 65px; }
