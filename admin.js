@@ -283,6 +283,13 @@ loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!configured) {
     configWarning.hidden = false;
+    configWarning.classList.remove("attention");
+    void configWarning.offsetWidth;
+    configWarning.classList.add("attention");
+    showToast(
+      "ยังไม่ได้ตั้งค่า Supabase: ใส่ Project URL และ anon key ใน supabase-config.js",
+      true
+    );
     return;
   }
 

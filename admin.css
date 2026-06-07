@@ -43,7 +43,10 @@ button { cursor: pointer; }
 .login-card input:focus { border-color: #79a067; box-shadow: 0 0 0 4px rgba(98,140,81,.1); }
 .primary-button { display: flex; width: 100%; align-items: center; justify-content: center; gap: 11px; margin-top: 24px; border: 0; border-radius: 14px; padding: 14px; color: white; background: linear-gradient(135deg, #709b5d, #4d7749); font-weight: 700; box-shadow: 0 10px 24px rgba(69,112,62,.2); }
 .login-card > a { display: block; margin-top: 20px; color: #8d786a; text-align: center; font-size: 11px; text-decoration: none; }
-.config-warning { margin-top: 14px; border-radius: 12px; padding: 11px; color: #8a5a2e; background: #fff2d8; font-size: 10px; line-height: 1.6; }
+.config-warning { margin-top: 14px; border: 1px solid #efd39b; border-radius: 12px; padding: 11px; color: #8a5a2e; background: #fff2d8; font-size: 10px; line-height: 1.6; }
+.config-warning strong, .config-warning span { display: block; }
+.config-warning code { border-radius: 5px; padding: 1px 4px; background: rgba(255,255,255,.65); font-family: monospace; }
+.config-warning.attention { animation: warningShake .32s ease-in-out; }
 
 .admin-shell { min-height: 100vh; display: grid; grid-template-columns: 245px minmax(0, 1fr); }
 .sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 24px 18px; background: #fffdf8; border-right: 1px solid var(--line); }
@@ -172,6 +175,11 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .toast.error { background: #a65f54; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes warningShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
 
 @media (max-width: 900px) {
   .admin-login { grid-template-columns: 1fr; }
