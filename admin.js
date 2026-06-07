@@ -350,7 +350,37 @@ function selectRobotLesson(lessonId) {
     "ready",
     Boolean(activeLesson.instruction_pdf_path)
   );
+  updateLessonReadiness();
   renderRobotLessons();
+}
+
+function updateLessonReadiness() {
+  if (!activeLesson) return;
+  const hasVideo = Boolean(activeLesson.video_path || activeLesson.video_url);
+  const hasPdf = Boolean(activeLesson.instruction_pdf_path);
+  const readiness = document.querySelector("#lessonReadinessText");
+  const saveButton = lessonEditor.querySelector(".save-lesson-button");
+  readiness.className = "";
+
+  if (activeLesson.is_published) {
+    readiness.textContent = "✓ บทเรียนนี้เผยแพร่ในหน้าเด็กแล้ว";
+    readiness.classList.add("ready");
+    saveButton.textContent = "บันทึกการแก้ไข";
+  } else if (hasVideo && hasPdf) {
+    readiness.textContent = "สื่อครบแล้ว กดบันทึกเพื่อเผยแพร่บทเรียน";
+    readiness.classList.add("warning");
+    saveButton.textContent = "เผยแพร่บทเรียน";
+  } else if (!hasVideo && !hasPdf) {
+    readiness.textContent = "ยังขาดวิดีโอและ PDF";
+    readiness.classList.add("warning");
+    saveButton.textContent = "บันทึกข้อมูลบทเรียน";
+  } else {
+    readiness.textContent = hasVideo
+      ? "ยังขาดไฟล์ PDF แบบต่อ LEGO"
+      : "ยังขาดวิดีโอคุณครู";
+    readiness.classList.add("warning");
+    saveButton.textContent = "บันทึกข้อมูลบทเรียน";
+  }
 }
 
 async function loadRobotLessons() {
@@ -441,25 +471,49 @@ async function uploadSelectedLessonFile({
       file,
       selectedLesson.lesson_number
     );
+    const nextVideoPath =
+      column === "video_path" ? path : selectedLesson.video_path;
+    const nextPdfPath =
+      column === "instruction_pdf_path"
+        ? path
+        : selectedLesson.instruction_pdf_path;
+    const shouldPublish = Boolean(
+      (nextVideoPath || selectedLesson.video_url) && nextPdfPath
+    );
+    const updatePayload = {
+      [column]: path,
+      ...(shouldPublish ? { is_published: true } : {})
+    };
+
     const { error } = await supabaseClient
       .from("robot_lessons")
-      .update({ [column]: path })
+      .update(updatePayload)
       .eq("id", selectedLesson.id);
     if (error) throw error;
 
     const lessonIndex = robotLessons.findIndex(
       ({ id }) => id === selectedLesson.id
     );
-    if (lessonIndex >= 0) robotLessons[lessonIndex][column] = path;
+    if (lessonIndex >= 0) {
+      robotLessons[lessonIndex][column] = path;
+      if (shouldPublish) robotLessons[lessonIndex].is_published = true;
+    }
     if (activeLesson?.id === selectedLesson.id) {
       activeLesson[column] = path;
+      if (shouldPublish) {
+        activeLesson.is_published = true;
+        document.querySelector("#lessonPublished").checked = true;
+      }
       currentFile.className = "current-file ready";
       currentFile.textContent =
         `อัปโหลดสำเร็จ: ${file.name} (${formatFileSize(file.size)})`;
+      updateLessonReadiness();
     }
     input.value = "";
     renderRobotLessons();
-    showToast(`อัปโหลด ${label} สำเร็จ`);
+    showToast(shouldPublish
+      ? `อัปโหลด ${label} สำเร็จ และเผยแพร่บทเรียนแล้ว`
+      : `อัปโหลด ${label} สำเร็จ`);
   } catch (error) {
     currentFile.className = "current-file selected";
     currentFile.textContent = `อัปโหลดไม่สำเร็จ: ${file.name}`;
@@ -507,9 +561,13 @@ lessonEditor.addEventListener("submit", async (event) => {
   const description =
     document.querySelector("#lessonDescription").value.trim();
   const videoUrl = document.querySelector("#lessonVideoUrl").value.trim();
-  const publish = document.querySelector("#lessonPublished").checked;
+  let publish = document.querySelector("#lessonPublished").checked;
   let videoPath = activeLesson.video_path;
   let pdfPath = activeLesson.instruction_pdf_path;
+  if ((videoPath || videoUrl) && pdfPath) {
+    publish = true;
+    document.querySelector("#lessonPublished").checked = true;
+  }
 
   if (publish && !(videoPath || videoUrl) && !pdfPath) {
     showToast("ต้องมีวิดีโอและ PDF ก่อนเผยแพร่", true);

@@ -241,6 +241,8 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .editor-note { display: flex; align-items: center; gap: 8px; border-radius: 11px; padding: 10px 12px; color: #876f51; background: #fff4d7; font-size: 8px; }
 .lesson-save-bar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 14px; margin: 0 -24px -24px; border-top: 1px solid var(--line); padding: 14px 24px; background: rgba(255,253,248,.94); backdrop-filter: blur(12px); }
 .lesson-save-bar > span { color: #8b786b; font-size: 8px; }
+.lesson-save-bar > span.ready { color: #4f7949; font-weight: 700; }
+.lesson-save-bar > span.warning { color: #a16c24; font-weight: 700; }
 .save-lesson-button { min-width: 210px; margin-left: auto; border: 0; border-radius: 13px; padding: 13px; color: white; background: linear-gradient(135deg, #709b5d, #4f774b); font-size: 10px; font-weight: 700; box-shadow: 0 9px 20px rgba(71,113,64,.16); }
 .save-lesson-button:disabled { cursor: wait; opacity: .65; }
 .upload-progress { display: flex; align-items: center; justify-content: center; gap: 8px; color: #718366; font-size: 8px; }
