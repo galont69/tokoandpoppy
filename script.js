@@ -8,6 +8,7 @@ const slipInput = document.querySelector("#slipInput");
 const filePreview = document.querySelector("#filePreview");
 const uploadBox = document.querySelector("#uploadBox");
 const toast = document.querySelector("#toast");
+const authContent = document.querySelector(".auth-content");
 
 function setAuthMode(mode) {
   const isRegister = mode === "register";
@@ -51,6 +52,12 @@ loginTab.addEventListener("click", () => setAuthMode("login"));
 authModal.addEventListener("click", (event) => {
   if (event.target === authModal) closeAuth();
 });
+
+authModal.addEventListener("wheel", (event) => {
+  if (window.innerWidth <= 720 || authContent.contains(event.target)) return;
+  authContent.scrollBy({ top: event.deltaY });
+  event.preventDefault();
+}, { passive: false });
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
