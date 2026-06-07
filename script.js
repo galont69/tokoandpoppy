@@ -9,14 +9,43 @@ const filePreview = document.querySelector("#filePreview");
 const uploadBox = document.querySelector("#uploadBox");
 const toast = document.querySelector("#toast");
 const authContent = document.querySelector(".auth-content");
-const supabaseConfig = window.SUPABASE_CONFIG || {};
-const supabaseConfigured = supabaseConfig.url &&
+const fallbackSupabaseConfig = {
+  url: "https://kpdikwbutsfxwsanetvm.supabase.co",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZGlrd2J1dHNmeHdzYW5ldHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NTg2MzIsImV4cCI6MjA5NjMzNDYzMn0.6D-FQjRAv0SLZJfnEHPGsM4yt4s5sf7zvH90bVRtGLM"
+};
+const externalSupabaseConfig = window.SUPABASE_CONFIG || {};
+const externalConfigIsValid = Boolean(
+  externalSupabaseConfig.url &&
+  externalSupabaseConfig.anonKey &&
+  !externalSupabaseConfig.url.includes("YOUR_PROJECT") &&
+  !externalSupabaseConfig.anonKey.includes("YOUR_SUPABASE")
+);
+const supabaseConfig = externalConfigIsValid
+  ? externalSupabaseConfig
+  : fallbackSupabaseConfig;
+const supabaseConfigured = Boolean(supabaseConfig.url &&
   supabaseConfig.anonKey &&
   !supabaseConfig.url.includes("YOUR_PROJECT") &&
-  !supabaseConfig.anonKey.includes("YOUR_SUPABASE");
-const enrollmentSupabase = supabaseConfigured
+  !supabaseConfig.anonKey.includes("YOUR_SUPABASE"));
+const supabaseSdkAvailable =
+  typeof window.supabase?.createClient === "function";
+const enrollmentSupabase = supabaseConfigured && supabaseSdkAvailable
   ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey)
   : null;
+document.documentElement.dataset.supabaseReady =
+  String(Boolean(enrollmentSupabase));
+
+function canUseSupabase() {
+  if (!supabaseConfigured) {
+    showToast("ไม่พบค่าการเชื่อมต่อ Supabase กรุณาตรวจไฟล์ supabase-config.js");
+    return false;
+  }
+  if (!supabaseSdkAvailable) {
+    showToast("โหลดระบบ Supabase ไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตแล้วรีเฟรชหน้า");
+    return false;
+  }
+  return true;
+}
 
 function setAuthMode(mode) {
   const isRegister = mode === "register";
@@ -148,10 +177,7 @@ registerForm.addEventListener("submit", async (event) => {
     registerForm.reportValidity();
     return;
   }
-  if (!supabaseConfigured) {
-    showToast("กรุณาตั้งค่า Supabase ในไฟล์ supabase-config.js");
-    return;
-  }
+  if (!canUseSupabase()) return;
 
   const submitButton = registerForm.querySelector(".submit-button");
   const formData = new FormData(registerForm);
@@ -222,10 +248,7 @@ document.querySelector("#closeStatus").addEventListener("click", () => {
 
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!supabaseConfigured) {
-    showToast("กรุณาตั้งค่า Supabase ในไฟล์ supabase-config.js");
-    return;
-  }
+  if (!canUseSupabase()) return;
 
   const [email, password] =
     loginForm.querySelectorAll("input:not([type=checkbox])");
