@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f4ea">
+  <title>Admin | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <div class="paper-noise" aria-hidden="true"></div>
+
+  <section class="admin-login" id="adminLogin">
+    <div class="login-art">
+      <img src="logo.png" alt="Toko and Poppy">
+      <span>พื้นที่สำหรับทีมผู้ดูแล</span>
+      <h1>ช่วยกันเปิดประตู<br>สู่การเรียนรู้</h1>
+      <p>ตรวจสอบใบสมัครและมอบสิทธิ์คอร์สให้เด็กๆ อย่างปลอดภัย</p>
+    </div>
+    <form class="login-card" id="adminLoginForm">
+      <div class="login-badge">ADMIN ONLY</div>
+      <h2>เข้าสู่ระบบผู้ดูแล</h2>
+      <p>ใช้บัญชีที่ถูกกำหนด role เป็น admin ใน Supabase</p>
+      <label>อีเมล
+        <input name="email" type="email" autocomplete="email" placeholder="admin@tokoandpoppy.com" required>
+      </label>
+      <label>รหัสผ่าน
+        <input name="password" type="password" autocomplete="current-password" placeholder="กรอกรหัสผ่าน" required>
+      </label>
+      <button class="primary-button" type="submit">เข้าสู่ระบบ <span>→</span></button>
+      <div class="config-warning" id="configWarning" hidden>
+        กรุณาตั้งค่า Supabase ในไฟล์ <strong>supabase-config.js</strong>
+      </div>
+      <a href="index.html">← กลับหน้าเว็บไซต์</a>
+    </form>
+  </section>
+
+  <div class="admin-shell" id="adminShell" hidden>
+    <aside class="sidebar">
+      <a class="admin-brand" href="index.html">
+        <img src="logo.png" alt="">
+        <span><strong>Toko & Poppy</strong><small>ADMIN CENTER</small></span>
+      </a>
+      <nav>
+        <button class="nav-item active" type="button">
+          <span>📋</span> ใบสมัครเรียน
+          <i id="pendingBadge">0</i>
+        </button>
+        <button class="nav-item" type="button" disabled><span>👨‍👩‍👧</span> นักเรียนทั้งหมด</button>
+        <button class="nav-item" type="button" disabled><span>📚</span> จัดการบทเรียน</button>
+      </nav>
+      <div class="sidebar-character">
+        <img src="logo.png" alt="Toko และ Poppy">
+        <p>ตรวจสลิปให้เรียบร้อย<br>ก่อนกดอนุมัตินะ!</p>
+      </div>
+      <button class="logout-button" id="logoutButton" type="button">ออกจากระบบ</button>
+    </aside>
+
+    <main class="admin-main">
+      <header class="topbar">
+        <button class="menu-button" id="menuButton" type="button" aria-label="เปิดเมนู">☰</button>
+        <div>
+          <span class="page-kicker">ศูนย์จัดการสมาชิก</span>
+          <h1>ใบสมัครเรียน</h1>
+        </div>
+        <div class="admin-profile">
+          <span class="profile-avatar">A</span>
+          <div><strong>ผู้ดูแลระบบ</strong><small id="adminEmail">กำลังโหลด...</small></div>
+        </div>
+      </header>
+
+      <section class="content">
+        <div class="welcome-strip">
+          <div>
+            <span>สวัสดีคุณแอดมิน 👋</span>
+            <h2>วันนี้มีเด็กๆ รอเริ่มต้นการผจญภัย</h2>
+            <p>ตรวจสอบข้อมูลและหลักฐานการชำระเงินก่อนเปิดสิทธิ์เข้าเรียน</p>
+          </div>
+          <div class="welcome-doodle" aria-hidden="true">✦</div>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card pending">
+            <span class="stat-icon">⏳</span>
+            <div><small>รอตรวจสอบ</small><strong id="pendingCount">0</strong></div>
+            <i>ใบสมัคร</i>
+          </article>
+          <article class="stat-card approved">
+            <span class="stat-icon">✓</span>
+            <div><small>อนุมัติแล้ว</small><strong id="approvedCount">0</strong></div>
+            <i>นักเรียน</i>
+          </article>
+          <article class="stat-card rejected">
+            <span class="stat-icon">×</span>
+            <div><small>ไม่ผ่านการอนุมัติ</small><strong id="rejectedCount">0</strong></div>
+            <i>รายการ</i>
+          </article>
+        </div>
+
+        <section class="applications-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>รายการใบสมัคร</h2>
+              <p>ข้อมูลล่าสุดจาก Supabase</p>
+            </div>
+            <button class="refresh-button" id="refreshButton" type="button">↻ รีเฟรช</button>
+          </div>
+
+          <div class="toolbar">
+            <label class="search-box">
+              <span>⌕</span>
+              <input id="searchInput" type="search" placeholder="ค้นหาชื่อนักเรียน อีเมล หรือเบอร์โทร">
+            </label>
+            <div class="filter-tabs" id="filterTabs">
+              <button class="active" type="button" data-status="all">ทั้งหมด</button>
+              <button type="button" data-status="pending">รอตรวจ</button>
+              <button type="button" data-status="approved">อนุมัติแล้ว</button>
+              <button type="button" data-status="rejected">ไม่อนุมัติ</button>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>นักเรียน / ผู้ปกครอง</th>
+                  <th>คอร์สที่สมัคร</th>
+                  <th>หลักฐานการชำระเงิน</th>
+                  <th>วันที่สมัคร</th>
+                  <th>สถานะ</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="applicationRows"></tbody>
+            </table>
+          </div>
+
+          <div class="empty-state" id="emptyState" hidden>
+            <div>📭</div>
+            <h3>ยังไม่พบใบสมัคร</h3>
+            <p>เมื่อผู้ปกครองส่งใบสมัคร รายการจะปรากฏตรงนี้</p>
+          </div>
+          <div class="loading-state" id="loadingState">
+            <i></i><span>กำลังโหลดใบสมัคร...</span>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="review-backdrop" id="reviewModal" aria-hidden="true">
+    <section class="review-modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+      <button class="modal-close" id="closeReview" type="button" aria-label="ปิด">×</button>
+      <div class="review-header">
+        <span>ตรวจสอบใบสมัคร</span>
+        <h2 id="reviewTitle">ข้อมูลนักเรียน</h2>
+        <p id="reviewSubtitle"></p>
+      </div>
+      <div class="review-grid">
+        <div class="slip-panel">
+          <div class="slip-title"><span>🧾</span><strong>หลักฐานการโอนเงิน</strong></div>
+          <div class="slip-frame" id="slipFrame">
+            <div class="slip-loading">กำลังโหลดรูปสลิป...</div>
+          </div>
+          <a id="openSlipLink" href="#" target="_blank" rel="noopener">เปิดรูปขนาดเต็ม ↗</a>
+        </div>
+        <div class="decision-panel">
+          <dl class="student-details" id="studentDetails"></dl>
+          <fieldset>
+            <legend>เลือกคอร์สที่อนุมัติให้เรียน</legend>
+            <label class="access-option robot">
+              <input id="robotAccess" type="checkbox">
+              <span>🤖</span>
+              <div><strong>โรบอท + โค้ดดิ้ง</strong><small>เปิดสิทธิ์บทเรียน SPIKE Essential</small></div>
+              <i>✓</i>
+            </label>
+            <label class="access-option art">
+              <input id="artAccess" type="checkbox">
+              <span>🎨</span>
+              <div><strong>ห้องเรียนศิลปะ</strong><small>เปิดสิทธิ์บทเรียน Creative Art</small></div>
+              <i>✓</i>
+            </label>
+          </fieldset>
+          <label class="reason-field" id="reasonField">
+            เหตุผลกรณีไม่อนุมัติ
+            <textarea id="rejectionReason" rows="3" placeholder="ระบุสาเหตุเพื่อให้ทีมงานติดตาม"></textarea>
+          </label>
+          <div class="decision-actions">
+            <button class="reject-button" id="rejectButton" type="button">ไม่อนุมัติ</button>
+            <button class="approve-button" id="approveButton" type="button">✓ อนุมัติและเปิดสิทธิ์</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="adminToast" role="status"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

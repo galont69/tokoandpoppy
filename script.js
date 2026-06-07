@@ -9,6 +9,14 @@ const filePreview = document.querySelector("#filePreview");
 const uploadBox = document.querySelector("#uploadBox");
 const toast = document.querySelector("#toast");
 const authContent = document.querySelector(".auth-content");
+const supabaseConfig = window.SUPABASE_CONFIG || {};
+const supabaseConfigured = supabaseConfig.url &&
+  supabaseConfig.anonKey &&
+  !supabaseConfig.url.includes("YOUR_PROJECT") &&
+  !supabaseConfig.anonKey.includes("YOUR_SUPABASE");
+const enrollmentSupabase = supabaseConfigured
+  ? window.supabase.createClient(supabaseConfig.url, supabaseConfig.anonKey)
+  : null;
 
 function setAuthMode(mode) {
   const isRegister = mode === "register";
@@ -134,16 +142,73 @@ document.querySelector(".copy-account").addEventListener("click", async () => {
   }
 });
 
-registerForm.addEventListener("submit", (event) => {
+registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!registerForm.checkValidity()) {
     registerForm.reportValidity();
     return;
   }
-  closeAuth();
-  statusModal.classList.add("open");
-  statusModal.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
+  if (!supabaseConfigured) {
+    showToast("กรุณาตั้งค่า Supabase ในไฟล์ supabase-config.js");
+    return;
+  }
+
+  const submitButton = registerForm.querySelector(".submit-button");
+  const formData = new FormData(registerForm);
+  const slip = formData.get("slip");
+  submitButton.disabled = true;
+  submitButton.innerHTML = "กำลังส่งใบสมัคร...";
+
+  try {
+    const { data: authData, error: signUpError } =
+      await enrollmentSupabase.auth.signUp({
+        email: formData.get("email"),
+        password: formData.get("password")
+      });
+
+    if (signUpError) throw signUpError;
+    if (!authData.session || !authData.user) {
+      throw new Error(
+        "กรุณายืนยันอีเมลก่อนสมัคร หรือปิด Confirm email ใน Supabase Auth Settings"
+      );
+    }
+
+    const extension = slip.name.split(".").pop().toLowerCase();
+    const fileName = `${crypto.randomUUID()}.${extension}`;
+    const slipPath = `${authData.user.id}/${fileName}`;
+
+    const { error: uploadError } = await enrollmentSupabase.storage
+      .from("payment-slips")
+      .upload(slipPath, slip, {
+        cacheControl: "3600",
+        contentType: slip.type,
+        upsert: false
+      });
+    if (uploadError) throw uploadError;
+
+    const { error: enrollmentError } = await enrollmentSupabase.rpc(
+      "submit_enrollment",
+      {
+        p_student_name: formData.get("studentName"),
+        p_parent_phone: formData.get("phone"),
+        p_course: formData.get("course"),
+        p_slip_path: slipPath
+      }
+    );
+    if (enrollmentError) {
+      throw enrollmentError;
+    }
+
+    closeAuth();
+    statusModal.classList.add("open");
+    statusModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  } catch (error) {
+    showToast(`ส่งใบสมัครไม่สำเร็จ: ${error.message}`);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.innerHTML = 'ส่งใบสมัคร <span>→</span>';
+  }
 });
 
 document.querySelector("#closeStatus").addEventListener("click", () => {
@@ -155,13 +220,50 @@ document.querySelector("#closeStatus").addEventListener("click", () => {
   filePreview.classList.remove("show");
 });
 
-loginForm.addEventListener("submit", (event) => {
+loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const [email, password] = loginForm.querySelectorAll("input:not([type=checkbox])");
-  if (email.value === "demo@tokoandpoppy.com" && password.value === "12345678") {
-    closeAuth();
-    showToast("เข้าสู่ระบบสำเร็จ ยินดีต้อนรับ!");
+  if (!supabaseConfigured) {
+    showToast("กรุณาตั้งค่า Supabase ในไฟล์ supabase-config.js");
     return;
   }
-  showToast("บัญชีนี้ยังไม่ได้รับอนุมัติ หรือข้อมูลไม่ถูกต้อง");
+
+  const [email, password] =
+    loginForm.querySelectorAll("input:not([type=checkbox])");
+  const submitButton = loginForm.querySelector(".submit-button");
+  submitButton.disabled = true;
+  submitButton.textContent = "กำลังเข้าสู่ระบบ...";
+
+  const { data, error } = await enrollmentSupabase.auth.signInWithPassword({
+    email: email.value,
+    password: password.value
+  });
+
+  if (error) {
+    submitButton.disabled = false;
+    submitButton.innerHTML = 'เข้าสู่ระบบ <span>→</span>';
+    showToast(`เข้าสู่ระบบไม่สำเร็จ: ${error.message}`);
+    return;
+  }
+
+  const { data: application } = await enrollmentSupabase
+    .from("enrollment_applications")
+    .select("status, robot_access, art_access")
+    .eq("parent_user_id", data.user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  submitButton.disabled = false;
+  submitButton.innerHTML = 'เข้าสู่ระบบ <span>→</span>';
+  closeAuth();
+
+  if (application?.status === "approved") {
+    const courses = [
+      application.robot_access ? "โรบอท" : "",
+      application.art_access ? "ศิลปะ" : ""
+    ].filter(Boolean).join(" และ ");
+    showToast(`เข้าสู่ระบบสำเร็จ เปิดสิทธิ์คอร์ส${courses}แล้ว`);
+  } else {
+    showToast("บัญชียังอยู่ระหว่างรอการอนุมัติจากแอดมิน");
+  }
 });

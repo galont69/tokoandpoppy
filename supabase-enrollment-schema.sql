@@ -80,6 +80,10 @@ create table if not exists public.enrollment_applications (
   updated_at timestamptz not null default now()
 );
 
+alter table public.enrollment_applications
+  add column if not exists robot_access boolean not null default false,
+  add column if not exists art_access boolean not null default false;
+
 create index if not exists enrollment_parent_user_id_idx
   on public.enrollment_applications(parent_user_id);
 
@@ -232,6 +236,82 @@ grant execute on function public.submit_enrollment(
   text,
   text,
   public.course_code,
+  text
+) to authenticated;
+
+create or replace function public.review_enrollment(
+  p_application_id uuid,
+  p_decision public.application_status,
+  p_robot_access boolean default false,
+  p_art_access boolean default false,
+  p_rejection_reason text default null
+)
+returns public.enrollment_applications
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_application public.enrollment_applications;
+begin
+  if not (select private.is_admin()) then
+    raise exception 'Admin access is required';
+  end if;
+
+  if p_decision not in ('approved', 'rejected') then
+    raise exception 'Decision must be approved or rejected';
+  end if;
+
+  if p_decision = 'approved'
+     and not (coalesce(p_robot_access, false) or coalesce(p_art_access, false)) then
+    raise exception 'Select at least one course';
+  end if;
+
+  update public.enrollment_applications
+  set
+    status = p_decision,
+    payment_status = case
+      when p_decision = 'approved' then 'verified'::public.payment_status
+      else 'rejected'::public.payment_status
+    end,
+    robot_access = case
+      when p_decision = 'approved' then coalesce(p_robot_access, false)
+      else false
+    end,
+    art_access = case
+      when p_decision = 'approved' then coalesce(p_art_access, false)
+      else false
+    end,
+    reviewed_by = (select auth.uid()),
+    reviewed_at = now(),
+    rejection_reason = case
+      when p_decision = 'rejected' then nullif(trim(p_rejection_reason), '')
+      else null
+    end
+  where id = p_application_id
+  returning * into v_application;
+
+  if v_application.id is null then
+    raise exception 'Application not found';
+  end if;
+
+  return v_application;
+end;
+$$;
+
+revoke all on function public.review_enrollment(
+  uuid,
+  public.application_status,
+  boolean,
+  boolean,
+  text
+) from public;
+
+grant execute on function public.review_enrollment(
+  uuid,
+  public.application_status,
+  boolean,
+  boolean,
   text
 ) to authenticated;
 
