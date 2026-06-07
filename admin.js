@@ -24,10 +24,15 @@ const artAccess = document.querySelector("#artAccess");
 const rejectionReason = document.querySelector("#rejectionReason");
 const approveButton = document.querySelector("#approveButton");
 const rejectButton = document.querySelector("#rejectButton");
+const lessonAdminList = document.querySelector("#lessonAdminList");
+const lessonEditor = document.querySelector("#lessonEditor");
+const lessonUploadProgress = document.querySelector("#lessonUploadProgress");
 
 let applications = [];
 let activeStatus = "all";
 let activeApplication = null;
+let robotLessons = [];
+let activeLesson = null;
 
 const courseLabels = {
   robot: ["โรบอท + โค้ดดิ้ง", "SPIKE Essential"],
@@ -123,6 +128,21 @@ function updateStats() {
   document.querySelector("#approvedCount").textContent = count("approved");
   document.querySelector("#rejectedCount").textContent = count("rejected");
   document.querySelector("#pendingBadge").textContent = pending;
+}
+
+function showAdminView(viewName) {
+  document.querySelectorAll(".admin-view").forEach((view) => {
+    view.hidden = view.id !== `${viewName}View`;
+  });
+  document.querySelectorAll("[data-admin-view]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.adminView === viewName);
+  });
+  document.querySelector(".topbar h1").textContent =
+    viewName === "lessons" ? "จัดการบทเรียนโรบอท" : "ใบสมัครเรียน";
+  document.querySelector(".page-kicker").textContent =
+    viewName === "lessons" ? "ROBOT COURSE STUDIO" : "ศูนย์จัดการสมาชิก";
+  document.querySelector(".sidebar").classList.remove("open");
+  if (viewName === "lessons") loadRobotLessons();
 }
 
 function renderApplications() {
@@ -279,6 +299,184 @@ async function reviewApplication(decision) {
   await loadApplications();
 }
 
+function renderRobotLessons() {
+  const published = robotLessons.filter((lesson) => lesson.is_published).length;
+  document.querySelector("#publishedLessonCount").textContent = published;
+  lessonAdminList.innerHTML = robotLessons.map((lesson) => {
+    const hasVideo = Boolean(lesson.video_path || lesson.video_url);
+    const isReady = hasVideo && lesson.instruction_pdf_path;
+    return `
+      <button class="lesson-admin-item ${activeLesson?.id === lesson.id ? "active" : ""}"
+        type="button" data-lesson-id="${lesson.id}">
+        <span>${String(lesson.lesson_number).padStart(2, "0")}</span>
+        <div>
+          <strong>${escapeHtml(lesson.title)}</strong>
+          <small>${lesson.is_published ? "เผยแพร่แล้ว" : isReady ? "พร้อมเผยแพร่" : "ยังไม่ครบ"}</small>
+        </div>
+        <i class="${lesson.is_published ? "ready" : ""}"></i>
+      </button>
+    `;
+  }).join("");
+}
+
+function selectRobotLesson(lessonId) {
+  activeLesson = robotLessons.find((lesson) => lesson.id === lessonId);
+  if (!activeLesson) return;
+  const number = String(activeLesson.lesson_number).padStart(2, "0");
+  document.querySelector("#editorLessonNumber").textContent = number;
+  document.querySelector("#editorLessonHeading").textContent =
+    `บทเรียนที่ ${activeLesson.lesson_number}`;
+  document.querySelector("#lessonTitle").value = activeLesson.title || "";
+  document.querySelector("#lessonDescription").value =
+    activeLesson.description || "";
+  document.querySelector("#lessonVideoUrl").value =
+    activeLesson.video_url || "";
+  document.querySelector("#lessonPublished").checked =
+    activeLesson.is_published;
+  document.querySelector("#lessonVideoFile").value = "";
+  document.querySelector("#lessonPdfFile").value = "";
+
+  const currentVideo = document.querySelector("#currentVideo");
+  const currentPdf = document.querySelector("#currentPdf");
+  const videoLabel = activeLesson.video_path || activeLesson.video_url;
+  currentVideo.textContent = videoLabel
+    ? `มีวิดีโอแล้ว: ${videoLabel}`
+    : "ยังไม่มีวิดีโอ";
+  currentVideo.classList.toggle("ready", Boolean(videoLabel));
+  currentPdf.textContent = activeLesson.instruction_pdf_path
+    ? `มี PDF แล้ว: ${activeLesson.instruction_pdf_path}`
+    : "ยังไม่มีไฟล์ PDF";
+  currentPdf.classList.toggle(
+    "ready",
+    Boolean(activeLesson.instruction_pdf_path)
+  );
+  renderRobotLessons();
+}
+
+async function loadRobotLessons() {
+  lessonAdminList.innerHTML =
+    '<div class="loading-state"><i></i><span>กำลังโหลด 31 บทเรียน...</span></div>';
+  const { data, error } = await supabaseClient
+    .from("robot_lessons")
+    .select("*")
+    .order("lesson_number");
+
+  if (error) {
+    lessonAdminList.innerHTML = "";
+    showToast(`โหลดบทเรียนไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  robotLessons = data || [];
+  if (!activeLesson || !robotLessons.some(({ id }) => id === activeLesson.id)) {
+    activeLesson = robotLessons[0] || null;
+  } else {
+    activeLesson = robotLessons.find(({ id }) => id === activeLesson.id);
+  }
+  renderRobotLessons();
+  if (activeLesson) selectRobotLesson(activeLesson.id);
+}
+
+function safeFileName(fileName) {
+  return fileName
+    .normalize("NFKD")
+    .replace(/[^\w.-]+/g, "-")
+    .replace(/-+/g, "-")
+    .toLowerCase();
+}
+
+async function uploadLessonFile(bucket, file, lessonNumber) {
+  const folder = `lesson-${String(lessonNumber).padStart(2, "0")}`;
+  const path = `${folder}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+  const { error } = await supabaseClient.storage
+    .from(bucket)
+    .upload(path, file, {
+      contentType: file.type,
+      cacheControl: "3600",
+      upsert: false
+    });
+  if (error) throw error;
+  return path;
+}
+
+lessonEditor.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!activeLesson) return;
+
+  const title = document.querySelector("#lessonTitle").value.trim();
+  const description =
+    document.querySelector("#lessonDescription").value.trim();
+  const videoUrl = document.querySelector("#lessonVideoUrl").value.trim();
+  const videoFile = document.querySelector("#lessonVideoFile").files[0];
+  const pdfFile = document.querySelector("#lessonPdfFile").files[0];
+  const publish = document.querySelector("#lessonPublished").checked;
+  let videoPath = activeLesson.video_path;
+  let pdfPath = activeLesson.instruction_pdf_path;
+
+  if (videoFile && videoFile.size > 500 * 1024 * 1024) {
+    showToast("วิดีโอต้องมีขนาดไม่เกิน 500 MB", true);
+    return;
+  }
+  if (pdfFile && pdfFile.size > 50 * 1024 * 1024) {
+    showToast("ไฟล์ PDF ต้องมีขนาดไม่เกิน 50 MB", true);
+    return;
+  }
+  if (publish && !(videoFile || videoPath || videoUrl) && !(pdfFile || pdfPath)) {
+    showToast("ต้องมีวิดีโอและ PDF ก่อนเผยแพร่", true);
+    return;
+  }
+  if (publish && !(videoFile || videoPath || videoUrl)) {
+    showToast("กรุณาเพิ่มวิดีโอก่อนเผยแพร่", true);
+    return;
+  }
+  if (publish && !(pdfFile || pdfPath)) {
+    showToast("กรุณาเพิ่มไฟล์ PDF ก่อนเผยแพร่", true);
+    return;
+  }
+
+  const saveButton = lessonEditor.querySelector(".save-lesson-button");
+  saveButton.disabled = true;
+  lessonUploadProgress.hidden = false;
+
+  try {
+    if (videoFile) {
+      videoPath = await uploadLessonFile(
+        "robot-videos",
+        videoFile,
+        activeLesson.lesson_number
+      );
+    }
+    if (pdfFile) {
+      pdfPath = await uploadLessonFile(
+        "robot-instructions",
+        pdfFile,
+        activeLesson.lesson_number
+      );
+    }
+
+    const { error } = await supabaseClient
+      .from("robot_lessons")
+      .update({
+        title,
+        description,
+        video_path: videoPath || null,
+        video_url: videoUrl || null,
+        instruction_pdf_path: pdfPath || null,
+        is_published: publish
+      })
+      .eq("id", activeLesson.id);
+    if (error) throw error;
+
+    showToast(`บันทึกบทเรียนที่ ${activeLesson.lesson_number} แล้ว`);
+    await loadRobotLessons();
+  } catch (error) {
+    showToast(`บันทึกบทเรียนไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    saveButton.disabled = false;
+    lessonUploadProgress.hidden = true;
+  }
+});
+
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!configured) {
@@ -348,6 +546,18 @@ document.querySelector("#rejectButton").addEventListener("click", () =>
   reviewApplication("rejected"));
 document.querySelector("#menuButton").addEventListener("click", () =>
   document.querySelector(".sidebar").classList.toggle("open"));
+document.querySelectorAll("[data-admin-view]").forEach((button) => {
+  button.addEventListener("click", () =>
+    showAdminView(button.dataset.adminView));
+});
+lessonAdminList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-lesson-id]");
+  if (button) selectRobotLesson(button.dataset.lessonId);
+});
+document.querySelector("#refreshLessonsButton").addEventListener(
+  "click",
+  loadRobotLessons
+);
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && reviewModal.classList.contains("open")) {

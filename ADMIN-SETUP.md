@@ -13,6 +13,9 @@
 - RPC `review_enrollment` สำหรับอนุมัติหรือปฏิเสธใบสมัคร
 - Storage bucket ส่วนตัว `payment-slips`
 - RLS สำหรับผู้ปกครองและ Admin
+- บทเรียนโรบอท 31 บท
+- Storage ส่วนตัวสำหรับวิดีโอและ PDF แบบต่อ LEGO
+- ตารางสะสมความคืบหน้าของนักเรียน
 
 ## 2. เชื่อมหน้าเว็บกับโปรเจกต์
 
@@ -32,7 +35,7 @@ window.SUPABASE_CONFIG = {
 ## 3. สร้างบัญชี Admin
 
 1. สร้างผู้ใช้ Admin ใน Supabase Dashboard > Authentication > Users
-2. รัน SQL นี้ โดยเปลี่ยนอีเมลให้ตรงกับบัญชี Admin:
+2. รันไฟล์ `promote-admin.sql` หรือรัน SQL นี้ โดยเปลี่ยนอีเมลให้ตรงกับบัญชี Admin:
 
 ```sql
 update public.profiles
@@ -64,3 +67,19 @@ Supabase Dashboard > Authentication > Providers > Email
 5. Admin เปิด `admin.html` เพื่อตรวจสลิป
 6. Admin เลือกสิทธิ์โรบอท ศิลปะ หรือทั้งสองคอร์ส
 7. RPC เปลี่ยนสถานะเป็น `approved` และบันทึกสิทธิ์คอร์ส
+
+## จัดการบทเรียนโรบอท
+
+1. รัน `supabase-enrollment-schema.sql` ฉบับล่าสุด
+2. เข้าหน้า `admin.html`
+3. เลือกเมนู `จัดการบทเรียน`
+4. เลือกบทที่ 1-31
+5. กรอกชื่อและคำอธิบาย
+6. อัปโหลดวิดีโอ หรือวางลิงก์ YouTube/วิดีโอ
+7. อัปโหลด PDF แบบต่อ LEGO
+8. เปิดสวิตช์ `เผยแพร่` แล้วกดบันทึก
+
+หน้าเด็กอยู่ที่ `robot-lessons.html` และเปิดได้เฉพาะบัญชีที่ Admin
+อนุมัติ `robot_access` แล้วเท่านั้น
+
+ไฟล์ `sample-lesson-01-two-wheel.pdf` คือ PDF ตัวอย่างสำหรับบทที่ 1

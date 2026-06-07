@@ -46,12 +46,12 @@
         <span><strong>Toko & Poppy</strong><small>ADMIN CENTER</small></span>
       </a>
       <nav>
-        <button class="nav-item active" type="button">
+        <button class="nav-item active" type="button" data-admin-view="applications">
           <span>📋</span> ใบสมัครเรียน
           <i id="pendingBadge">0</i>
         </button>
         <button class="nav-item" type="button" disabled><span>👨‍👩‍👧</span> นักเรียนทั้งหมด</button>
-        <button class="nav-item" type="button" disabled><span>📚</span> จัดการบทเรียน</button>
+        <button class="nav-item" type="button" data-admin-view="lessons"><span>📚</span> จัดการบทเรียน</button>
       </nav>
       <div class="sidebar-character">
         <img src="logo.png" alt="Toko และ Poppy">
@@ -73,7 +73,7 @@
         </div>
       </header>
 
-      <section class="content">
+      <section class="content admin-view" id="applicationsView">
         <div class="welcome-strip">
           <div>
             <span>สวัสดีคุณแอดมิน 👋</span>
@@ -148,6 +148,91 @@
             <i></i><span>กำลังโหลดใบสมัคร...</span>
           </div>
         </section>
+      </section>
+
+      <section class="content admin-view" id="lessonsView" hidden>
+        <div class="lesson-admin-hero">
+          <div>
+            <span>ROBOT COURSE STUDIO</span>
+            <h2>จัดการบทเรียนโรบอท 31 บท</h2>
+            <p>เพิ่มวิดีโอแนะนำและสาธิตการต่อ พร้อมแบบต่อ LEGO® ในรูปแบบ PDF</p>
+          </div>
+          <a href="robot-lessons.html" target="_blank" rel="noopener">ดูหน้าเด็ก ↗</a>
+        </div>
+
+        <div class="lesson-admin-layout">
+          <section class="lesson-list-panel">
+            <div class="lesson-list-heading">
+              <div><strong>บทเรียนทั้งหมด</strong><small><span id="publishedLessonCount">0</span>/31 เผยแพร่แล้ว</small></div>
+              <button id="refreshLessonsButton" type="button">↻</button>
+            </div>
+            <div class="lesson-admin-list" id="lessonAdminList"></div>
+          </section>
+
+          <form class="lesson-editor" id="lessonEditor">
+            <div class="editor-heading">
+              <div class="editor-number" id="editorLessonNumber">01</div>
+              <div>
+                <span>กำลังแก้ไข</span>
+                <h2 id="editorLessonHeading">บทเรียนที่ 1</h2>
+              </div>
+              <label class="publish-toggle">
+                <input id="lessonPublished" type="checkbox">
+                <span></span>
+                เผยแพร่
+              </label>
+            </div>
+
+            <label>ชื่อบทเรียน
+              <input id="lessonTitle" type="text" maxlength="150" required placeholder="เช่น Two Wheel">
+            </label>
+            <label>คำอธิบายสำหรับเด็ก
+              <textarea id="lessonDescription" rows="3" maxlength="1000" placeholder="วันนี้เราจะสร้างอะไร และได้เรียนรู้อะไรบ้าง"></textarea>
+            </label>
+
+            <div class="media-upload-grid">
+              <section class="media-upload-card">
+                <div class="media-card-title">
+                  <span>🎬</span>
+                  <div><strong>วิดีโอคุณครู</strong><small>อัปโหลดไฟล์ หรือวางลิงก์วิดีโอ</small></div>
+                </div>
+                <label class="compact-label">ลิงก์วิดีโอ
+                  <input id="lessonVideoUrl" type="url" placeholder="https://youtube.com/...">
+                </label>
+                <label class="file-drop">
+                  <input id="lessonVideoFile" type="file" accept="video/mp4,video/webm,video/quicktime">
+                  <span>＋</span>
+                  <strong>เลือกไฟล์วิดีโอ</strong>
+                  <small>MP4, WEBM หรือ MOV สูงสุด 500 MB</small>
+                </label>
+                <div class="current-file" id="currentVideo">ยังไม่มีวิดีโอ</div>
+              </section>
+
+              <section class="media-upload-card pdf">
+                <div class="media-card-title">
+                  <span>📕</span>
+                  <div><strong>แบบต่อ LEGO®</strong><small>ไฟล์คู่มือทีละขั้นสำหรับเด็ก</small></div>
+                </div>
+                <label class="file-drop">
+                  <input id="lessonPdfFile" type="file" accept="application/pdf">
+                  <span>＋</span>
+                  <strong>เลือกไฟล์ PDF</strong>
+                  <small>PDF สูงสุด 50 MB</small>
+                </label>
+                <div class="current-file" id="currentPdf">ยังไม่มีไฟล์ PDF</div>
+              </section>
+            </div>
+
+            <div class="upload-progress" id="lessonUploadProgress" hidden>
+              <i></i><span>กำลังอัปโหลดและบันทึกบทเรียน...</span>
+            </div>
+            <div class="editor-note">
+              <span>💡</span>
+              เด็กจะเห็นบทเรียนเมื่อเปิด “เผยแพร่” และมีวิดีโอพร้อม PDF แล้ว
+            </div>
+            <button class="save-lesson-button" type="submit">บันทึกบทเรียน</button>
+          </form>
+        </div>
       </section>
     </main>
   </div>

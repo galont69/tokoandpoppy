@@ -407,6 +407,227 @@ drop policy if exists "Parents can remove their unsubmitted slips"
   on storage.objects;
 -- No client DELETE policy is created. Payment evidence stays immutable.
 
+-- Robot course: 31 lessons, teacher videos and LEGO instruction PDFs.
+create table if not exists public.robot_lessons (
+  id uuid primary key default gen_random_uuid(),
+  lesson_number smallint not null unique
+    check (lesson_number between 1 and 31),
+  title text not null,
+  description text not null default '',
+  video_path text,
+  video_url text,
+  instruction_pdf_path text,
+  is_published boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (
+    video_url is null
+    or video_url ~* '^https?://'
+  )
+);
+
+do $$
+begin
+  alter table public.robot_lessons
+    add constraint published_robot_lesson_has_media
+    check (
+      not is_published
+      or (
+        (video_path is not null or video_url is not null)
+        and instruction_pdf_path is not null
+      )
+    );
+exception
+  when duplicate_object then null;
+end
+$$;
+
+create table if not exists public.robot_lesson_progress (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  lesson_id uuid not null references public.robot_lessons(id) on delete cascade,
+  completed_at timestamptz not null default now(),
+  primary key (user_id, lesson_id)
+);
+
+drop trigger if exists robot_lessons_set_updated_at
+  on public.robot_lessons;
+create trigger robot_lessons_set_updated_at
+before update on public.robot_lessons
+for each row execute function public.set_updated_at();
+
+insert into public.robot_lessons (lesson_number, title)
+select
+  lesson_number,
+  case
+    when lesson_number = 1 then 'Two Wheel'
+    else 'บทเรียนโรบอท ' || lesson_number
+  end
+from generate_series(1, 31) as series(lesson_number)
+on conflict (lesson_number) do nothing;
+
+create or replace function private.has_robot_access()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.enrollment_applications
+    where parent_user_id = (select auth.uid())
+      and status = 'approved'
+      and robot_access = true
+  );
+$$;
+
+revoke all on function private.has_robot_access() from public;
+grant execute on function private.has_robot_access() to authenticated;
+
+alter table public.robot_lessons enable row level security;
+alter table public.robot_lesson_progress enable row level security;
+
+drop policy if exists "Robot students can read published lessons"
+  on public.robot_lessons;
+create policy "Robot students can read published lessons"
+on public.robot_lessons
+for select
+to authenticated
+using (
+  (is_published and (select private.has_robot_access()))
+  or (select private.is_admin())
+);
+
+drop policy if exists "Admins can insert robot lessons"
+  on public.robot_lessons;
+create policy "Admins can insert robot lessons"
+on public.robot_lessons
+for insert
+to authenticated
+with check ((select private.is_admin()));
+
+drop policy if exists "Admins can update robot lessons"
+  on public.robot_lessons;
+create policy "Admins can update robot lessons"
+on public.robot_lessons
+for update
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+drop policy if exists "Admins can delete robot lessons"
+  on public.robot_lessons;
+create policy "Admins can delete robot lessons"
+on public.robot_lessons
+for delete
+to authenticated
+using ((select private.is_admin()));
+
+drop policy if exists "Students can read their robot progress"
+  on public.robot_lesson_progress;
+create policy "Students can read their robot progress"
+on public.robot_lesson_progress
+for select
+to authenticated
+using (
+  user_id = (select auth.uid())
+  and (select private.has_robot_access())
+);
+
+drop policy if exists "Students can complete robot lessons"
+  on public.robot_lesson_progress;
+create policy "Students can complete robot lessons"
+on public.robot_lesson_progress
+for insert
+to authenticated
+with check (
+  user_id = (select auth.uid())
+  and (select private.has_robot_access())
+);
+
+drop policy if exists "Students can reset their robot progress"
+  on public.robot_lesson_progress;
+create policy "Students can reset their robot progress"
+on public.robot_lesson_progress
+for delete
+to authenticated
+using (
+  user_id = (select auth.uid())
+  and (select private.has_robot_access())
+);
+
+revoke all on public.robot_lessons from anon;
+revoke all on public.robot_lesson_progress from anon;
+grant select, insert, update, delete on public.robot_lessons to authenticated;
+grant select, insert, delete on public.robot_lesson_progress to authenticated;
+
+insert into storage.buckets (
+  id,
+  name,
+  public,
+  file_size_limit,
+  allowed_mime_types
+)
+values (
+  'robot-videos',
+  'robot-videos',
+  false,
+  524288000,
+  array['video/mp4', 'video/webm', 'video/quicktime']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+insert into storage.buckets (
+  id,
+  name,
+  public,
+  file_size_limit,
+  allowed_mime_types
+)
+values (
+  'robot-instructions',
+  'robot-instructions',
+  false,
+  52428800,
+  array['application/pdf']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Admins manage robot course files"
+  on storage.objects;
+create policy "Admins manage robot course files"
+on storage.objects
+for all
+to authenticated
+using (
+  bucket_id in ('robot-videos', 'robot-instructions')
+  and (select private.is_admin())
+)
+with check (
+  bucket_id in ('robot-videos', 'robot-instructions')
+  and (select private.is_admin())
+);
+
+drop policy if exists "Robot students read course files"
+  on storage.objects;
+create policy "Robot students read course files"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id in ('robot-videos', 'robot-instructions')
+  and (
+    (select private.has_robot_access())
+    or (select private.is_admin())
+  )
+);
+
 -- Promote an existing user to admin after replacing the email below:
 --
 -- update public.profiles

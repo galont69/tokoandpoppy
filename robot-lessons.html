@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#dfeecf">
+  <title>ตะลุยโลกโรบอท | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="robot-lessons.css">
+</head>
+<body>
+  <div class="paper-noise" aria-hidden="true"></div>
+  <header class="robot-header">
+    <a class="robot-brand" href="index.html">
+      <img src="logo.png" alt="">
+      <span><strong>Toko & Poppy</strong><small>ROBOT ADVENTURE</small></span>
+    </a>
+    <div class="header-progress">
+      <span>ความคืบหน้า</span>
+      <div><i id="headerProgressBar"></i></div>
+      <strong id="headerProgressText">0/31</strong>
+    </div>
+    <button id="robotLogout" type="button" hidden>ออกจากระบบ</button>
+  </header>
+
+  <main>
+    <section class="robot-hero">
+      <div class="hero-copy">
+        <span class="hero-chip">SPIKE ESSENTIAL JOURNEY</span>
+        <h1>ตะลุยโลกโรบอท<br><em>31 ภารกิจแสนสนุก</em></h1>
+        <p>ดูคุณครูสาธิต เปิดแบบต่อทีละขั้น แล้วสร้างหุ่นยนต์ไปพร้อมกับ Toko</p>
+        <div class="student-welcome" id="studentWelcome">กำลังตรวจสอบสิทธิ์การเรียน...</div>
+      </div>
+      <div class="hero-character">
+        <div class="orbit orbit-one"></div>
+        <div class="orbit orbit-two"></div>
+        <span class="gear gear-one">⚙</span>
+        <span class="gear gear-two">⚙</span>
+        <img src="logo.png" alt="Toko และ Poppy">
+      </div>
+    </section>
+
+    <section class="mission-section" id="missionSection" hidden>
+      <div class="section-heading">
+        <div>
+          <span>MISSION MAP</span>
+          <h2>เลือกภารกิจวันนี้</h2>
+          <p>บทที่มีรูปกุญแจยังอยู่ระหว่างที่คุณครูเตรียมเนื้อหา</p>
+        </div>
+        <div class="stamp-summary"><span>🏅</span><strong id="stampCount">0</strong><small>ตราที่สะสม</small></div>
+      </div>
+      <div class="mission-map" id="missionMap"></div>
+    </section>
+  </main>
+
+  <section class="access-screen" id="accessScreen">
+    <div class="access-card">
+      <img src="logo.png" alt="Toko and Poppy">
+      <span id="accessKicker">กำลังตรวจสอบ...</span>
+      <h2 id="accessTitle">ขอเวลา Toko เปิดประตูสักครู่</h2>
+      <p id="accessMessage">ระบบกำลังตรวจสอบบัญชีและสิทธิ์คอร์สโรบอท</p>
+      <form id="robotLoginForm" hidden>
+        <input name="email" type="email" placeholder="อีเมลผู้ปกครอง" required>
+        <input name="password" type="password" placeholder="รหัสผ่าน" required>
+        <button type="submit">เข้าสู่บทเรียน <span>→</span></button>
+      </form>
+      <a href="index.html">← กลับหน้าแรก</a>
+    </div>
+  </section>
+
+  <div class="lesson-backdrop" id="lessonModal" aria-hidden="true">
+    <article class="lesson-modal">
+      <button class="lesson-close" id="closeLesson" type="button" aria-label="ปิด">×</button>
+      <header class="lesson-heading">
+        <span id="lessonNumber">ภารกิจ 01</span>
+        <h2 id="lessonModalTitle">Two Wheel</h2>
+        <p id="lessonModalDescription"></p>
+      </header>
+      <div class="lesson-media-grid">
+        <section class="lesson-video-panel">
+          <div class="panel-title"><span>🎬</span><div><strong>วิดีโอคุณครู</strong><small>ฟังเรื่องราวและดูวิธีต่อ</small></div></div>
+          <div class="video-stage" id="videoStage">
+            <div class="media-loading">กำลังเตรียมวิดีโอ...</div>
+          </div>
+        </section>
+        <section class="lesson-pdf-panel">
+          <div class="panel-title"><span>📕</span><div><strong>แบบต่อ LEGO®</strong><small>เลื่อนดูแต่ละขั้นได้เลย</small></div></div>
+          <div class="pdf-stage" id="pdfStage">
+            <div class="media-loading">กำลังเปิดแบบต่อ...</div>
+          </div>
+          <a id="openPdfLink" href="#" target="_blank" rel="noopener">เปิด PDF เต็มหน้าจอ ↗</a>
+        </section>
+      </div>
+      <footer class="lesson-footer">
+        <p>ต่อเสร็จแล้วใช่ไหม? รับตราภารกิจจาก Toko ได้เลย!</p>
+        <button id="completeLesson" type="button">ภารกิจสำเร็จ! <span>★</span></button>
+      </footer>
+    </article>
+  </div>
+
+  <div class="celebration" id="celebration" aria-hidden="true">
+    <div class="celebration-card">
+      <div class="confetti">✦ ● ★ ✦ ●</div>
+      <img src="logo.png" alt="">
+      <span>MISSION COMPLETE</span>
+      <h2>เก่งมาก นักประดิษฐ์!</h2>
+      <p>ได้รับตรา Toko เพิ่มอีก 1 ดวงแล้ว</p>
+      <button id="closeCelebration" type="button">ไปภารกิจต่อไป</button>
+    </div>
+  </div>
+
+  <div class="toast" id="robotToast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="robot-lessons.js"></script>
+</body>
+</html>
