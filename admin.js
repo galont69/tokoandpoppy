@@ -385,6 +385,11 @@ function safeFileName(fileName) {
     .toLowerCase();
 }
 
+function formatFileSize(bytes) {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 async function uploadLessonFile(bucket, file, lessonNumber) {
   const folder = `lesson-${String(lessonNumber).padStart(2, "0")}`;
   const path = `${folder}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
@@ -399,6 +404,101 @@ async function uploadLessonFile(bucket, file, lessonNumber) {
   return path;
 }
 
+async function uploadSelectedLessonFile({
+  input,
+  bucket,
+  column,
+  currentFile,
+  maxBytes,
+  expectedType,
+  label
+}) {
+  const file = input.files[0];
+  if (!file || !activeLesson) return;
+  const selectedLesson = activeLesson;
+
+  if (file.size > maxBytes) {
+    input.value = "";
+    showToast(`${label} มีขนาดเกินกำหนด`, true);
+    return;
+  }
+  if (expectedType && !expectedType(file)) {
+    input.value = "";
+    showToast(`ชนิดไฟล์ ${label} ไม่ถูกต้อง`, true);
+    return;
+  }
+
+  const dropZone = input.closest(".file-drop");
+  currentFile.className = "current-file selected uploading";
+  currentFile.textContent =
+    `เลือกแล้ว: ${file.name} (${formatFileSize(file.size)}) · กำลังอัปโหลด`;
+  dropZone.classList.add("uploading");
+  showToast(`กำลังอัปโหลด ${file.name}`);
+
+  try {
+    const path = await uploadLessonFile(
+      bucket,
+      file,
+      selectedLesson.lesson_number
+    );
+    const { error } = await supabaseClient
+      .from("robot_lessons")
+      .update({ [column]: path })
+      .eq("id", selectedLesson.id);
+    if (error) throw error;
+
+    const lessonIndex = robotLessons.findIndex(
+      ({ id }) => id === selectedLesson.id
+    );
+    if (lessonIndex >= 0) robotLessons[lessonIndex][column] = path;
+    if (activeLesson?.id === selectedLesson.id) {
+      activeLesson[column] = path;
+      currentFile.className = "current-file ready";
+      currentFile.textContent =
+        `อัปโหลดสำเร็จ: ${file.name} (${formatFileSize(file.size)})`;
+    }
+    input.value = "";
+    renderRobotLessons();
+    showToast(`อัปโหลด ${label} สำเร็จ`);
+  } catch (error) {
+    currentFile.className = "current-file selected";
+    currentFile.textContent = `อัปโหลดไม่สำเร็จ: ${file.name}`;
+    showToast(`อัปโหลด ${label} ไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    dropZone.classList.remove("uploading");
+  }
+}
+
+document.querySelector("#lessonVideoFile").addEventListener("change", (event) => {
+  uploadSelectedLessonFile({
+    input: event.currentTarget,
+    bucket: "robot-videos",
+    column: "video_path",
+    currentFile: document.querySelector("#currentVideo"),
+    maxBytes: 500 * 1024 * 1024,
+    expectedType: (file) => [
+      "video/mp4",
+      "video/webm",
+      "video/quicktime"
+    ].includes(file.type),
+    label: "วิดีโอ"
+  });
+});
+
+document.querySelector("#lessonPdfFile").addEventListener("change", (event) => {
+  uploadSelectedLessonFile({
+    input: event.currentTarget,
+    bucket: "robot-instructions",
+    column: "instruction_pdf_path",
+    currentFile: document.querySelector("#currentPdf"),
+    maxBytes: 50 * 1024 * 1024,
+    expectedType: (file) =>
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf"),
+    label: "PDF"
+  });
+});
+
 lessonEditor.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!activeLesson) return;
@@ -407,29 +507,19 @@ lessonEditor.addEventListener("submit", async (event) => {
   const description =
     document.querySelector("#lessonDescription").value.trim();
   const videoUrl = document.querySelector("#lessonVideoUrl").value.trim();
-  const videoFile = document.querySelector("#lessonVideoFile").files[0];
-  const pdfFile = document.querySelector("#lessonPdfFile").files[0];
   const publish = document.querySelector("#lessonPublished").checked;
   let videoPath = activeLesson.video_path;
   let pdfPath = activeLesson.instruction_pdf_path;
 
-  if (videoFile && videoFile.size > 500 * 1024 * 1024) {
-    showToast("วิดีโอต้องมีขนาดไม่เกิน 500 MB", true);
-    return;
-  }
-  if (pdfFile && pdfFile.size > 50 * 1024 * 1024) {
-    showToast("ไฟล์ PDF ต้องมีขนาดไม่เกิน 50 MB", true);
-    return;
-  }
-  if (publish && !(videoFile || videoPath || videoUrl) && !(pdfFile || pdfPath)) {
+  if (publish && !(videoPath || videoUrl) && !pdfPath) {
     showToast("ต้องมีวิดีโอและ PDF ก่อนเผยแพร่", true);
     return;
   }
-  if (publish && !(videoFile || videoPath || videoUrl)) {
+  if (publish && !(videoPath || videoUrl)) {
     showToast("กรุณาเพิ่มวิดีโอก่อนเผยแพร่", true);
     return;
   }
-  if (publish && !(pdfFile || pdfPath)) {
+  if (publish && !pdfPath) {
     showToast("กรุณาเพิ่มไฟล์ PDF ก่อนเผยแพร่", true);
     return;
   }
@@ -439,21 +529,6 @@ lessonEditor.addEventListener("submit", async (event) => {
   lessonUploadProgress.hidden = false;
 
   try {
-    if (videoFile) {
-      videoPath = await uploadLessonFile(
-        "robot-videos",
-        videoFile,
-        activeLesson.lesson_number
-      );
-    }
-    if (pdfFile) {
-      pdfPath = await uploadLessonFile(
-        "robot-instructions",
-        pdfFile,
-        activeLesson.lesson_number
-      );
-    }
-
     const { error } = await supabaseClient
       .from("robot_lessons")
       .update({
