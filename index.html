@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#fffaf0">
+  <title>Toko & Poppy | Enjoy learning with stories</title>
+  <meta name="description" content="พื้นที่เรียนรู้ผ่านนิทานแสนสนุกสำหรับเด็กๆ กับ Toko และ Poppy">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            thai: ["Mali", "sans-serif"],
+            display: ["Nunito", "Mali", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="font-thai text-[#49372d]">
+  <div class="page-noise" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3 lg:px-8" aria-label="เมนูหลัก">
+      <a href="#home" class="brand" aria-label="Toko and Poppy หน้าแรก">
+        <img src="logo.png" alt="Toko & Poppy" class="brand-logo">
+        <span class="hidden sm:block">
+          <strong>Toko & Poppy</strong>
+          <small>Enjoy learning with stories</small>
+        </span>
+      </a>
+      <div class="flex items-center gap-2 sm:gap-3">
+        <a href="#courses" class="nav-link hidden md:inline-flex">คอร์สของเรา</a>
+        <button class="btn-login" type="button" data-open-auth="login">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3m9-9h6a3 3 0 013 3v12a3 3 0 01-3 3h-6"/></svg>
+          เข้าสู่ระบบ
+        </button>
+      </div>
+    </nav>
+  </header>
+
+  <main id="home">
+    <section class="hero">
+      <div class="hero-blob hero-blob-one" aria-hidden="true"></div>
+      <div class="hero-blob hero-blob-two" aria-hidden="true"></div>
+      <div class="cloud cloud-one" aria-hidden="true"></div>
+      <div class="cloud cloud-two" aria-hidden="true"></div>
+
+      <div class="mx-auto grid min-h-[680px] max-w-7xl items-center gap-8 px-5 pb-20 pt-12 lg:grid-cols-[1.02fr_.98fr] lg:px-8 lg:pb-28 lg:pt-16">
+        <div class="hero-copy relative z-10">
+          <div class="eyebrow">
+            <span class="eyebrow-star">★</span>
+            พื้นที่เรียนรู้สำหรับนักสร้างสรรค์ตัวน้อย
+          </div>
+          <h1>
+            ทุกเรื่องเล่า<br>
+            <span>พาเราเรียนรู้ได้</span>
+          </h1>
+          <p class="hero-lead">
+            ออกเดินทางไปกับ <strong>Toko</strong> และ <strong>Poppy</strong>
+            สนุกกับโรบอท โค้ดดิ้ง และศิลปะ ผ่านนิทานที่ปลุกจินตนาการ
+          </p>
+          <div class="hero-actions">
+            <button type="button" class="btn-primary" data-open-auth="register">
+              เริ่มต้นการผจญภัย
+              <span aria-hidden="true">→</span>
+            </button>
+            <a class="btn-ghost" href="#courses">
+              <span class="play-icon" aria-hidden="true">▶</span>
+              ดูคอร์สของเรา
+            </a>
+          </div>
+          <div class="trust-row">
+            <div class="avatar-stack" aria-hidden="true">
+              <span>🧒🏻</span><span>👧🏻</span><span>👦🏻</span>
+            </div>
+            <p><strong>เรียนสนุก เข้าใจง่าย</strong><br>ออกแบบเพื่อเด็กๆ โดยเฉพาะ</p>
+          </div>
+        </div>
+
+        <div class="hero-art relative">
+          <div class="sun-doodle" aria-hidden="true">☀</div>
+          <span class="spark spark-one" aria-hidden="true">✦</span>
+          <span class="spark spark-two" aria-hidden="true">✦</span>
+          <span class="spark spark-three" aria-hidden="true">✦</span>
+          <div class="story-card">
+            <div class="story-card-label">เพื่อนร่วมทางของหนู</div>
+            <img src="logo.png" alt="Toko เต่าใส่แว่นสีเขียว และ Poppy กระต่ายน้อย" class="hero-logo">
+            <div class="speech-bubble">พร้อมออกเดินทาง<br><strong>แล้วหรือยัง?</strong></div>
+          </div>
+          <div class="floating-card float-robot">
+            <span>🤖</span>
+            <div><strong>คิดเป็นขั้นตอน</strong><small>Robot & Coding</small></div>
+          </div>
+          <div class="floating-card float-art">
+            <span>🎨</span>
+            <div><strong>สร้างจินตนาการ</strong><small>Creative Art</small></div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-wave" aria-hidden="true"></div>
+    </section>
+
+    <section id="courses" class="courses-section">
+      <div class="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+        <div class="section-heading">
+          <span>เลือกเรื่องราวที่ชอบ</span>
+          <h2>วันนี้อยากผจญภัยแบบไหนดี?</h2>
+          <p>ทุกคอร์สผสานเรื่องเล่า การลงมือทำ และความสนุกเข้าด้วยกัน</p>
+        </div>
+        <div class="course-grid">
+          <article class="course-card robot-card">
+            <div class="course-icon">🤖</div>
+            <span class="course-chip">นักประดิษฐ์ตัวน้อย</span>
+            <h3>โรบอท + โค้ดดิ้ง</h3>
+            <p>สร้างหุ่นยนต์ LEGO® SPIKE Essential และฝึกคิดอย่างเป็นระบบผ่านภารกิจในนิทาน</p>
+            <ul>
+              <li>✓ เรียนผ่านวิดีโอและภาพทีละขั้น</li>
+              <li>✓ 30 ภารกิจสนุก พร้อมสะสมตรา</li>
+            </ul>
+          </article>
+          <article class="course-card art-card">
+            <div class="course-icon">🎨</div>
+            <span class="course-chip">ศิลปินนักเล่าเรื่อง</span>
+            <h3>ศิลปะแสนสนุก</h3>
+            <p>ฟังนิทาน ฝึกเทคนิคศิลปะ และสร้างผลงานที่ไม่เหมือนใครจากจินตนาการของเด็กๆ</p>
+            <ul>
+              <li>✓ ฝึกสี รูปร่าง และการเล่าเรื่อง</li>
+              <li>✓ แกลเลอรีผลงานสร้างแรงบันดาลใจ</li>
+            </ul>
+          </article>
+          <article class="course-card game-card">
+            <div class="course-icon">🕹️</div>
+            <span class="course-chip">ของขวัญสำหรับทุกคน</span>
+            <h3>Codeventure</h3>
+            <p>มินิเกมเขาวงกตฝึกตรรกะ วางชุดคำสั่งล่วงหน้าแล้วช่วยหุ่นยนต์กลับบ้านให้สำเร็จ</p>
+            <ul>
+              <li>✓ เล่นฟรีสำหรับนักเรียนทุกคอร์ส</li>
+              <li>✓ ฝึกแก้ปัญหาผ่านการเล่น</li>
+            </ul>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="join-section">
+      <div class="mx-auto max-w-5xl px-5 py-16 text-center">
+        <span class="join-kicker">เรื่องราวบทใหม่กำลังรออยู่</span>
+        <h2>มาเติบโตไปพร้อมกับ Toko & Poppy</h2>
+        <p>สมัครวันนี้ แล้วเริ่มต้นการเรียนรู้ที่เด็กๆ อยากกลับมาเล่นอีกทุกวัน</p>
+        <button type="button" class="btn-primary mx-auto mt-7" data-open-auth="register">สมัครเรียนเลย <span>→</span></button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-5 py-7 text-center sm:flex-row sm:text-left lg:px-8">
+      <div class="brand footer-brand">
+        <img src="logo.png" alt="" class="brand-logo">
+        <span><strong>Toko & Poppy</strong><small>Enjoy learning with stories</small></span>
+      </div>
+      <p>พื้นที่เล็กๆ สำหรับความฝันที่ยิ่งใหญ่ © 2026</p>
+    </div>
+  </footer>
+
+  <div class="modal-backdrop" id="authModal" aria-hidden="true">
+    <section class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+      <button class="modal-close" type="button" aria-label="ปิดหน้าต่าง">×</button>
+      <div class="auth-aside">
+        <img src="logo.png" alt="Toko and Poppy">
+        <h2>ยินดีต้อนรับ<br>สู่โลกแห่งนิทาน!</h2>
+        <p>สร้างบัญชีสำหรับผู้ปกครอง เพื่อเริ่มต้นเส้นทางการเรียนรู้ของเด็กๆ</p>
+        <div class="aside-note">🌟 เรียน เล่น และเติบโตไปด้วยกัน</div>
+      </div>
+      <div class="auth-content">
+        <div class="auth-tabs" role="tablist">
+          <button id="registerTab" class="auth-tab active" type="button" role="tab" aria-selected="true">สมัครเรียน</button>
+          <button id="loginTab" class="auth-tab" type="button" role="tab" aria-selected="false">เข้าสู่ระบบ</button>
+        </div>
+
+        <form id="registerForm" class="auth-form">
+          <div class="form-intro">
+            <span>สำหรับผู้ปกครอง</span>
+            <h2 id="authTitle">เริ่มต้นสร้างบัญชี</h2>
+            <p>กรอกข้อมูลให้ครบ แล้วรอแอดมินยืนยันการสมัคร</p>
+          </div>
+          <label>ชื่อ - นามสกุลนักเรียน
+            <input required name="studentName" type="text" placeholder="เช่น ด.ช. ต้นกล้า ใจดี">
+          </label>
+          <div class="two-cols">
+            <label>เบอร์โทรศัพท์
+              <input required name="phone" type="tel" inputmode="tel" placeholder="08x-xxx-xxxx">
+            </label>
+            <label>อีเมลผู้ปกครอง
+              <input required name="email" type="email" placeholder="parent@email.com">
+            </label>
+          </div>
+          <label>รหัสผ่าน
+            <div class="password-field">
+              <input required minlength="8" name="password" type="password" placeholder="อย่างน้อย 8 ตัวอักษร">
+              <button class="toggle-password" type="button" aria-label="แสดงรหัสผ่าน">👁</button>
+            </div>
+          </label>
+
+          <fieldset>
+            <legend>เลือกคอร์สที่สนใจ</legend>
+            <div class="course-options">
+              <label class="course-option">
+                <input type="radio" name="course" value="robot" required>
+                <span class="option-icon robot">🤖</span>
+                <span><strong>โรบอท + โค้ดดิ้ง</strong><small>SPIKE Essential</small></span>
+                <i>✓</i>
+              </label>
+              <label class="course-option">
+                <input type="radio" name="course" value="art">
+                <span class="option-icon art">🎨</span>
+                <span><strong>คอร์สศิลปะ</strong><small>Creative Art</small></span>
+                <i>✓</i>
+              </label>
+              <label class="course-option wide">
+                <input type="radio" name="course" value="both">
+                <span class="option-icon both">✨</span>
+                <span><strong>สมัครทั้งสองคอร์ส</strong><small>สนุกครบ ได้เรียนรู้รอบด้าน</small></span>
+                <span class="best-value">คุ้มที่สุด</span>
+                <i>✓</i>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="payment-box">
+            <div class="payment-title">
+              <span>💳</span>
+              <div><strong>ข้อมูลการชำระเงิน</strong><small>โอนเงินแล้วแนบหลักฐานด้านล่าง</small></div>
+            </div>
+            <div class="bank-details">
+              <div class="qr-placeholder" aria-label="พื้นที่ QR Code">
+                <div class="qr-pattern"></div>
+                <span>QR CODE</span>
+              </div>
+              <div>
+                <p>ธนาคารกสิกรไทย</p>
+                <strong>xxx-x-xxxxx-x</strong>
+                <small>ชื่อบัญชี: สถาบัน Toko & Poppy</small>
+                <button type="button" class="copy-account">คัดลอกเลขบัญชี</button>
+              </div>
+            </div>
+          </div>
+
+          <label class="upload-box" id="uploadBox">
+            <input required id="slipInput" name="slip" type="file" accept="image/png,image/jpeg,image/webp">
+            <span class="upload-icon">☁</span>
+            <strong>อัปโหลดสลิปการโอนเงิน</strong>
+            <small>แตะเพื่อเลือกไฟล์ PNG, JPG หรือ WEBP (ไม่เกิน 5 MB)</small>
+            <div class="file-preview" id="filePreview"></div>
+          </label>
+
+          <label class="consent">
+            <input required type="checkbox">
+            <span>ฉันยอมรับเงื่อนไขการสมัครเรียนและนโยบายความเป็นส่วนตัว</span>
+          </label>
+          <button class="submit-button" type="submit">ส่งใบสมัคร <span>→</span></button>
+        </form>
+
+        <form id="loginForm" class="auth-form hidden">
+          <div class="form-intro">
+            <span>ยินดีต้อนรับกลับมา</span>
+            <h2>เข้าสู่โลกการเรียนรู้</h2>
+            <p>สำหรับบัญชีที่ได้รับการอนุมัติแล้ว</p>
+          </div>
+          <label>อีเมลผู้ปกครอง
+            <input required type="email" placeholder="parent@email.com">
+          </label>
+          <label>รหัสผ่าน
+            <div class="password-field">
+              <input required type="password" placeholder="กรอกรหัสผ่าน">
+              <button class="toggle-password" type="button" aria-label="แสดงรหัสผ่าน">👁</button>
+            </div>
+          </label>
+          <div class="login-extras">
+            <label class="consent"><input type="checkbox"><span>จดจำฉันไว้</span></label>
+            <button type="button">ลืมรหัสผ่าน?</button>
+          </div>
+          <button class="submit-button" type="submit">เข้าสู่ระบบ <span>→</span></button>
+          <div class="demo-note">บัญชีตัวอย่าง: <strong>demo@tokoandpoppy.com</strong> / <strong>12345678</strong></div>
+        </form>
+      </div>
+    </section>
+  </div>
+
+  <div class="status-modal" id="statusModal" aria-hidden="true">
+    <div class="status-card" role="alertdialog" aria-modal="true">
+      <div class="status-confetti" aria-hidden="true">✦　●　★　✦　●</div>
+      <div class="status-icon">⏳</div>
+      <span class="status-chip">ส่งใบสมัครสำเร็จ</span>
+      <h2>รอการอนุมัติจากแอดมิน</h2>
+      <p>เราได้รับข้อมูลและหลักฐานการชำระเงินแล้ว ทีมงานจะตรวจสอบและแจ้งผลทางอีเมล</p>
+      <div class="status-line"><i></i><span></span><i></i></div>
+      <small>ระหว่างนี้ยังไม่สามารถเข้าดูเนื้อหาบทเรียนได้</small>
+      <button type="button" id="closeStatus">เข้าใจแล้ว</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="script.js"></script>
+</body>
+</html>
