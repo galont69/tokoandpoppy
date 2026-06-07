@@ -325,6 +325,11 @@ function showResult(success, hitObstacle = false) {
   document.querySelector("#resultToko").src =
     success ? frames.front[0] : frames.front[1];
   document.querySelector("#finishMap").hidden = !success;
+  const nextMapButton = document.querySelector("#nextMap");
+  nextMapButton.hidden = !success || currentLevel.number >= levels.length;
+  if (success && currentLevel.number < levels.length) {
+    nextMapButton.textContent = `แผนที่ ${currentLevel.number + 1} ต่อไป →`;
+  }
   resultModal.classList.add("open");
   resultModal.setAttribute("aria-hidden", "false");
 }
@@ -400,6 +405,12 @@ document.querySelector("#finishMap").addEventListener("click", () => {
   mapSelectView.hidden = false;
   renderMaps();
   window.scrollTo({ top: 0 });
+});
+document.querySelector("#nextMap").addEventListener("click", () => {
+  if (currentLevel.number >= levels.length) return;
+  const nextMapNumber = currentLevel.number + 1;
+  closeResult();
+  openMap(nextMapNumber);
 });
 
 renderMaps();

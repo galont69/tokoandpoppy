@@ -129,10 +129,11 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
 .result-card h2 { margin: 9px 0 5px; font-size: 23px; }
 .result-card p { margin: 0; color: #8c776a; font-size: 13px; }
 .result-stars { margin: 12px 0; color: #eab12b; font-size: 30px; letter-spacing: 6px; text-shadow: 0 3px white; }
-.result-actions { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; }
+.result-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .result-actions button { border: 0; border-radius: 12px; padding: 12px; font-size: 12px; font-weight: 700; }
 #tryAgain { color: #806d60; background: #eee7dd; }
-#finishMap { color: white; background: #668f57; }
+#finishMap { color: #725f50; background: #f3eadb; }
+#nextMap { grid-column: 1/-1; color: white; background: linear-gradient(135deg,#76a865,#4f7c4c); box-shadow: 0 8px 18px rgba(69,113,64,.2); }
 .result-confetti { position: absolute; top: 14px; left: 0; width: 100%; color: #e9b12b; letter-spacing: 18px; }
 .ck-toast { position: fixed; right: 22px; bottom: 22px; z-index: 120; visibility: hidden; max-width: 340px; border-radius: 12px; padding: 12px 16px; color: white; background: #4d4038; box-shadow: 0 10px 30px rgba(0,0,0,.2); font-size: 13px; opacity: 0; transform: translateY(12px); transition: .2s; }
 .ck-toast.show { visibility: visible; opacity: 1; transform: translateY(0); }
