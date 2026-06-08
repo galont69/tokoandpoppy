@@ -308,7 +308,7 @@ function renderLevels() {
         <span class="map-meta">${done ? "🏅" : unlocked ? "▶" : "🔒"}</span>
         <div class="map-art">${done ? "🎒" : lesson.icon}</div>
         <h3>${level.title}</h3>
-        <p>${level.moves} คำสั่ง · ${lesson.short}</p>
+        <p>ทางสั้นประมาณ ${level.moves} คำสั่ง · ${lesson.short}</p>
         <div class="map-stars">${done ? "ผ่านแล้ว" : unlocked ? "พร้อมเล่น" : "ผ่านด่านก่อนหน้า"}</div>
       </button>
     `;
@@ -347,8 +347,8 @@ function renderBoard() {
   tokoElement.className = "toko-player idle";
   tokoElement.alt = "Toko";
   tokoElement.src = frames.front[0];
-  tokoElement.style.width = `${100 / currentLevel.cols}%`;
-  tokoElement.style.height = `${100 / currentLevel.rows}%`;
+  tokoElement.style.width = `${126 / currentLevel.cols}%`;
+  tokoElement.style.height = `${126 / currentLevel.rows}%`;
   gameBoard.appendChild(tokoElement);
   positionToko(false);
 }
@@ -356,14 +356,14 @@ function renderBoard() {
 function positionToko(animate = true) {
   if (!tokoElement) return;
   if (!animate) tokoElement.style.transition = "none";
-  tokoElement.style.left = `${(player.col / currentLevel.cols) * 100}%`;
-  tokoElement.style.top = `${(player.row / currentLevel.rows) * 100}%`;
+  tokoElement.style.left = `${((player.col + 0.5) / currentLevel.cols) * 100}%`;
+  tokoElement.style.top = `${((player.row + 0.5) / currentLevel.rows) * 100}%`;
   if (!animate) requestAnimationFrame(() => { tokoElement.style.transition = ""; });
 }
 
 function renderQueue(activeIndex = -1) {
   document.querySelector("#commandCount").textContent =
-    `${commands.length}/${currentLevel.moves}`;
+    `${commands.length} คำสั่ง`;
   if (!commands.length) {
     commandQueue.innerHTML =
       '<div class="queue-empty">แตะหรือ ลากไอคอน<br>มาวางตรงนี้</div>';
@@ -384,8 +384,9 @@ function setControlsDisabled(disabled) {
 
 function addCommand(command) {
   if (running || !directions[command]) return;
-  if (commands.length >= currentLevel.moves) {
-    showToast(`Level นี้ใช้ ${currentLevel.moves} คำสั่งนะ`);
+  const maxCommands = Math.min(30, Math.max(12, currentLevel.rows * currentLevel.cols));
+  if (commands.length >= maxCommands) {
+    showToast(`ลองรันก่อนนะ ตอนนี้มี ${maxCommands} คำสั่งแล้ว`);
     return;
   }
   commands.push(command);
@@ -436,23 +437,22 @@ async function walk(command) {
 
 async function runProgram() {
   if (running || !commands.length) return;
-  if (commands.length !== currentLevel.moves) {
-    showToast(`วางให้ครบ ${currentLevel.moves} คำสั่งก่อนเริ่มนะ`);
-    return;
-  }
   running = true;
   resetPlayerOnly();
   setControlsDisabled(true);
   document.querySelector("#gameHint").textContent = "Toko กำลังเดินตามแผนของหนู...";
   let failed = false;
+  let executedCount = 0;
   for (let index = 0; index < commands.length; index += 1) {
     renderQueue(index);
     if (!await walk(commands[index])) {
       failed = true;
       break;
     }
+    executedCount = index + 1;
+    if (reachedTarget) break;
   }
-  renderQueue(commands.length);
+  renderQueue(executedCount);
   running = false;
   if (!failed && reachedTarget) {
     saveProgress();
@@ -489,7 +489,7 @@ function resetLevel(clear = true) {
   renderQueue();
   setControlsDisabled(false);
   document.querySelector("#gameHint").textContent =
-    `พา Toko ไปหยิบเป้ด้วย ${currentLevel.moves} คำสั่งนะ!`;
+    `พา Toko ไปหยิบเป้ให้ได้ แผนที่นี้มีทางสั้นประมาณ ${currentLevel.moves} คำสั่ง`;
 }
 
 function openMission(missionId) {
@@ -523,7 +523,7 @@ function openLevel(levelId) {
         ? "คิดเส้นทางเอง หลบสิ่งกีดขวาง แล้วพา Toko ไปหยิบเป้"
         : "คิดเส้นทางเองบนตาราง แล้วเรียงคำสั่งให้ Toko เดินถึงเป้";
   document.querySelector("#commandLimitText").textContent =
-    `ใช้ ${level.moves} คำสั่ง`;
+    `แนะนำ ${level.moves} คำสั่ง · ลองวิธีของหนูได้`;
   document.querySelector("#boardTitle").textContent =
     level.guided ? "ทางเดินเตรียมตัว" : lesson.id === 2 ? "ห้องฝึกทิศทาง" : "แผนที่ผจญภัย";
   commands = [];
@@ -538,7 +538,7 @@ function showResult(success, failed = false) {
   document.querySelector("#resultTitle").textContent =
     success ? "เก่งมาก Toko ได้เป้แล้ว!" : "เกือบถึงแล้ว!";
   document.querySelector("#resultMessage").textContent = success
-    ? "หนูวางคำสั่งได้ถูกลำดับ Toko พร้อมออกเดินทางแล้ว"
+    ? "Toko เดินไปหยิบเป้สำเร็จแล้ว หนูลองวิธีของตัวเองได้ดีมาก"
     : failed
       ? "คำสั่งพา Toko เดินผิดทาง ลองสังเกตช่องอีกครั้งนะ"
       : "ลองเรียงคำสั่งใหม่ เพื่อให้ Toko ไปถึงเป้";

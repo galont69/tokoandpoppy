@@ -124,9 +124,10 @@
 
           <section class="queue-section">
             <div class="queue-heading">
-              <div><span>ชุดคำสั่งของหนู</span><small id="commandLimitText">ใช้ 1 คำสั่ง</small></div>
-              <strong id="commandCount">0/1</strong>
+              <div><span>ชุดคำสั่งของหนู</span><small id="commandLimitText">แนะนำ 1 คำสั่ง</small></div>
+              <strong id="commandCount">0 คำสั่ง</strong>
             </div>
+            <button class="run-button" id="runProgram" type="button"><span>▶</span> เริ่มเดินตามคำสั่ง</button>
             <div class="command-queue" id="commandQueue" aria-label="พื้นที่วางไอคอนคำสั่ง">
               <div class="queue-empty">แตะหรือ ลากไอคอน<br>มาวางตรงนี้</div>
             </div>
@@ -143,7 +144,6 @@
             <button id="undoCommand" type="button">↶ ย้อน 1 คำสั่ง</button>
             <button id="clearCommands" type="button">ล้างทั้งหมด</button>
           </div>
-          <button class="run-button" id="runProgram" type="button"><span>▶</span> เริ่มเดินตามคำสั่ง</button>
           <button class="reset-button" id="resetLevel" type="button">↻ เริ่ม Level ใหม่</button>
         </aside>
 
