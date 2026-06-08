@@ -21,7 +21,7 @@
     <div class="ck-progress">
       <span>เส้นทางของฉัน</span>
       <div><i id="courseProgress"></i></div>
-      <strong id="courseProgressText">0/10</strong>
+      <strong id="courseProgressText">0/30</strong>
     </div>
     <a class="home-link" href="index.html">กลับหน้าแรก</a>
   </header>
@@ -31,81 +31,84 @@
       <div class="select-hero">
         <div class="hero-copy">
           <span class="hero-kicker">CODEKIDS STORY TRAIL</span>
-          <h1>เลือกภารกิจ<br><em>แล้วออกผจญภัย!</em></h1>
-          <p>แต่ละภารกิจมี 10 แผนที่ย่อย ให้เด็กๆ ฝึกคิด วางแผน และเรียนรู้ทีละขั้น</p>
+          <h1>เลือกภารกิจ<br><em>ของ Toko</em></h1>
+          <p>6 เนื้อเรื่องใหญ่สำหรับฝึกคิดเป็นลำดับ เริ่มจากการพา Toko เตรียมเป้ก่อนออกเดินทาง</p>
           <div class="skill-chips">
-            <span>🧠 ฝึกคิดเป็นลำดับ</span>
-            <span>🧩 แก้ปัญหา</span>
-            <span>🌟 เรียนผ่านเรื่องราว</span>
+            <span>✓ Icon Coding</span>
+            <span>✓ Basic sequencing</span>
+            <span>✓ Directional sequencing</span>
           </div>
         </div>
         <div class="hero-toko">
-          <div class="story-bubble">วันนี้หนูอยากทำ<br><strong>ภารกิจไหนดี?</strong></div>
+          <div class="story-bubble">วันนี้ Toko จะ<br><strong>ออกเดินทางแล้ว!</strong></div>
           <img src="assets/codekids/toko-front-a.png" alt="Toko">
-          <span class="hero-leaf leaf-one">🍃</span>
-          <span class="hero-leaf leaf-two">🍂</span>
+          <img class="hero-backpack" src="assets/codekids/backpack.png" alt="เป้">
         </div>
       </div>
 
       <section class="missions-section">
         <div class="section-heading">
           <div>
-            <span>STORY MISSIONS</span>
+            <span>6 STORY MISSIONS</span>
             <h2>ภารกิจของ Toko</h2>
-            <p>กดเลือกภารกิจ แล้วเข้าไปพิชิตแผนที่ย่อยทั้ง 10 แผนที่</p>
+            <p>แต่ละภารกิจมี 3 Lesson และ Lesson ละ 10 Level</p>
           </div>
-          <div class="star-wallet"><span>★</span><strong id="missionTotalStars">0</strong><small>ดาวสะสม</small></div>
+          <div class="star-wallet"><span>★</span><strong id="missionTotalStars">0</strong><small>Level ผ่านแล้ว</small></div>
         </div>
-        <div class="mission-grid">
-          <button class="mission-card mission-card-active" id="openMissionOne" type="button">
-            <span class="mission-number">ภารกิจที่ 1</span>
-            <div class="mission-visual">
-              <span>⭐</span>
-              <img src="assets/codekids/toko-front-a.png" alt="">
-            </div>
-            <div class="mission-copy">
-              <h3>พา Toko เก็บดาว</h3>
-              <p>เรียนรู้คำสั่งทิศทาง ผ่าน 10 แผนที่ จากการเดินตรงไปจนถึงการหลบอุปสรรค</p>
-              <div class="mission-progress-row">
-                <span><i id="missionProgressBar"></i></span>
-                <strong id="missionProgressText">0/10 แผนที่</strong>
-              </div>
-              <b>เริ่มภารกิจ →</b>
-            </div>
-          </button>
-          <article class="mission-card mission-card-coming">
-            <span class="mission-number">ภารกิจที่ 2</span>
-            <div class="coming-icon">🔒</div>
-            <h3>เรื่องราวใหม่เร็วๆ นี้</h3>
-            <p>พื้นที่สำหรับเพิ่มภารกิจและแผนที่ชุดถัดไป</p>
-          </article>
-        </div>
+        <div class="mission-grid" id="missionGrid"></div>
       </section>
     </section>
 
-    <section class="map-select-view" id="mapSelectView" hidden>
-      <section class="maps-section">
-        <button class="back-to-missions" id="backToMissions" type="button">← เลือกภารกิจ</button>
+    <section class="lesson-select-view" id="lessonSelectView" hidden>
+      <section class="content-section">
+        <button class="soft-back" id="backToMissions" type="button">← เลือกภารกิจ</button>
+        <div class="lesson-hero-card">
+          <div>
+            <span>ภารกิจที่ 1</span>
+            <h1>โทโกะเตรียมตัวออกเดินทางตามหาเป้</h1>
+            <p>เด็กๆ จะได้เรียนรู้การเขียนโค้ดด้วยไอคอน ลำดับขั้นตอนพื้นฐาน และการเรียงคำสั่งตามทิศทาง</p>
+            <ul>
+              <li>✓ การเขียนโค้ดด้วยไอคอน (Icon Coding)</li>
+              <li>✓ ลำดับขั้นตอนพื้นฐาน (Basic sequencing)</li>
+              <li>✓ ลำดับขั้นตอนตามทิศทาง (Directional sequencing)</li>
+            </ul>
+          </div>
+          <img src="assets/codekids/backpack.png" alt="เป้">
+        </div>
+        <div class="section-heading compact-heading">
+          <div>
+            <span>3 LESSONS · 30 LEVELS</span>
+            <h2>เลือก Lesson</h2>
+            <p>เริ่มจากทางเดินที่กำหนดไว้ แล้วค่อยเปิดพื้นที่ให้เด็กคิดเส้นทางเอง</p>
+          </div>
+        </div>
+        <div class="lesson-grid" id="lessonGrid"></div>
+      </section>
+    </section>
+
+    <section class="level-select-view" id="levelSelectView" hidden>
+      <section class="content-section">
+        <button class="soft-back" id="backToLessons" type="button">← เลือก Lesson</button>
         <div class="section-heading">
           <div>
-            <span>ภารกิจที่ 1 · 10 STORY MAPS</span>
-            <h2>พา Toko เก็บดาว</h2>
-            <p>เริ่มจากเดินตรง 3 ช่อง แล้วค่อยเรียนรู้เส้นทางที่ท้าทายขึ้น</p>
+            <span id="levelSelectKicker">LESSON 1</span>
+            <h2 id="levelSelectTitle">เดินตรงไปหาเป้</h2>
+            <p id="levelSelectDescription">ช่องเดินเป็นทางที่กำหนดไว้ เพื่อให้เข้าใจระบบคำสั่งง่ายที่สุด</p>
           </div>
-          <div class="star-wallet"><span>★</span><strong id="totalStars">0</strong><small>ดาวสะสม</small></div>
+          <div class="star-wallet"><span>🎒</span><strong id="lessonProgressText">0/10</strong><small>Level</small></div>
         </div>
-        <div class="map-grid" id="mapGrid"></div>
+        <div class="level-grid" id="levelGrid"></div>
       </section>
     </section>
 
     <section class="game-view" id="gameView" hidden>
       <div class="game-topbar">
-        <button class="back-to-maps" id="backToMaps" type="button">← เลือกแผนที่</button>
+        <button class="back-to-maps" id="backToLevels" type="button">← เลือก Level</button>
         <div class="level-title">
-          <span id="currentMapLabel">MAP 1 / 10</span>
-          <h1 id="currentMapTitle">พา Toko เก็บดาว</h1>
+          <span id="currentLevelLabel">LESSON 1 · LEVEL 1</span>
+          <h1 id="currentLevelTitle">เดินไปหาเป้</h1>
         </div>
-        <div class="level-stars"><span>★</span><strong id="levelStarCount">0/1</strong></div>
+        <div class="level-stars"><span>🎒</span><strong id="levelTargetCount">0/1</strong></div>
       </div>
 
       <div class="game-layout">
@@ -113,47 +116,47 @@
           <div class="mission-story">
             <span class="story-icon">📖</span>
             <div>
-              <small>ภารกิจวันนี้</small>
-              <h2 id="missionTitle">พา Toko เก็บดาว 1 ดวง</h2>
-              <p id="missionDescription">วางคำสั่งเดินขึ้น 3 ช่อง แล้วกดเริ่มเดินตามคำสั่ง</p>
+              <small id="storyKicker">ภารกิจวันนี้</small>
+              <h2 id="missionTitle">พา Toko เดินไปหาเป้</h2>
+              <p id="missionDescription">แตะหรือลากไอคอนคำสั่งลงในช่อง แล้วกดเริ่มเดิน</p>
             </div>
           </div>
 
           <section class="queue-section">
             <div class="queue-heading">
-              <div><span>ชุดคำสั่งของหนู</span><small id="commandLimitText">ใช้ 3 คำสั่ง</small></div>
-              <strong id="commandCount">0/3</strong>
+              <div><span>ชุดคำสั่งของหนู</span><small id="commandLimitText">ใช้ 1 คำสั่ง</small></div>
+              <strong id="commandCount">0/1</strong>
             </div>
-            <div class="command-queue" id="commandQueue">
-              <div class="queue-empty" id="queueEmpty">แตะลูกศรด้านล่าง<br>เพื่อวางแผนการเดิน</div>
+            <div class="command-queue" id="commandQueue" aria-label="พื้นที่วางไอคอนคำสั่ง">
+              <div class="queue-empty">แตะหรือ ลากไอคอน<br>มาวางตรงนี้</div>
             </div>
           </section>
 
           <section class="arrow-pad" aria-label="ปุ่มคำสั่ง">
-            <button type="button" data-command="up" aria-label="เดินขึ้น"><span>↑</span><small>ขึ้น</small></button>
-            <button type="button" data-command="left" aria-label="เดินซ้าย"><span>←</span><small>ซ้าย</small></button>
-            <button type="button" data-command="down" aria-label="เดินลง"><span>↓</span><small>ลง</small></button>
-            <button type="button" data-command="right" aria-label="เดินขวา"><span>→</span><small>ขวา</small></button>
+            <button type="button" draggable="true" data-command="left" aria-label="เดินซ้าย"><span>←</span><small>ซ้าย</small></button>
+            <button type="button" draggable="true" data-command="up" aria-label="เดินขึ้น"><span>↑</span><small>ขึ้น</small></button>
+            <button type="button" draggable="true" data-command="down" aria-label="เดินลง"><span>↓</span><small>ลง</small></button>
+            <button type="button" draggable="true" data-command="right" aria-label="เดินขวา"><span>→</span><small>ขวา</small></button>
           </section>
 
           <div class="command-actions">
-            <button class="undo-button" id="undoCommand" type="button">↶ ย้อน 1 คำสั่ง</button>
-            <button class="clear-button" id="clearCommands" type="button">ล้างทั้งหมด</button>
+            <button id="undoCommand" type="button">↶ ย้อน 1 คำสั่ง</button>
+            <button id="clearCommands" type="button">ล้างทั้งหมด</button>
           </div>
           <button class="run-button" id="runProgram" type="button"><span>▶</span> เริ่มเดินตามคำสั่ง</button>
-          <button class="reset-button" id="resetMap" type="button">↻ เริ่มแผนที่ใหม่</button>
+          <button class="reset-button" id="resetLevel" type="button">↻ เริ่ม Level ใหม่</button>
         </aside>
 
         <section class="game-board-wrap">
           <div class="board-banner">
-            <div><span>🌳</span><strong>สวนเล่านิทาน</strong></div>
-            <p id="gameHint">วางแผนให้ดีก่อนกดเริ่มนะ!</p>
+            <div><span>🎒</span><strong id="boardTitle">ห้องเตรียมตัว</strong></div>
+            <p id="gameHint">วางแผนให้ดี แล้วช่วย Toko ไปหยิบเป้นะ!</p>
           </div>
           <div class="game-board" id="gameBoard" aria-label="ตารางเกม Codekids"></div>
           <div class="board-legend">
-            <span>⭐ ดาวที่ต้องเก็บ</span>
-            <span>🪨 ห้ามเดินชน</span>
-            <span>👣 วางแผนตามจำนวนก้าว</span>
+            <span>🎒 เป้าหมาย</span>
+            <span>🪨 สิ่งกีดขวาง</span>
+            <span>👣 เดินตามคำสั่งที่วางไว้</span>
           </div>
         </section>
       </div>
@@ -164,14 +167,14 @@
     <div class="result-card">
       <div class="result-confetti">✦ ★ ● ✦ ★</div>
       <img id="resultToko" src="assets/codekids/toko-front-a.png" alt="">
-      <span id="resultKicker">MAP COMPLETE</span>
+      <span id="resultKicker">LEVEL COMPLETE</span>
       <h2 id="resultTitle">เยี่ยมมาก นักวางแผน!</h2>
-      <p id="resultMessage">Toko เก็บดาวครบแล้ว</p>
-      <div class="result-stars" id="resultStars">★</div>
+      <p id="resultMessage">Toko เดินไปหยิบเป้สำเร็จแล้ว</p>
+      <div class="result-stars" id="resultStars">🎒</div>
       <div class="result-actions">
         <button id="tryAgain" type="button">เล่นอีกครั้ง</button>
-        <button id="finishMap" type="button">เลือกแผนที่</button>
-        <button id="nextMap" type="button">แผนที่ถัดไป →</button>
+        <button id="finishLevel" type="button">เลือก Level</button>
+        <button id="nextLevel" type="button">Level ถัดไป →</button>
       </div>
     </div>
   </div>

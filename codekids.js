@@ -1,78 +1,23 @@
-const missionSelectView = document.querySelector("#missionSelectView");
-const mapSelectView = document.querySelector("#mapSelectView");
-const gameView = document.querySelector("#gameView");
-const mapGrid = document.querySelector("#mapGrid");
+const views = {
+  missions: document.querySelector("#missionSelectView"),
+  lessons: document.querySelector("#lessonSelectView"),
+  levels: document.querySelector("#levelSelectView"),
+  game: document.querySelector("#gameView")
+};
+const missionGrid = document.querySelector("#missionGrid");
+const lessonGrid = document.querySelector("#lessonGrid");
+const levelGrid = document.querySelector("#levelGrid");
 const gameBoard = document.querySelector("#gameBoard");
 const commandQueue = document.querySelector("#commandQueue");
 const runButton = document.querySelector("#runProgram");
 const resultModal = document.querySelector("#resultModal");
 const toast = document.querySelector("#codekidsToast");
 
-const levels = [
-  {
-    number: 1, stars: [{ row: 2, col: 2 }], moves: 3, start: { row: 5, col: 2 },
-    solution: ["up", "up", "up"], rocks: [], trees: [],
-    title: "ก้าวแรกของ Toko", description: "เดินตรง 3 ช่อง ไม่มีอุปสรรค", icon: "🌟"
-  },
-  {
-    number: 2, stars: [{ row: 1, col: 3 }], moves: 4, start: { row: 5, col: 3 },
-    solution: ["up", "up", "up", "up"], rocks: [], trees: [],
-    title: "เดินอีกนิดนะ", description: "เดินตรง 4 ช่อง ไม่มีอุปสรรค", icon: "👣"
-  },
-  {
-    number: 3, stars: [{ row: 1, col: 2 }], moves: 5, start: { row: 5, col: 1 },
-    solution: ["up", "up", "up", "up", "right"], rocks: [], trees: [],
-    title: "ลองเลี้ยวดูสิ", description: "เก็บ 1 ดาว ด้วยคำสั่ง 5 ช่อง", icon: "↗️"
-  },
-  {
-    number: 4, stars: [{ row: 3, col: 1 }, { row: 1, col: 2 }], moves: 5,
-    start: { row: 5, col: 1 }, solution: ["up", "up", "up", "up", "right"],
-    rocks: [], trees: [], title: "ดาวสองดวง", description: "เก็บ 2 ดาว ไม่มีอุปสรรค", icon: "⭐"
-  },
-  {
-    number: 5, stars: [{ row: 3, col: 1 }, { row: 1, col: 2 }], moves: 5,
-    start: { row: 5, col: 1 }, solution: ["up", "up", "up", "up", "right"],
-    rocks: [{ row: 4, col: 2 }, { row: 2, col: 2 }], trees: [{ row: 3, col: 4 }],
-    title: "หลบก้อนหิน", description: "เก็บ 2 ดาว มีอุปสรรค", icon: "🪨"
-  },
-  {
-    number: 6, stars: [{ row: 3, col: 1 }, { row: 0, col: 2 }], moves: 7,
-    start: { row: 5, col: 0 }, solution: ["up", "right", "up", "up", "right", "up", "up"],
-    rocks: [{ row: 4, col: 2 }, { row: 2, col: 0 }, { row: 1, col: 3 }],
-    trees: [{ row: 3, col: 4 }], title: "เส้นทางซิกแซก", description: "เก็บ 2 ดาว เดิน 7 ช่อง", icon: "🌿"
-  },
-  {
-    number: 7, stars: [{ row: 4, col: 1 }, { row: 3, col: 2 }, { row: 1, col: 3 }], moves: 7,
-    start: { row: 5, col: 0 }, solution: ["up", "right", "up", "right", "up", "right", "up"],
-    rocks: [{ row: 5, col: 2 }, { row: 2, col: 1 }, { row: 2, col: 4 }],
-    trees: [{ row: 4, col: 4 }], title: "สามดาวแรก", description: "เก็บ 3 ดาว เดิน 7 ช่อง", icon: "✨"
-  },
-  {
-    number: 8, stars: [{ row: 5, col: 2 }, { row: 3, col: 2 }, { row: 1, col: 1 }], moves: 7,
-    start: { row: 5, col: 0 }, solution: ["right", "right", "up", "up", "left", "up", "up"],
-    rocks: [{ row: 4, col: 1 }, { row: 2, col: 3 }, { row: 1, col: 4 }],
-    trees: [{ row: 4, col: 4 }], title: "อ้อมแล้วกลับ", description: "เก็บ 3 ดาว มีอุปสรรค", icon: "🍃"
-  },
-  {
-    number: 9, stars: [{ row: 3, col: 0 }, { row: 2, col: 2 }, { row: 0, col: 4 }], moves: 9,
-    start: { row: 5, col: 0 }, solution: ["up", "up", "right", "right", "up", "up", "right", "right", "up"],
-    rocks: [{ row: 4, col: 2 }, { row: 3, col: 3 }, { row: 1, col: 1 }],
-    trees: [{ row: 5, col: 4 }], title: "ทางยาวเก้าก้าว", description: "เก็บ 3 ดาว เดิน 9 ช่อง", icon: "🗺️"
-  },
-  {
-    number: 10, stars: [{ row: 4, col: 2 }, { row: 2, col: 3 }, { row: 0, col: 5 }], moves: 10,
-    start: { row: 5, col: 0 },
-    solution: ["right", "up", "right", "up", "right", "up", "right", "up", "right", "up"],
-    rocks: [{ row: 5, col: 3 }, { row: 3, col: 1 }, { row: 1, col: 2 }, { row: 2, col: 5 }],
-    trees: [{ row: 4, col: 4 }], title: "นักเก็บดาวตัวจริง", description: "เก็บ 3 ดาว เดิน 10 ช่อง", icon: "🏅"
-  }
-].map((level) => ({ rows: 6, cols: 6, ...level }));
-
 const directions = {
-  up: { row: -1, col: 0, symbol: "↑", facing: "back" },
-  down: { row: 1, col: 0, symbol: "↓", facing: "front" },
-  left: { row: 0, col: -1, symbol: "←", facing: "left" },
-  right: { row: 0, col: 1, symbol: "→", facing: "right" }
+  up: { row: -1, col: 0, symbol: "↑", facing: "back", label: "ขึ้น" },
+  down: { row: 1, col: 0, symbol: "↓", facing: "front", label: "ลง" },
+  left: { row: 0, col: -1, symbol: "←", facing: "left", label: "ซ้าย" },
+  right: { row: 0, col: 1, symbol: "→", facing: "right", label: "ขวา" }
 };
 
 const frames = {
@@ -82,65 +27,297 @@ const frames = {
   right: ["assets/codekids/toko-right-a.png", "assets/codekids/toko-right-b.png"]
 };
 
-let currentLevel = levels[0];
+const missions = [
+  {
+    id: 1,
+    title: "โทโกะเดินเก็บเป้",
+    story: "เตรียมตัวออกเดินทางตามหาเป้",
+    description: "เริ่มจากการกดไอคอนคำสั่ง ฝึกลำดับขั้นตอน และพา Toko ไปหยิบเป้ให้สำเร็จ",
+    icon: "🎒",
+    active: true
+  },
+  { id: 2, title: "โทโกะตามหา Poppy", story: "เดินตามหาเพื่อนรัก", icon: "🐰" },
+  { id: 3, title: "โทโกะเดินทางทูวีล", story: "ออกผจญภัยกับสองล้อ", icon: "🛞" },
+  { id: 4, title: "โทโกะเดินทางเบลล่า", story: "เดินทางไปพบเบลล่า", icon: "🌸" },
+  { id: 5, title: "โทโกะเดินหา Steve", story: "ตามหาเพื่อนนักสร้าง", icon: "🧢" },
+  { id: 6, title: "โทโกะหาหุ่นยนต์กอริลล่า", story: "ภารกิจใหญ่ของนักคิด", icon: "🤖" }
+];
+
+const lessons = [
+  {
+    id: 1,
+    title: "เดินตรงไปหาเป้",
+    short: "ทางเดินกำหนดไว้",
+    description: "เด็กๆ เห็นช่องทางเดินชัดเจน ฝึกกดหรือวางไอคอนเพื่อให้ Toko ขยับตามลำดับ",
+    goal: "Icon Coding + Basic sequencing",
+    icon: "👣"
+  },
+  {
+    id: 2,
+    title: "เดินตามทิศทาง",
+    short: "คิดเส้นทางเองบน 3x5",
+    description: "เริ่มมีเลี้ยวซ้ายและขวา เด็กต้องคิดว่าจะวางคำสั่งทิศทางใดก่อนหลัง",
+    goal: "Directional sequencing",
+    icon: "🧭"
+  },
+  {
+    id: 3,
+    title: "วางลำดับหลายขั้นตอน",
+    short: "แผนที่เต็มพร้อมอุปสรรค",
+    description: "เปิดพื้นที่มากขึ้น มีสิ่งกีดขวางเบาๆ ให้เด็กคิดเส้นทางเองและเรียงคำสั่งหลายขั้นตอน",
+    goal: "Sequencing + Problem solving",
+    icon: "🧩"
+  }
+];
+
+function tracePath(start, solution) {
+  const path = [{ ...start }];
+  let position = { ...start };
+  solution.forEach((command) => {
+    const direction = directions[command];
+    position = {
+      row: position.row + direction.row,
+      col: position.col + direction.col
+    };
+    path.push({ ...position });
+  });
+  return path;
+}
+
+function createLevel({ lessonId, number, title, rows, cols, start, solution, obstacles = [], guided = false }) {
+  const path = tracePath(start, solution);
+  return {
+    id: `m1-l${lessonId}-${number}`,
+    missionId: 1,
+    lessonId,
+    number,
+    title,
+    rows,
+    cols,
+    start,
+    target: path[path.length - 1],
+    solution,
+    moves: solution.length,
+    obstacles,
+    guided,
+    path: guided ? path : []
+  };
+}
+
+const allLevels = [
+  ...[
+    ["right", "right"],
+    ["right", "right", "right"],
+    ["left", "left", "left"],
+    ["up", "up", "up"],
+    ["down", "down", "down"],
+    ["right", "right", "right", "right"],
+    ["up", "up", "up", "up"],
+    ["down", "down", "down", "down"],
+    ["right", "right", "right", "right", "right"],
+    ["up", "up", "up", "up", "up"]
+  ].map((solution, index) => {
+    const starts = [
+      { row: 0, col: 0 }, { row: 0, col: 0 }, { row: 0, col: 3 },
+      { row: 3, col: 0 }, { row: 0, col: 0 }, { row: 0, col: 0 },
+      { row: 4, col: 0 }, { row: 0, col: 0 }, { row: 0, col: 0 },
+      { row: 5, col: 0 }
+    ];
+    const sizes = [
+      [1, 3], [1, 4], [1, 4], [4, 1], [4, 1],
+      [1, 5], [5, 1], [5, 1], [1, 6], [6, 1]
+    ];
+    return createLevel({
+      lessonId: 1,
+      number: index + 1,
+      title: `ทางตรงด่านที่ ${index + 1}`,
+      rows: sizes[index][0],
+      cols: sizes[index][1],
+      start: starts[index],
+      solution,
+      guided: true
+    });
+  }),
+  ...[
+    { start: { row: 2, col: 0 }, s: ["right", "right"] },
+    { start: { row: 4, col: 1 }, s: ["up", "up", "up"] },
+    { start: { row: 4, col: 0 }, s: ["up", "up", "right", "right"] },
+    { start: { row: 0, col: 0 }, s: ["down", "down", "down", "right", "right"] },
+    { start: { row: 4, col: 2 }, s: ["up", "up", "up", "left", "left"] },
+    { start: { row: 0, col: 2 }, s: ["down", "down", "down", "down", "left", "left"] },
+    { start: { row: 4, col: 0 }, s: ["up", "up", "up", "up", "right", "right"] },
+    { start: { row: 0, col: 0 }, s: ["down", "down", "down", "down", "right", "right"] },
+    { start: { row: 2, col: 0 }, s: ["up", "up", "right", "right"] },
+    { start: { row: 4, col: 1 }, s: ["up", "up", "up", "up", "left"] }
+  ].map((level, index) => createLevel({
+    lessonId: 2,
+    number: index + 1,
+    title: `คิดทิศทางด่านที่ ${index + 1}`,
+    rows: 5,
+    cols: 3,
+    start: level.start,
+    solution: level.s
+  })),
+  ...[
+    { start: { row: 6, col: 0 }, s: ["right", "right", "right"], o: [{ row: 5, col: 1 }, { row: 4, col: 4 }] },
+    { start: { row: 6, col: 0 }, s: ["right", "right", "right", "up", "up"], o: [{ row: 5, col: 2 }, { row: 3, col: 4 }] },
+    { start: { row: 5, col: 1 }, s: ["up", "up", "right", "right", "right", "down"], o: [{ row: 4, col: 2 }, { row: 2, col: 5 }] },
+    { start: { row: 6, col: 2 }, s: ["up", "up", "up", "up", "right", "right"], o: [{ row: 4, col: 3 }, { row: 3, col: 1 }] },
+    { start: { row: 6, col: 0 }, s: ["right", "right", "up", "up", "right", "right"], o: [{ row: 5, col: 3 }, { row: 3, col: 2 }] },
+    { start: { row: 6, col: 5 }, s: ["left", "left", "up", "up", "up", "left", "left"], o: [{ row: 5, col: 4 }, { row: 4, col: 2 }, { row: 1, col: 1 }] },
+    { start: { row: 0, col: 0 }, s: ["down", "down", "right", "right", "right", "down", "down"], o: [{ row: 1, col: 2 }, { row: 3, col: 0 }, { row: 5, col: 4 }] },
+    { start: { row: 6, col: 0 }, s: ["up", "up", "right", "right", "up", "up", "right", "right"], o: [{ row: 5, col: 1 }, { row: 3, col: 3 }, { row: 1, col: 5 }] },
+    { start: { row: 5, col: 0 }, s: ["right", "right", "right", "up", "up", "up", "right", "right"], o: [{ row: 4, col: 1 }, { row: 2, col: 3 }, { row: 6, col: 5 }] },
+    { start: { row: 6, col: 0 }, s: ["right", "right", "up", "up", "right", "right", "up", "up", "right", "right"], o: [{ row: 5, col: 2 }, { row: 4, col: 4 }, { row: 2, col: 1 }, { row: 1, col: 5 }] }
+  ].map((level, index) => createLevel({
+    lessonId: 3,
+    number: index + 1,
+    title: `เส้นทางใหญ่ด่านที่ ${index + 1}`,
+    rows: 7,
+    cols: 7,
+    start: level.start,
+    solution: level.s,
+    obstacles: level.o
+  }))
+];
+
+let currentMissionId = 1;
+let currentLessonId = 1;
+let currentLevel = allLevels[0];
 let commands = [];
 let player = { ...currentLevel.start };
-let collectedStars = new Set();
+let reachedTarget = false;
 let running = false;
 let tokoElement = null;
 let walkFrame = 0;
 
 function getProgress() {
   try {
-    return JSON.parse(localStorage.getItem("codekids-mission-1-progress")) || {
-      completedMaps: [], starsByMap: {}
-    };
+    return JSON.parse(localStorage.getItem("codekids-v2-progress")) || { completed: [] };
   } catch {
-    return { completedMaps: [], starsByMap: {} };
+    return { completed: [] };
   }
 }
 
 function saveProgress() {
   const progress = getProgress();
-  if (!progress.completedMaps.includes(currentLevel.number)) {
-    progress.completedMaps.push(currentLevel.number);
+  if (!progress.completed.includes(currentLevel.id)) {
+    progress.completed.push(currentLevel.id);
   }
-  progress.starsByMap[currentLevel.number] = currentLevel.stars.length;
-  localStorage.setItem("codekids-mission-1-progress", JSON.stringify(progress));
+  localStorage.setItem("codekids-v2-progress", JSON.stringify(progress));
 }
 
-function renderMaps() {
-  const progress = getProgress();
-  const highestCompleted = progress.completedMaps.length
-    ? Math.max(...progress.completedMaps) : 0;
-  mapGrid.innerHTML = levels.map((level) => {
-    const completed = progress.completedMaps.includes(level.number);
-    const unlocked = level.number <= highestCompleted + 1;
-    const stars = "★".repeat(progress.starsByMap[level.number] || 0) +
-      "☆".repeat(level.stars.length - (progress.starsByMap[level.number] || 0));
+function completedLevels(lessonId = null) {
+  const completed = getProgress().completed;
+  return lessonId
+    ? completed.filter((id) => id.includes(`-l${lessonId}-`)).length
+    : completed.length;
+}
+
+function lessonIsUnlocked(lessonId) {
+  if (lessonId === 1) return true;
+  return completedLevels(lessonId - 1) >= 10;
+}
+
+function levelIsUnlocked(level) {
+  if (!lessonIsUnlocked(level.lessonId)) return false;
+  const previous = allLevels.find((candidate) =>
+    candidate.lessonId === level.lessonId && candidate.number === level.number - 1
+  );
+  return level.number === 1 || getProgress().completed.includes(previous?.id);
+}
+
+function showView(name) {
+  Object.entries(views).forEach(([key, view]) => {
+    view.hidden = key !== name;
+  });
+  window.scrollTo({ top: 0 });
+}
+
+function updateHeaderProgress() {
+  const count = completedLevels();
+  document.querySelector("#courseProgress").style.width = `${(count / 30) * 100}%`;
+  document.querySelector("#courseProgressText").textContent = `${count}/30`;
+  document.querySelector("#missionTotalStars").textContent = count;
+}
+
+function renderMissions() {
+  const count = completedLevels();
+  missionGrid.innerHTML = missions.map((mission) => {
+    const locked = !mission.active;
     return `
-      <button class="map-card ${unlocked ? "unlocked" : "locked"}" type="button"
-        ${unlocked ? `data-map="${level.number}"` : "disabled"}>
-        <span class="map-number">${String(level.number).padStart(2, "0")}</span>
-        <span class="map-meta">${completed ? "🏅" : unlocked ? "▶" : "🔒"}</span>
-        <div class="map-art">${level.icon}</div>
-        <h3>${level.title}</h3>
-        <p>${level.description}<br>${level.moves} คำสั่ง</p>
-        <div class="map-stars">${unlocked ? stars : "ผ่าน Map ก่อนหน้า"}</div>
+      <button class="mission-card ${mission.active ? "mission-card-active" : "mission-card-coming"}" type="button"
+        ${mission.active ? `data-mission="${mission.id}"` : "disabled"}>
+        <span class="mission-number">ภารกิจที่ ${mission.id}</span>
+        <div class="mission-visual">
+          <span>${locked ? "🔒" : mission.icon}</span>
+          <img src="${locked ? "assets/codekids/toko-front-b.png" : "assets/codekids/backpack.png"}" alt="">
+        </div>
+        <div class="mission-copy">
+          <h3>${mission.title}</h3>
+          <p>${mission.description || mission.story}</p>
+          <div class="mission-progress-row">
+            <span><i style="width:${mission.active ? (count / 30) * 100 : 0}%"></i></span>
+            <strong>${mission.active ? `${count}/30 Level` : "เร็วๆ นี้"}</strong>
+          </div>
+          <b>${mission.active ? "เริ่มภารกิจ →" : "ยังไม่เปิด"}</b>
+        </div>
       </button>
     `;
   }).join("");
-  const completedCount = progress.completedMaps.length;
-  const totalStars = Object.values(progress.starsByMap)
-    .reduce((sum, count) => sum + count, 0);
-  document.querySelector("#courseProgress").style.width = `${completedCount * 10}%`;
-  document.querySelector("#courseProgressText").textContent = `${completedCount}/10`;
-  document.querySelector("#totalStars").textContent = totalStars;
-  document.querySelector("#missionTotalStars").textContent = totalStars;
-  document.querySelector("#missionProgressBar").style.width =
-    `${completedCount * 10}%`;
-  document.querySelector("#missionProgressText").textContent =
-    `${completedCount}/10 แผนที่`;
+  updateHeaderProgress();
+}
+
+function renderLessons() {
+  lessonGrid.innerHTML = lessons.map((lesson) => {
+    const count = completedLevels(lesson.id);
+    const unlocked = lessonIsUnlocked(lesson.id);
+    return `
+      <button class="lesson-card ${unlocked ? "unlocked" : "locked"}" type="button"
+        ${unlocked ? `data-lesson="${lesson.id}"` : "disabled"}>
+        <span class="lesson-number">Lesson ${lesson.id}</span>
+        <div class="lesson-icon">${unlocked ? lesson.icon : "🔒"}</div>
+        <h3>${lesson.title}</h3>
+        <p>${lesson.description}</p>
+        <small>${lesson.goal}</small>
+        <div class="lesson-meter"><i style="width:${count * 10}%"></i></div>
+        <strong>${count}/10 Level</strong>
+      </button>
+    `;
+  }).join("");
+  updateHeaderProgress();
+}
+
+function renderLevels() {
+  const lesson = lessons.find((item) => item.id === currentLessonId);
+  const levels = allLevels.filter((level) => level.lessonId === currentLessonId);
+  const completed = getProgress().completed;
+  document.querySelector("#levelSelectKicker").textContent =
+    `ภารกิจที่ ${currentMissionId} · LESSON ${lesson.id}`;
+  document.querySelector("#levelSelectTitle").textContent = lesson.title;
+  document.querySelector("#levelSelectDescription").textContent = lesson.description;
+  document.querySelector("#lessonProgressText").textContent =
+    `${completedLevels(currentLessonId)}/10`;
+  levelGrid.innerHTML = levels.map((level) => {
+    const done = completed.includes(level.id);
+    const unlocked = levelIsUnlocked(level);
+    return `
+      <button class="level-card ${unlocked ? "unlocked" : "locked"}" type="button"
+        ${unlocked ? `data-level="${level.id}"` : "disabled"}>
+        <span class="map-number">${String(level.number).padStart(2, "0")}</span>
+        <span class="map-meta">${done ? "🏅" : unlocked ? "▶" : "🔒"}</span>
+        <div class="map-art">${done ? "🎒" : lesson.icon}</div>
+        <h3>${level.title}</h3>
+        <p>${level.moves} คำสั่ง · ${lesson.short}</p>
+        <div class="map-stars">${done ? "ผ่านแล้ว" : unlocked ? "พร้อมเล่น" : "ผ่านด่านก่อนหน้า"}</div>
+      </button>
+    `;
+  }).join("");
+  updateHeaderProgress();
+}
+
+function positionKey(position) {
+  return `${position.row}-${position.col}`;
 }
 
 function hasPosition(list, row, col) {
@@ -149,29 +326,25 @@ function hasPosition(list, row, col) {
 
 function renderBoard() {
   gameBoard.style.setProperty("--cols", currentLevel.cols);
+  gameBoard.style.setProperty("--rows", currentLevel.rows);
+  gameBoard.classList.toggle("guided-board", currentLevel.guided);
   gameBoard.innerHTML = "";
+  const pathSet = new Set(currentLevel.path.map(positionKey));
   for (let row = 0; row < currentLevel.rows; row += 1) {
     for (let col = 0; col < currentLevel.cols; col += 1) {
       const cell = document.createElement("div");
-      cell.className = "board-cell path";
-      if (hasPosition(currentLevel.rocks, row, col)) {
+      const onPath = !currentLevel.guided || pathSet.has(`${row}-${col}`);
+      cell.className = `board-cell ${onPath ? "path" : "hidden-cell"}`;
+      if (hasPosition(currentLevel.obstacles, row, col)) {
         cell.innerHTML = '<span class="cell-object">🪨</span>';
-      } else if (hasPosition(currentLevel.trees, row, col)) {
-        cell.innerHTML = '<span class="cell-object">🌳</span>';
-      } else {
-        const starIndex = currentLevel.stars.findIndex(
-          (star) => star.row === row && star.col === col
-        );
-        if (starIndex >= 0) {
-          cell.innerHTML =
-            `<span class="cell-object cell-star" data-star="${starIndex}">⭐</span>`;
-        }
+      } else if (currentLevel.target.row === row && currentLevel.target.col === col) {
+        cell.innerHTML = '<img class="cell-target" src="assets/codekids/backpack.png" alt="เป้">';
       }
       gameBoard.appendChild(cell);
     }
   }
   tokoElement = document.createElement("img");
-  tokoElement.className = "toko-player";
+  tokoElement.className = "toko-player idle";
   tokoElement.alt = "Toko";
   tokoElement.src = frames.front[0];
   tokoElement.style.width = `${100 / currentLevel.cols}%`;
@@ -193,7 +366,7 @@ function renderQueue(activeIndex = -1) {
     `${commands.length}/${currentLevel.moves}`;
   if (!commands.length) {
     commandQueue.innerHTML =
-      '<div class="queue-empty">แตะลูกศรด้านล่าง<br>เพื่อวางแผนการเดิน</div>';
+      '<div class="queue-empty">แตะหรือ ลากไอคอน<br>มาวางตรงนี้</div>';
     return;
   }
   commandQueue.innerHTML = commands.map((command, index) => `
@@ -210,9 +383,9 @@ function setControlsDisabled(disabled) {
 }
 
 function addCommand(command) {
-  if (running) return;
+  if (running || !directions[command]) return;
   if (commands.length >= currentLevel.moves) {
-    showToast(`แผนที่นี้ใช้ ${currentLevel.moves} คำสั่งนะ`);
+    showToast(`Level นี้ใช้ ${currentLevel.moves} คำสั่งนะ`);
     return;
   }
   commands.push(command);
@@ -230,31 +403,34 @@ async function walk(command) {
     row: player.row + direction.row,
     col: player.col + direction.col
   };
-  walkFrame = 1 - walkFrame;
-  tokoElement.src = frames[direction.facing][walkFrame];
   const outside = next.row < 0 || next.row >= currentLevel.rows ||
     next.col < 0 || next.col >= currentLevel.cols;
-  const obstacle = hasPosition(currentLevel.rocks, next.row, next.col) ||
-    hasPosition(currentLevel.trees, next.row, next.col);
-  if (outside || obstacle) {
+  const obstacle = hasPosition(currentLevel.obstacles, next.row, next.col);
+  const offGuidedPath = currentLevel.guided &&
+    !currentLevel.path.some((item) => item.row === next.row && item.col === next.col);
+  walkFrame = 1 - walkFrame;
+  tokoElement.classList.remove("idle");
+  tokoElement.classList.add("walking");
+  tokoElement.src = frames[direction.facing][walkFrame];
+  if (outside || obstacle || offGuidedPath) {
     tokoElement.classList.add("bump");
     await sleep(360);
-    tokoElement.classList.remove("bump");
+    tokoElement.classList.remove("bump", "walking");
+    tokoElement.classList.add("idle");
     return false;
   }
   player = next;
   positionToko();
   await sleep(430);
-  const starIndex = currentLevel.stars.findIndex(
-    (star) => star.row === player.row && star.col === player.col
-  );
-  if (starIndex >= 0 && !collectedStars.has(starIndex)) {
-    collectedStars.add(starIndex);
-    gameBoard.querySelector(`[data-star="${starIndex}"]`)?.classList.add("collected");
-    document.querySelector("#levelStarCount").textContent =
-      `${collectedStars.size}/${currentLevel.stars.length}`;
+  reachedTarget =
+    player.row === currentLevel.target.row && player.col === currentLevel.target.col;
+  if (reachedTarget) {
+    gameBoard.querySelector(".cell-target")?.classList.add("collected");
+    document.querySelector("#levelTargetCount").textContent = "1/1";
     await sleep(180);
   }
+  tokoElement.classList.remove("walking");
+  tokoElement.classList.add("idle");
   return true;
 }
 
@@ -267,77 +443,128 @@ async function runProgram() {
   running = true;
   resetPlayerOnly();
   setControlsDisabled(true);
-  document.querySelector("#gameHint").textContent = "Toko กำลังทำตามแผนของหนู...";
-  let hitObstacle = false;
+  document.querySelector("#gameHint").textContent = "Toko กำลังเดินตามแผนของหนู...";
+  let failed = false;
   for (let index = 0; index < commands.length; index += 1) {
     renderQueue(index);
     if (!await walk(commands[index])) {
-      hitObstacle = true;
+      failed = true;
       break;
     }
   }
   renderQueue(commands.length);
   running = false;
-  if (!hitObstacle && collectedStars.size === currentLevel.stars.length) {
+  if (!failed && reachedTarget) {
     saveProgress();
-    renderMaps();
+    renderMissions();
+    renderLessons();
+    renderLevels();
     showResult(true);
   } else {
-    document.querySelector("#gameHint").textContent = hitObstacle
-      ? "โอ๊ะ! Toko ชนสิ่งกีดขวาง ลองเปลี่ยนเส้นทางนะ"
-      : "ยังเก็บดาวไม่ครบ ลองจัดคำสั่งใหม่อีกครั้ง";
-    showResult(false, hitObstacle);
+    document.querySelector("#gameHint").textContent = failed
+      ? "โอ๊ะ! Toko เดินผิดทางหรือชนสิ่งกีดขวาง ลองใหม่อีกครั้งนะ"
+      : "ยังไม่ถึงเป้ ลองเรียงคำสั่งใหม่ดูนะ";
+    showResult(false, failed);
     setControlsDisabled(false);
   }
 }
 
 function resetPlayerOnly() {
   player = { ...currentLevel.start };
-  collectedStars = new Set();
+  reachedTarget = false;
   walkFrame = 0;
-  gameBoard.querySelectorAll(".cell-star").forEach((star) => {
-    star.classList.remove("collected");
-  });
-  document.querySelector("#levelStarCount").textContent =
-    `0/${currentLevel.stars.length}`;
+  gameBoard.querySelector(".cell-target")?.classList.remove("collected");
+  document.querySelector("#levelTargetCount").textContent = "0/1";
   if (tokoElement) {
     tokoElement.src = frames.front[0];
+    tokoElement.classList.remove("walking", "bump");
+    tokoElement.classList.add("idle");
     positionToko(false);
   }
 }
 
-function resetMap(clear = true) {
+function resetLevel(clear = true) {
   resetPlayerOnly();
   if (clear) commands = [];
   renderQueue();
   setControlsDisabled(false);
   document.querySelector("#gameHint").textContent =
-    `เก็บดาวให้ครบด้วย ${currentLevel.moves} คำสั่งนะ!`;
+    `พา Toko ไปหยิบเป้ด้วย ${currentLevel.moves} คำสั่งนะ!`;
 }
 
-function showResult(success, hitObstacle = false) {
+function openMission(missionId) {
+  if (missionId !== 1) return;
+  currentMissionId = missionId;
+  renderLessons();
+  showView("lessons");
+}
+
+function openLesson(lessonId) {
+  if (!lessonIsUnlocked(lessonId)) return;
+  currentLessonId = lessonId;
+  renderLevels();
+  showView("levels");
+}
+
+function openLevel(levelId) {
+  const level = allLevels.find((item) => item.id === levelId);
+  if (!level || !levelIsUnlocked(level)) return;
+  currentLevel = level;
+  const lesson = lessons.find((item) => item.id === level.lessonId);
+  document.querySelector("#currentLevelLabel").textContent =
+    `ภารกิจที่ ${level.missionId} · LESSON ${level.lessonId} · LEVEL ${level.number}`;
+  document.querySelector("#currentLevelTitle").textContent = level.title;
+  document.querySelector("#storyKicker").textContent = lesson.title;
+  document.querySelector("#missionTitle").textContent = "พา Toko เดินไปหยิบเป้";
+  document.querySelector("#missionDescription").textContent =
+    level.guided
+      ? "เดินตามช่องทางที่กำหนดไว้ แล้วสังเกตว่าไอคอนแต่ละตัวพา Toko ไปทางไหน"
+      : level.obstacles.length
+        ? "คิดเส้นทางเอง หลบสิ่งกีดขวาง แล้วพา Toko ไปหยิบเป้"
+        : "คิดเส้นทางเองบนตาราง แล้วเรียงคำสั่งให้ Toko เดินถึงเป้";
+  document.querySelector("#commandLimitText").textContent =
+    `ใช้ ${level.moves} คำสั่ง`;
+  document.querySelector("#boardTitle").textContent =
+    level.guided ? "ทางเดินเตรียมตัว" : lesson.id === 2 ? "ห้องฝึกทิศทาง" : "แผนที่ผจญภัย";
+  commands = [];
+  renderBoard();
+  resetLevel();
+  showView("game");
+}
+
+function showResult(success, failed = false) {
   document.querySelector("#resultKicker").textContent =
-    success ? `MAP ${currentLevel.number} COMPLETE` : "ลองอีกครั้งได้เสมอ";
+    success ? `LESSON ${currentLevel.lessonId} · LEVEL ${currentLevel.number}` : "ลองอีกครั้งได้เสมอ";
   document.querySelector("#resultTitle").textContent =
-    success ? "เยี่ยมมาก นักวางแผน!" : "เกือบสำเร็จแล้ว!";
+    success ? "เก่งมาก Toko ได้เป้แล้ว!" : "เกือบถึงแล้ว!";
   document.querySelector("#resultMessage").textContent = success
-    ? `Toko เก็บดาวครบ ${currentLevel.stars.length} ดวงแล้ว`
-    : hitObstacle
-      ? "คำสั่งพา Toko ชนสิ่งกีดขวาง ลองเปลี่ยนเส้นทางดูนะ"
-      : "ลองสังเกตตำแหน่งดาว แล้วจัดคำสั่งใหม่อีกครั้ง";
-  document.querySelector("#resultStars").textContent =
-    success ? "★".repeat(currentLevel.stars.length) :
-      "☆".repeat(currentLevel.stars.length);
-  document.querySelector("#resultToko").src =
-    success ? frames.front[0] : frames.front[1];
-  document.querySelector("#finishMap").hidden = !success;
-  const nextMapButton = document.querySelector("#nextMap");
-  nextMapButton.hidden = !success || currentLevel.number >= levels.length;
-  if (success && currentLevel.number < levels.length) {
-    nextMapButton.textContent = `แผนที่ ${currentLevel.number + 1} ต่อไป →`;
+    ? "หนูวางคำสั่งได้ถูกลำดับ Toko พร้อมออกเดินทางแล้ว"
+    : failed
+      ? "คำสั่งพา Toko เดินผิดทาง ลองสังเกตช่องอีกครั้งนะ"
+      : "ลองเรียงคำสั่งใหม่ เพื่อให้ Toko ไปถึงเป้";
+  document.querySelector("#resultStars").textContent = success ? "🎒" : "↻";
+  document.querySelector("#resultToko").src = success ? frames.front[0] : frames.front[1];
+  document.querySelector("#finishLevel").hidden = !success;
+  const nextButton = document.querySelector("#nextLevel");
+  const next = getNextLevel();
+  nextButton.hidden = !success || !next;
+  if (success && next) {
+    nextButton.textContent = next.lessonId === currentLevel.lessonId
+      ? `Level ${next.number} ต่อไป →`
+      : `Lesson ${next.lessonId} ต่อไป →`;
   }
   resultModal.classList.add("open");
   resultModal.setAttribute("aria-hidden", "false");
+}
+
+function getNextLevel() {
+  const currentIndex = allLevels.findIndex((level) => level.id === currentLevel.id);
+  return allLevels[currentIndex + 1] || null;
+}
+
+function closeResult() {
+  resultModal.classList.remove("open");
+  resultModal.setAttribute("aria-hidden", "true");
 }
 
 function showToast(message) {
@@ -347,51 +574,49 @@ function showToast(message) {
   showToast.timer = setTimeout(() => toast.classList.remove("show"), 2600);
 }
 
-function openMap(mapNumber) {
-  currentLevel = levels.find((level) => level.number === mapNumber) || levels[0];
-  document.querySelector("#currentMapLabel").textContent =
-    `MAP ${currentLevel.number} / 10`;
-  document.querySelector("#currentMapTitle").textContent = currentLevel.title;
-  document.querySelector("#missionTitle").textContent =
-    `พา Toko เก็บดาว ${currentLevel.stars.length} ดวง`;
-  document.querySelector("#missionDescription").textContent =
-    `${currentLevel.rocks.length || currentLevel.trees.length ? "หลบอุปสรรคและ" : ""}เดิน ${currentLevel.moves} ช่อง เพื่อเก็บดาวให้ครบ`;
-  document.querySelector("#commandLimitText").textContent =
-    `ใช้ ${currentLevel.moves} คำสั่ง`;
-  missionSelectView.hidden = true;
-  mapSelectView.hidden = true;
-  gameView.hidden = false;
-  window.scrollTo({ top: 0 });
-  commands = [];
-  renderBoard();
-  resetMap();
-}
-
-function closeResult() {
-  resultModal.classList.remove("open");
-  resultModal.setAttribute("aria-hidden", "true");
-}
-
-mapGrid.addEventListener("click", (event) => {
-  const card = event.target.closest("[data-map]");
-  if (card) openMap(Number(card.dataset.map));
+missionGrid.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-mission]");
+  if (card) openMission(Number(card.dataset.mission));
 });
-document.querySelector("#openMissionOne").addEventListener("click", () => {
-  missionSelectView.hidden = true;
-  mapSelectView.hidden = false;
-  gameView.hidden = true;
-  renderMaps();
-  window.scrollTo({ top: 0 });
+lessonGrid.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-lesson]");
+  if (card) openLesson(Number(card.dataset.lesson));
+});
+levelGrid.addEventListener("click", (event) => {
+  const card = event.target.closest("[data-level]");
+  if (card) openLevel(card.dataset.level);
 });
 document.querySelector("#backToMissions").addEventListener("click", () => {
-  mapSelectView.hidden = true;
-  gameView.hidden = true;
-  missionSelectView.hidden = false;
-  renderMaps();
-  window.scrollTo({ top: 0 });
+  renderMissions();
+  showView("missions");
+});
+document.querySelector("#backToLessons").addEventListener("click", () => {
+  renderLessons();
+  showView("lessons");
+});
+document.querySelector("#backToLevels").addEventListener("click", () => {
+  if (running) return;
+  renderLevels();
+  showView("levels");
 });
 document.querySelectorAll("[data-command]").forEach((button) => {
   button.addEventListener("click", () => addCommand(button.dataset.command));
+  button.addEventListener("dragstart", (event) => {
+    event.dataTransfer.setData("text/plain", button.dataset.command);
+    event.dataTransfer.effectAllowed = "copy";
+  });
+});
+commandQueue.addEventListener("dragover", (event) => {
+  event.preventDefault();
+  commandQueue.classList.add("dragging");
+});
+commandQueue.addEventListener("dragleave", () => {
+  commandQueue.classList.remove("dragging");
+});
+commandQueue.addEventListener("drop", (event) => {
+  event.preventDefault();
+  commandQueue.classList.remove("dragging");
+  addCommand(event.dataTransfer.getData("text/plain"));
 });
 document.querySelector("#undoCommand").addEventListener("click", () => {
   if (!running) {
@@ -408,32 +633,23 @@ document.querySelector("#clearCommands").addEventListener("click", () => {
   }
 });
 runButton.addEventListener("click", runProgram);
-document.querySelector("#resetMap").addEventListener("click", () => resetMap());
-document.querySelector("#backToMaps").addEventListener("click", () => {
-  if (running) return;
-  missionSelectView.hidden = true;
-  gameView.hidden = true;
-  mapSelectView.hidden = false;
-  renderMaps();
-  window.scrollTo({ top: 0 });
-});
+document.querySelector("#resetLevel").addEventListener("click", () => resetLevel());
 document.querySelector("#tryAgain").addEventListener("click", () => {
   closeResult();
-  resetMap(false);
+  resetLevel(false);
 });
-document.querySelector("#finishMap").addEventListener("click", () => {
+document.querySelector("#finishLevel").addEventListener("click", () => {
   closeResult();
-  missionSelectView.hidden = true;
-  gameView.hidden = true;
-  mapSelectView.hidden = false;
-  renderMaps();
-  window.scrollTo({ top: 0 });
+  renderLevels();
+  showView("levels");
 });
-document.querySelector("#nextMap").addEventListener("click", () => {
-  if (currentLevel.number >= levels.length) return;
-  const nextMapNumber = currentLevel.number + 1;
+document.querySelector("#nextLevel").addEventListener("click", () => {
+  const next = getNextLevel();
+  if (!next) return;
   closeResult();
-  openMap(nextMapNumber);
+  openLevel(next.id);
 });
 
-renderMaps();
+renderMissions();
+renderLessons();
+renderLevels();
