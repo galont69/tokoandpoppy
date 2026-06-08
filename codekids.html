@@ -64,16 +64,16 @@
         <button class="soft-back" id="backToMissions" type="button">← เลือกภารกิจ</button>
         <div class="lesson-hero-card">
           <div>
-            <span>ภารกิจที่ 1</span>
-            <h1>โทโกะเตรียมตัวออกเดินทางตามหาเป้</h1>
-            <p>เด็กๆ จะได้เรียนรู้การเขียนโค้ดด้วยไอคอน ลำดับขั้นตอนพื้นฐาน และการเรียงคำสั่งตามทิศทาง</p>
-            <ul>
+            <span id="lessonHeroBadge">ภารกิจที่ 1</span>
+            <h1 id="lessonHeroTitle">โทโกะเตรียมตัวออกเดินทางตามหาเป้</h1>
+            <p id="lessonHeroDescription">เด็กๆ จะได้เรียนรู้การเขียนโค้ดด้วยไอคอน ลำดับขั้นตอนพื้นฐาน และการเรียงคำสั่งตามทิศทาง</p>
+            <ul id="lessonHeroSkills">
               <li>✓ การเขียนโค้ดด้วยไอคอน (Icon Coding)</li>
               <li>✓ ลำดับขั้นตอนพื้นฐาน (Basic sequencing)</li>
               <li>✓ ลำดับขั้นตอนตามทิศทาง (Directional sequencing)</li>
             </ul>
           </div>
-          <img src="assets/codekids/backpack.png" alt="เป้">
+          <img id="lessonHeroImage" src="assets/codekids/backpack.png" alt="เป้">
         </div>
         <div class="section-heading compact-heading">
           <div>
@@ -138,6 +138,7 @@
             <button type="button" draggable="true" data-command="up" aria-label="เดินขึ้น"><span>↑</span><small>ขึ้น</small></button>
             <button type="button" draggable="true" data-command="down" aria-label="เดินลง"><span>↓</span><small>ลง</small></button>
             <button type="button" draggable="true" data-command="right" aria-label="เดินขวา"><span>→</span><small>ขวา</small></button>
+            <button class="key-command" id="keyCommand" type="button" draggable="true" data-command="key" aria-label="ใช้กุญแจ" hidden><span>🔑</span><small>กุญแจ</small></button>
           </section>
 
           <div class="command-actions">
@@ -149,13 +150,14 @@
 
         <section class="game-board-wrap">
           <div class="board-banner">
-            <div><span>🎒</span><strong id="boardTitle">ห้องเตรียมตัว</strong></div>
+            <div><span id="boardIcon">🎒</span><strong id="boardTitle">ห้องเตรียมตัว</strong></div>
             <p id="gameHint">วางแผนให้ดี แล้วช่วย Toko ไปหยิบเป้นะ!</p>
           </div>
           <div class="game-board" id="gameBoard" aria-label="ตารางเกม Codekids"></div>
           <div class="board-legend">
-            <span>🎒 เป้าหมาย</span>
+            <span id="targetLegend">🎒 เป้าหมาย</span>
             <span>🪨 สิ่งกีดขวาง</span>
+            <span id="doorLegend" hidden>🚪 ประตูต้องใช้กุญแจ</span>
             <span>👣 เดินตามคำสั่งที่วางไว้</span>
           </div>
         </section>
