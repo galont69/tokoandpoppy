@@ -21,7 +21,8 @@ const directions = {
 };
 const commandCatalog = {
   ...directions,
-  key: { symbol: "🔑", label: "ใช้กุญแจ" }
+  key: { symbol: "🔑", label: "ใช้กุญแจ" },
+  portal: { symbol: "🌀", label: "วาร์ป" }
 };
 
 let audioContext = null;
@@ -85,6 +86,11 @@ function playSound(name) {
       playTone({ frequency: 880, duration: 0.045, type: "square", volume: 0.045 });
       playTone({ frequency: 1320, duration: 0.065, type: "triangle", volume: 0.055, start: 0.05 });
     },
+    portal() {
+      [392, 523.25, 784].forEach((frequency, index) => {
+        playTone({ frequency, duration: 0.11, type: "sine", volume: 0.055, start: index * 0.045, slideTo: frequency * 1.35 });
+      });
+    },
     success() {
       [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
         playTone({ frequency, duration: 0.13, type: "triangle", volume: 0.07, start: index * 0.09 });
@@ -124,7 +130,15 @@ const missions = [
     image: "assets/codekids/poppy.png",
     active: true
   },
-  { id: 3, title: "โทโกะเดินทางทูวีล", story: "ออกผจญภัยกับสองล้อ", icon: "🛞" },
+  {
+    id: 3,
+    title: "โทโกะเดินทางทูวีล",
+    story: "ใช้ประตูวาร์ปสีเดียวกันเพื่อข้ามไปอีกฝั่ง",
+    description: "ฝึกคิดเส้นทางหลายช่วง เดินไปยังประตูวาร์ป แล้วใช้คำสั่งวาร์ปเพื่อไปหาทูวีล",
+    icon: "🛞",
+    image: "assets/codekids/twowheel.png",
+    active: true
+  },
   { id: 4, title: "โทโกะเดินทางเบลล่า", story: "เดินทางไปพบเบลล่า", icon: "🌸" },
   { id: 5, title: "โทโกะเดินหา Steve", story: "ตามหาเพื่อนนักสร้าง", icon: "🧢" },
   { id: 6, title: "โทโกะหาหุ่นยนต์กอริลล่า", story: "ภารกิจใหญ่ของนักคิด", icon: "🤖" }
@@ -182,6 +196,32 @@ const missionLessons = {
       goal: "Multi-step sequencing + Problem solving",
       icon: "🚪"
     }
+  ],
+  3: [
+    {
+      id: 1,
+      title: "รู้จักประตูวาร์ป",
+      short: "วาร์ป 1 คู่",
+      description: "เดินไปยืนบนประตูวาร์ป แล้วใช้คำสั่งวาร์ปเพื่อโผล่ประตูสีเดียวกันอีกฝั่ง",
+      goal: "Portal command + Sequencing",
+      icon: "🌀"
+    },
+    {
+      id: 2,
+      title: "วาร์ปหลบอุปสรรค",
+      short: "วาร์ปพร้อมสิ่งกีดขวาง",
+      description: "เลือกเส้นทางไปยังประตูวาร์ปให้ถูก หลบก้อนหิน แล้วเดินต่อไปหาทูวีล",
+      goal: "Path planning + Avoid obstacles",
+      icon: "🛞"
+    },
+    {
+      id: 3,
+      title: "วาร์ปหลายจุด",
+      short: "วาร์ป 2 คู่",
+      description: "ใช้ประตูวาร์ปมากกว่าหนึ่งคู่ เรียงลำดับการเดินและวาร์ปให้ถูกจังหวะ",
+      goal: "Multi-step portal sequencing",
+      icon: "🌈"
+    }
   ]
 };
 
@@ -207,13 +247,41 @@ const missionDetails = {
     ],
     image: "assets/codekids/poppy.png",
     imageAlt: "Poppy"
+  },
+  3: {
+    title: "โทโกะเดินทางทูวีล",
+    description: "Toko ต้องใช้ประตูวาร์ปสีเดียวกันเพื่อข้ามพื้นที่ที่เดินไปไม่ได้ แล้วเดินทางไปเจอทูวีลให้สำเร็จ",
+    skills: [
+      "คำสั่งวาร์ป (Portal command)",
+      "การแยกเส้นทางเป็นหลายช่วงก่อนและหลังวาร์ป",
+      "การเลือกประตูสีเดียวกันและวางลำดับคำสั่งให้ถูก"
+    ],
+    image: "assets/codekids/twowheel.png",
+    imageAlt: "ทูวีล"
   }
 };
 
-function tracePath(start, solution) {
+function findPortalPair(portals, position) {
+  const current = portals.find((portal) => portal.row === position.row && portal.col === position.col);
+  if (!current) return null;
+  return portals.find((portal) =>
+    portal.color === current.color &&
+    (portal.row !== current.row || portal.col !== current.col)
+  ) || null;
+}
+
+function tracePath(start, solution, portals = []) {
   const path = [{ ...start }];
   let position = { ...start };
   solution.forEach((command) => {
+    if (command === "portal") {
+      const pair = findPortalPair(portals, position);
+      if (pair) {
+        position = { row: pair.row, col: pair.col };
+        path.push({ ...position });
+      }
+      return;
+    }
     const direction = directions[command];
     if (!direction) return;
     position = {
@@ -236,10 +304,11 @@ function createLevel({
   solution,
   obstacles = [],
   doors = [],
+  portals = [],
   guided = false,
-  targetType = missionId === 2 ? "poppy" : "backpack"
+  targetType = missionId === 2 ? "poppy" : missionId === 3 ? "twowheel" : "backpack"
 }) {
-  const path = tracePath(start, solution);
+  const path = tracePath(start, solution, portals);
   return {
     id: `m${missionId}-l${lessonId}-${number}`,
     missionId,
@@ -255,6 +324,7 @@ function createLevel({
     moves: solution.length,
     obstacles,
     doors,
+    portals,
     guided,
     path: guided ? path : []
   };
@@ -405,6 +475,95 @@ const allLevels = [
   }))
 ];
 
+function portalPair(color, a, b) {
+  return [
+    { ...a, color },
+    { ...b, color }
+  ];
+}
+
+function createTwoWheelLevels() {
+  const lessonOne = [
+    { start: { row: 2, col: 0 }, s: ["right", "right", "portal", "right", "right"], p: portalPair("pink", { row: 2, col: 2 }, { row: 2, col: 4 }), size: [5, 7] },
+    { start: { row: 0, col: 1 }, s: ["down", "down", "portal", "down", "down"], p: portalPair("blue", { row: 2, col: 1 }, { row: 4, col: 1 }), size: [7, 3] },
+    { start: { row: 4, col: 0 }, s: ["right", "portal", "right", "right", "up"], p: portalPair("green", { row: 4, col: 1 }, { row: 4, col: 3 }), size: [6, 6] },
+    { start: { row: 0, col: 4 }, s: ["left", "left", "portal", "left", "down", "down"], p: portalPair("pink", { row: 0, col: 2 }, { row: 0, col: 1 }), size: [4, 5] },
+    { start: { row: 5, col: 5 }, s: ["up", "up", "portal", "left", "left", "up"], p: portalPair("blue", { row: 3, col: 5 }, { row: 3, col: 3 }), size: [6, 6] },
+    { start: { row: 1, col: 0 }, s: ["right", "right", "down", "portal", "down", "right"], p: portalPair("green", { row: 2, col: 2 }, { row: 4, col: 2 }), size: [6, 5] },
+    { start: { row: 6, col: 0 }, s: ["up", "right", "portal", "right", "up", "up"], p: portalPair("pink", { row: 5, col: 1 }, { row: 5, col: 3 }), size: [7, 5] },
+    { start: { row: 0, col: 0 }, s: ["down", "down", "right", "portal", "right", "right", "down"], p: portalPair("blue", { row: 2, col: 1 }, { row: 2, col: 3 }), size: [5, 6] },
+    { start: { row: 6, col: 4 }, s: ["left", "left", "portal", "up", "up", "left", "left"], p: portalPair("green", { row: 6, col: 2 }, { row: 4, col: 2 }), size: [7, 5] },
+    { start: { row: 0, col: 5 }, s: ["down", "left", "left", "portal", "down", "down", "right"], p: portalPair("pink", { row: 1, col: 3 }, { row: 3, col: 3 }), size: [6, 6] }
+  ];
+
+  const lessonTwo = [
+    { start: { row: 5, col: 0 }, s: ["up", "right", "right", "portal", "right", "up"], p: portalPair("pink", { row: 4, col: 2 }, { row: 4, col: 4 }), o: [{ row: 3, col: 1 }, { row: 5, col: 3 }] },
+    { start: { row: 0, col: 0 }, s: ["right", "down", "down", "portal", "right", "right"], p: portalPair("blue", { row: 2, col: 1 }, { row: 2, col: 3 }), o: [{ row: 1, col: 2 }, { row: 3, col: 4 }] },
+    { start: { row: 5, col: 5 }, s: ["left", "left", "up", "portal", "up", "left"], p: portalPair("green", { row: 4, col: 3 }, { row: 2, col: 3 }), o: [{ row: 5, col: 2 }, { row: 3, col: 1 }] },
+    { start: { row: 1, col: 5 }, s: ["left", "left", "down", "portal", "down", "left", "left"], p: portalPair("pink", { row: 2, col: 3 }, { row: 4, col: 3 }), o: [{ row: 1, col: 2 }, { row: 3, col: 4 }] },
+    { start: { row: 5, col: 1 }, s: ["right", "right", "up", "portal", "up", "right", "right"], p: portalPair("blue", { row: 4, col: 3 }, { row: 2, col: 3 }), o: [{ row: 5, col: 4 }, { row: 3, col: 2 }, { row: 0, col: 5 }] },
+    { start: { row: 0, col: 4 }, s: ["down", "down", "left", "portal", "left", "down", "left"], p: portalPair("green", { row: 2, col: 3 }, { row: 2, col: 2 }), o: [{ row: 1, col: 2 }, { row: 4, col: 3 }] },
+    { start: { row: 6, col: 0 }, s: ["up", "up", "right", "portal", "right", "up", "right", "right"], p: portalPair("pink", { row: 4, col: 1 }, { row: 4, col: 3 }), o: [{ row: 5, col: 2 }, { row: 3, col: 0 }, { row: 2, col: 3 }], size: [7, 7] },
+    { start: { row: 0, col: 0 }, s: ["right", "right", "down", "portal", "down", "right", "right", "down"], p: portalPair("blue", { row: 1, col: 2 }, { row: 3, col: 2 }), o: [{ row: 2, col: 1 }, { row: 5, col: 5 }, { row: 1, col: 5 }], size: [6, 6] },
+    { start: { row: 6, col: 5 }, s: ["left", "up", "up", "portal", "left", "left", "up", "left"], p: portalPair("green", { row: 4, col: 4 }, { row: 4, col: 3 }), o: [{ row: 5, col: 3 }, { row: 2, col: 1 }, { row: 1, col: 4 }], size: [7, 6] },
+    { start: { row: 1, col: 0 }, s: ["right", "right", "down", "portal", "down", "right", "up", "right"], p: portalPair("pink", { row: 2, col: 2 }, { row: 4, col: 2 }), o: [{ row: 1, col: 3 }, { row: 3, col: 4 }, { row: 5, col: 1 }], size: [6, 6] }
+  ];
+
+  const lessonThree = [
+    { start: { row: 6, col: 0 }, s: ["right", "portal", "right", "right", "portal", "right"], p: [...portalPair("pink", { row: 6, col: 1 }, { row: 4, col: 1 }), ...portalPair("blue", { row: 4, col: 3 }, { row: 2, col: 3 })], o: [{ row: 5, col: 2 }, { row: 3, col: 4 }] },
+    { start: { row: 0, col: 0 }, s: ["down", "down", "portal", "right", "right", "portal", "down"], p: [...portalPair("green", { row: 2, col: 0 }, { row: 2, col: 2 }), ...portalPair("pink", { row: 2, col: 4 }, { row: 4, col: 4 })], o: [{ row: 1, col: 3 }, { row: 3, col: 1 }] },
+    { start: { row: 6, col: 6 }, s: ["left", "left", "portal", "up", "up", "portal", "left"], p: [...portalPair("blue", { row: 6, col: 4 }, { row: 4, col: 4 }), ...portalPair("green", { row: 2, col: 4 }, { row: 2, col: 2 })], o: [{ row: 5, col: 3 }, { row: 3, col: 5 }] },
+    { start: { row: 0, col: 6 }, s: ["left", "down", "portal", "down", "left", "portal", "left", "down"], p: [...portalPair("pink", { row: 1, col: 5 }, { row: 3, col: 5 }), ...portalPair("blue", { row: 4, col: 4 }, { row: 4, col: 2 })], o: [{ row: 2, col: 3 }, { row: 5, col: 5 }] },
+    { start: { row: 6, col: 0 }, s: ["up", "right", "portal", "right", "up", "portal", "right", "right"], p: [...portalPair("green", { row: 5, col: 1 }, { row: 3, col: 1 }), ...portalPair("pink", { row: 2, col: 2 }, { row: 2, col: 4 })], o: [{ row: 4, col: 2 }, { row: 1, col: 3 }, { row: 5, col: 5 }] },
+    { start: { row: 0, col: 0 }, s: ["right", "down", "portal", "down", "right", "portal", "right", "down"], p: [...portalPair("blue", { row: 1, col: 1 }, { row: 3, col: 1 }), ...portalPair("green", { row: 4, col: 2 }, { row: 4, col: 4 })], o: [{ row: 2, col: 2 }, { row: 5, col: 3 }, { row: 1, col: 5 }] },
+    { start: { row: 7, col: 0 }, s: ["right", "right", "portal", "up", "up", "right", "portal", "right", "up"], p: [...portalPair("pink", { row: 7, col: 2 }, { row: 5, col: 2 }), ...portalPair("blue", { row: 3, col: 3 }, { row: 3, col: 5 })], o: [{ row: 6, col: 3 }, { row: 4, col: 1 }, { row: 2, col: 4 }], size: [8, 7] },
+    { start: { row: 0, col: 6 }, s: ["down", "down", "portal", "left", "left", "down", "portal", "left", "left"], p: [...portalPair("green", { row: 2, col: 6 }, { row: 2, col: 4 }), ...portalPair("pink", { row: 3, col: 2 }, { row: 5, col: 2 })], o: [{ row: 1, col: 3 }, { row: 4, col: 4 }, { row: 6, col: 1 }], size: [7, 7] },
+    { start: { row: 7, col: 7 }, s: ["left", "left", "up", "portal", "up", "left", "portal", "left", "up", "left"], p: [...portalPair("blue", { row: 6, col: 5 }, { row: 4, col: 5 }), ...portalPair("green", { row: 3, col: 4 }, { row: 3, col: 2 })], o: [{ row: 5, col: 3 }, { row: 3, col: 6 }, { row: 1, col: 0 }], size: [8, 8] },
+    { start: { row: 0, col: 0 }, s: ["right", "right", "down", "portal", "down", "right", "right", "portal", "down", "right"], p: [...portalPair("pink", { row: 1, col: 2 }, { row: 3, col: 2 }), ...portalPair("blue", { row: 4, col: 4 }, { row: 4, col: 6 })], o: [{ row: 2, col: 3 }, { row: 5, col: 5 }, { row: 1, col: 6 }], size: [7, 8] }
+  ];
+
+  return [
+    ...lessonOne.map((level, index) => createLevel({
+      missionId: 3,
+      lessonId: 1,
+      number: index + 1,
+      title: `ประตูวาร์ปด่านที่ ${index + 1}`,
+      rows: level.size[0],
+      cols: level.size[1],
+      start: level.start,
+      solution: level.s,
+      portals: level.p,
+      guided: true
+    })),
+    ...lessonTwo.map((level, index) => createLevel({
+      missionId: 3,
+      lessonId: 2,
+      number: index + 1,
+      title: `วาร์ปหลบทางตันด่านที่ ${index + 1}`,
+      rows: level.size?.[0] || 6,
+      cols: level.size?.[1] || 6,
+      start: level.start,
+      solution: level.s,
+      obstacles: level.o,
+      portals: level.p
+    })),
+    ...lessonThree.map((level, index) => createLevel({
+      missionId: 3,
+      lessonId: 3,
+      number: index + 1,
+      title: `ทูวีลอีกฝั่งด่านที่ ${index + 1}`,
+      rows: level.size?.[0] || 7,
+      cols: level.size?.[1] || 7,
+      start: level.start,
+      solution: level.s,
+      obstacles: level.o,
+      portals: level.p
+    }))
+  ];
+}
+
+allLevels.push(...createTwoWheelLevels());
+
 let currentMissionId = 1;
 let currentLessonId = 1;
 let currentLevel = allLevels[0];
@@ -454,11 +613,13 @@ function completedLevels(missionId = null, lessonId = null) {
 function missionIsUnlocked(missionId) {
   if (missionId === 1) return true;
   if (missionId === 2) return true;
+  if (missionId === 3) return true;
   return false;
 }
 
 function lessonIsUnlocked(missionId, lessonId) {
   if (missionId === 2) return true;
+  if (missionId === 3) return true;
   if (lessonId === 1) return true;
   return completedLevels(missionId, lessonId - 1) >= 10;
 }
@@ -481,7 +642,9 @@ function showView(name) {
 }
 
 function updateHeaderProgress() {
-  const total = getMissionLevels(1).length + getMissionLevels(2).length;
+  const total = missions
+    .filter((mission) => mission.active)
+    .reduce((sum, mission) => sum + getMissionLevels(mission.id).length, 0);
   const count = Math.min(completedLevels(), total);
   document.querySelector("#courseProgress").style.width = `${(count / total) * 100}%`;
   document.querySelector("#courseProgressText").textContent = `${count}/${total}`;
@@ -558,6 +721,7 @@ function renderLevels() {
   document.querySelector("#levelSelectDescription").textContent = lesson.description;
   document.querySelector("#lessonProgressText").textContent =
     `${completedLevels(currentMissionId, currentLessonId)}/10`;
+  const doneIcon = currentMissionId === 2 ? "🐰" : currentMissionId === 3 ? "🛞" : "🎒";
   levelGrid.innerHTML = levels.map((level) => {
     const done = completed.includes(level.id);
     const unlocked = levelIsUnlocked(level);
@@ -566,7 +730,7 @@ function renderLevels() {
         ${unlocked ? `data-level="${level.id}"` : "disabled"}>
         <span class="map-number">${String(level.number).padStart(2, "0")}</span>
         <span class="map-meta">${done ? "🏅" : unlocked ? "▶" : "🔒"}</span>
-        <div class="map-art">${done ? "🎒" : lesson.icon}</div>
+        <div class="map-art">${done ? doneIcon : lesson.icon}</div>
         <h3>${level.title}</h3>
         <p>ทางสั้นประมาณ ${level.moves} คำสั่ง · ${lesson.short}</p>
         <div class="map-stars">${done ? "ผ่านแล้ว" : unlocked ? "พร้อมเล่น" : "ผ่านด่านก่อนหน้า"}</div>
@@ -588,11 +752,22 @@ function targetContent(level) {
   if (level.targetType === "poppy") {
     return '<img class="cell-target poppy-target" src="assets/codekids/poppy.png" alt="Poppy">';
   }
+  if (level.targetType === "twowheel") {
+    return '<img class="cell-target twowheel-target" src="assets/codekids/twowheel.png" alt="ทูวีล">';
+  }
   return '<img class="cell-target" src="assets/codekids/backpack.png" alt="เป้">';
 }
 
 function doorKey(row, col) {
   return `${row}-${col}`;
+}
+
+function portalAt(row, col) {
+  return currentLevel.portals.find((portal) => portal.row === row && portal.col === col);
+}
+
+function portalContent(portal) {
+  return `<span class="portal-object ${portal.color}" aria-label="ประตูวาร์ปสี${portal.color}"></span>`;
 }
 
 function renderBoard() {
@@ -613,6 +788,8 @@ function renderBoard() {
       } else if (hasPosition(currentLevel.doors, row, col)) {
         const opened = openedDoors.has(doorKey(row, col));
         cell.innerHTML = `<span class="door-object ${opened ? "opened" : ""}" aria-label="${opened ? "ประตูเปิดแล้ว" : "ประตูล็อก"}">${opened ? "🚪" : "🔒"}</span>`;
+      } else if (portalAt(row, col)) {
+        cell.innerHTML = portalContent(portalAt(row, col));
       } else if (currentLevel.target.row === row && currentLevel.target.col === col) {
         cell.innerHTML = targetContent(currentLevel);
       }
@@ -744,8 +921,39 @@ async function useKey() {
   return true;
 }
 
+async function usePortal() {
+  const pair = findPortalPair(currentLevel.portals, player);
+  if (!pair) {
+    playSound("bump");
+    tokoElement.classList.add("bump");
+    await sleep(360);
+    tokoElement.classList.remove("bump");
+    showToast("ต้องยืนบนประตูวาร์ปก่อนใช้คำสั่งวาร์ปนะ");
+    return false;
+  }
+  const portalCells = [
+    gameBoard.querySelector(`[data-row="${player.row}"][data-col="${player.col}"] .portal-object`),
+    gameBoard.querySelector(`[data-row="${pair.row}"][data-col="${pair.col}"] .portal-object`)
+  ].filter(Boolean);
+  portalCells.forEach((cell) => cell.classList.add("active"));
+  playSound("portal");
+  tokoElement.classList.remove("idle");
+  tokoElement.style.opacity = "0";
+  await sleep(250);
+  player = { row: pair.row, col: pair.col };
+  positionToko(false);
+  await sleep(80);
+  tokoElement.style.opacity = "";
+  tokoElement.classList.add("idle");
+  await sleep(280);
+  portalCells.forEach((cell) => cell.classList.remove("active"));
+  return true;
+}
+
 async function executeCommand(command) {
-  return command === "key" ? useKey() : walk(command);
+  if (command === "key") return useKey();
+  if (command === "portal") return usePortal();
+  return walk(command);
 }
 
 async function runProgram() {
@@ -797,6 +1005,9 @@ function resetPlayerOnly() {
     }
   });
   gameBoard.querySelector(".cell-target")?.classList.remove("collected");
+  gameBoard.querySelectorAll(".portal-object.active").forEach((portal) => {
+    portal.classList.remove("active");
+  });
   document.querySelector("#levelTargetCount").textContent = "0/1";
   if (tokoElement) {
     tokoElement.src = frames.front[0];
@@ -811,7 +1022,9 @@ function resetLevel(clear = true) {
   if (clear) commands = [];
   renderQueue();
   setControlsDisabled(false);
-  const targetName = currentLevel.targetType === "poppy" ? "Poppy" : "เป้";
+  const targetName = currentLevel.targetType === "poppy"
+    ? "Poppy"
+    : currentLevel.targetType === "twowheel" ? "ทูวีล" : "เป้";
   document.querySelector("#gameHint").textContent =
     `พา Toko ไปหา${targetName}ให้ได้ แผนที่นี้มีทางสั้นประมาณ ${currentLevel.moves} คำสั่ง`;
 }
@@ -843,12 +1056,18 @@ function openLevel(levelId) {
   document.querySelector("#currentLevelTitle").textContent = level.title;
   document.querySelector("#storyKicker").textContent = lesson.title;
   document.querySelector("#missionTitle").textContent =
-    level.targetType === "poppy" ? "พา Toko เดินไปหา Poppy" : "พา Toko เดินไปหยิบเป้";
+    level.targetType === "poppy"
+      ? "พา Toko เดินไปหา Poppy"
+      : level.targetType === "twowheel" ? "พา Toko เดินทางไปหาทูวีล" : "พา Toko เดินไปหยิบเป้";
   document.querySelector("#missionDescription").textContent =
     level.targetType === "poppy"
       ? level.doors.length
         ? "เดินมาหยุดหน้าประตู ใช้กุญแจ แล้วเดินต่อไปหา Poppy"
         : "วางเส้นทางให้ Toko เลี้ยว หลบอุปสรรค และเดินไปหา Poppy"
+      : level.targetType === "twowheel"
+        ? level.portals.length > 2
+          ? "ใช้ประตูวาร์ปหลายคู่ให้ถูกสี แล้วเดินต่อไปหาทูวีล"
+          : "เดินไปยืนบนประตูวาร์ป ใช้คำสั่งวาร์ป แล้วเดินต่อไปหาทูวีล"
       : level.guided
         ? "เดินตามช่องทางที่กำหนดไว้ แล้วสังเกตว่าไอคอนแต่ละตัวพา Toko ไปทางไหน"
         : level.obstacles.length
@@ -859,13 +1078,20 @@ function openLevel(levelId) {
   document.querySelector("#boardTitle").textContent =
     level.targetType === "poppy"
       ? level.doors.length ? "ทางเดินมีประตู" : "เส้นทางหา Poppy"
+      : level.targetType === "twowheel" ? "เส้นทางประตูวาร์ป"
       : level.guided ? "ทางเดินเตรียมตัว" : lesson.id === 2 ? "ห้องฝึกทิศทาง" : "แผนที่ผจญภัย";
-  document.querySelector("#boardIcon").textContent = level.targetType === "poppy" ? "🐰" : "🎒";
-  document.querySelector(".level-stars span").textContent = level.targetType === "poppy" ? "🐰" : "🎒";
+  document.querySelector("#boardIcon").textContent =
+    level.targetType === "poppy" ? "🐰" : level.targetType === "twowheel" ? "🛞" : "🎒";
+  document.querySelector(".level-stars span").textContent =
+    level.targetType === "poppy" ? "🐰" : level.targetType === "twowheel" ? "🛞" : "🎒";
   document.querySelector("#targetLegend").textContent =
-    level.targetType === "poppy" ? "🐰 Poppy เป้าหมาย" : "🎒 เป้าหมาย";
+    level.targetType === "poppy"
+      ? "🐰 Poppy เป้าหมาย"
+      : level.targetType === "twowheel" ? "🛞 ทูวีลเป้าหมาย" : "🎒 เป้าหมาย";
   document.querySelector("#doorLegend").hidden = !level.doors.length;
+  document.querySelector("#portalLegend").hidden = !level.portals.length;
   document.querySelector("#keyCommand").hidden = !level.doors.length;
+  document.querySelector("#portalCommand").hidden = !level.portals.length;
   commands = [];
   openedDoors = new Set();
   renderBoard();
@@ -878,19 +1104,29 @@ function showResult(success, failed = false) {
     success ? `LESSON ${currentLevel.lessonId} · LEVEL ${currentLevel.number}` : "ลองอีกครั้งได้เสมอ";
   document.querySelector("#resultTitle").textContent =
     success
-      ? currentLevel.targetType === "poppy" ? "เก่งมาก Toko เจอ Poppy แล้ว!" : "เก่งมาก Toko ได้เป้แล้ว!"
+      ? currentLevel.targetType === "poppy"
+        ? "เก่งมาก Toko เจอ Poppy แล้ว!"
+        : currentLevel.targetType === "twowheel" ? "เยี่ยมมาก Toko เจอทูวีลแล้ว!" : "เก่งมาก Toko ได้เป้แล้ว!"
       : "เกือบถึงแล้ว!";
   document.querySelector("#resultMessage").textContent = success
     ? currentLevel.targetType === "poppy"
       ? "Toko ผ่านเส้นทางและไปหา Poppy ได้สำเร็จ หนูวางแผนได้ดีมาก"
+      : currentLevel.targetType === "twowheel"
+        ? "Toko ใช้ประตูวาร์ปถูกจังหวะและเดินทางไปหาทูวีลได้สำเร็จ"
       : "Toko เดินไปหยิบเป้สำเร็จแล้ว หนูลองวิธีของตัวเองได้ดีมาก"
     : failed
       ? "คำสั่งพา Toko เดินผิดทาง ลองสังเกตช่องอีกครั้งนะ"
-      : currentLevel.targetType === "poppy" ? "ลองเรียงคำสั่งใหม่ เพื่อให้ Toko ไปถึง Poppy" : "ลองเรียงคำสั่งใหม่ เพื่อให้ Toko ไปถึงเป้";
+      : currentLevel.targetType === "poppy"
+        ? "ลองเรียงคำสั่งใหม่ เพื่อให้ Toko ไปถึง Poppy"
+        : currentLevel.targetType === "twowheel" ? "ลองเช็กจังหวะวาร์ปอีกครั้ง เพื่อให้ Toko ไปถึงทูวีล" : "ลองเรียงคำสั่งใหม่ เพื่อให้ Toko ไปถึงเป้";
   document.querySelector("#resultStars").textContent =
-    success ? currentLevel.targetType === "poppy" ? "🐰" : "🎒" : "↻";
+    success
+      ? currentLevel.targetType === "poppy" ? "🐰" : currentLevel.targetType === "twowheel" ? "🛞" : "🎒"
+      : "↻";
   document.querySelector("#resultToko").src =
-    success && currentLevel.targetType === "poppy" ? "assets/codekids/poppy.png" : success ? frames.front[0] : frames.front[1];
+    success && currentLevel.targetType === "poppy"
+      ? "assets/codekids/poppy.png"
+      : success && currentLevel.targetType === "twowheel" ? "assets/codekids/twowheel.png" : success ? frames.front[0] : frames.front[1];
   document.querySelector("#finishLevel").hidden = !success;
   const nextButton = document.querySelector("#nextLevel");
   const next = getNextLevel();
