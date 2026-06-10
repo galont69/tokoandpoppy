@@ -22,7 +22,10 @@ const directions = {
 const commandCatalog = {
   ...directions,
   key: { symbol: "🔑", label: "ใช้กุญแจ" },
-  portal: { symbol: "🌀", label: "วาร์ป" }
+  portal: { symbol: "🌀", label: "วาร์ป" },
+  loop2: { symbol: "↻2", label: "ทำซ้ำ 2" },
+  loop3: { symbol: "↻3", label: "ทำซ้ำ 3" },
+  loop4: { symbol: "↻4", label: "ทำซ้ำ 4" }
 };
 
 let audioContext = null;
@@ -91,6 +94,11 @@ function playSound(name) {
         playTone({ frequency, duration: 0.11, type: "sine", volume: 0.055, start: index * 0.045, slideTo: frequency * 1.35 });
       });
     },
+    loop() {
+      [520, 620, 520].forEach((frequency, index) => {
+        playTone({ frequency, duration: 0.055, type: "triangle", volume: 0.045, start: index * 0.045 });
+      });
+    },
     success() {
       [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
         playTone({ frequency, duration: 0.13, type: "triangle", volume: 0.07, start: index * 0.09 });
@@ -132,14 +140,22 @@ const missions = [
   },
   {
     id: 3,
-    title: "โทโกะเดินทางทูวีล",
+    title: "โทโกะเดินตามหาทูวีล",
     story: "ใช้ประตูวาร์ปสีเดียวกันเพื่อข้ามไปอีกฝั่ง",
     description: "ฝึกคิดเส้นทางหลายช่วง เดินไปยังประตูวาร์ป แล้วใช้คำสั่งวาร์ปเพื่อไปหาทูวีล",
     icon: "🛞",
     image: "assets/codekids/twowheel.png",
     active: true
   },
-  { id: 4, title: "โทโกะเดินทางเบลล่า", story: "เดินทางไปพบเบลล่า", icon: "🌸" },
+  {
+    id: 4,
+    title: "โทโกะเดินตามหาเบลล่า",
+    story: "เรียนรู้ Loop เพื่อเดินซ้ำอย่างฉลาด",
+    description: "ฝึกใช้คำสั่งทำซ้ำ ลดจำนวนบล็อก และวางแผนเส้นทางให้ Toko ไปพบ Bella",
+    icon: "🌸",
+    image: "assets/codekids/bella.png",
+    active: true
+  },
   { id: 5, title: "โทโกะเดินหา Steve", story: "ตามหาเพื่อนนักสร้าง", icon: "🧢" },
   { id: 6, title: "โทโกะหาหุ่นยนต์กอริลล่า", story: "ภารกิจใหญ่ของนักคิด", icon: "🤖" }
 ];
@@ -222,6 +238,32 @@ const missionLessons = {
       goal: "Multi-step portal sequencing",
       icon: "🌈"
     }
+  ],
+  4: [
+    {
+      id: 1,
+      title: "Loop ทางตรง",
+      short: "ทำซ้ำทิศทางเดิม",
+      description: "เริ่มจากเส้นทางตรง ฝึกวางไอคอนเดินหนึ่งครั้ง แล้วใช้ Loop เพื่อเดินซ้ำไปหา Bella",
+      goal: "Loop + Basic repetition",
+      icon: "↻"
+    },
+    {
+      id: 2,
+      title: "Loop แล้วเลี้ยว",
+      short: "ทำซ้ำหลายช่วง",
+      description: "ฝึกแบ่งเส้นทางเป็นช่วงๆ ใช้ Loop กับทิศทางเดิม แล้วเปลี่ยนทิศเมื่อถึงจุดเลี้ยว",
+      goal: "Loop + Directional sequencing",
+      icon: "🧭"
+    },
+    {
+      id: 3,
+      title: "Loop ผ่านเส้นทางยาว",
+      short: "Loop กับการแก้ปัญหา",
+      description: "แผนที่ใหญ่ขึ้น มีสิ่งกีดขวางมากขึ้น เด็กๆ ต้องใช้ Loop ช่วยลดจำนวนคำสั่งและคิดเส้นทางเอง",
+      goal: "Loop + Problem solving",
+      icon: "🌸"
+    }
   ]
 };
 
@@ -249,7 +291,7 @@ const missionDetails = {
     imageAlt: "Poppy"
   },
   3: {
-    title: "โทโกะเดินทางทูวีล",
+    title: "โทโกะเดินตามหาทูวีล",
     description: "Toko ต้องใช้ประตูวาร์ปสีเดียวกันเพื่อข้ามพื้นที่ที่เดินไปไม่ได้ แล้วเดินทางไปเจอทูวีลให้สำเร็จ",
     skills: [
       "คำสั่งวาร์ป (Portal command)",
@@ -258,6 +300,17 @@ const missionDetails = {
     ],
     image: "assets/codekids/twowheel.png",
     imageAlt: "ทูวีล"
+  },
+  4: {
+    title: "โทโกะเดินตามหาเบลล่า",
+    description: "Toko จะได้เรียนรู้คำสั่ง Loop เพื่อทำซ้ำการเดิน ลดจำนวนบล็อก และวางแผนไปหา Bella ให้สำเร็จ",
+    skills: [
+      "คำสั่งทำซ้ำ (Loop command)",
+      "การลดจำนวนบล็อกด้วย Pattern",
+      "การวางแผนเส้นทางหลายช่วงและแก้ปัญหา"
+    ],
+    image: "assets/codekids/bella.png",
+    imageAlt: "Bella"
   }
 };
 
@@ -270,10 +323,44 @@ function findPortalPair(portals, position) {
   ) || null;
 }
 
+function loopRepeat(command) {
+  return command.startsWith("loop") ? Number(command.replace("loop", "")) || 0 : 0;
+}
+
+function previousDirectionCommand(commandsList, index) {
+  for (let scan = index - 1; scan >= 0; scan -= 1) {
+    if (directions[commandsList[scan]]) return commandsList[scan];
+  }
+  return null;
+}
+
+function expandedMoveCount(solution) {
+  return solution.reduce((total, command, index) => {
+    const repeat = loopRepeat(command);
+    if (repeat) return total + repeat;
+    return total + (directions[command] || commandCatalog[command] ? 1 : 0);
+  }, 0);
+}
+
 function tracePath(start, solution, portals = []) {
   const path = [{ ...start }];
   let position = { ...start };
-  solution.forEach((command) => {
+  const step = (command) => {
+    const direction = directions[command];
+    if (!direction) return;
+    position = {
+      row: position.row + direction.row,
+      col: position.col + direction.col
+    };
+    path.push({ ...position });
+  };
+  solution.forEach((command, index) => {
+    const repeat = loopRepeat(command);
+    if (repeat) {
+      const previous = previousDirectionCommand(solution, index);
+      for (let count = 0; previous && count < repeat; count += 1) step(previous);
+      return;
+    }
     if (command === "portal") {
       const pair = findPortalPair(portals, position);
       if (pair) {
@@ -282,13 +369,7 @@ function tracePath(start, solution, portals = []) {
       }
       return;
     }
-    const direction = directions[command];
-    if (!direction) return;
-    position = {
-      row: position.row + direction.row,
-      col: position.col + direction.col
-    };
-    path.push({ ...position });
+    step(command);
   });
   return path;
 }
@@ -306,7 +387,7 @@ function createLevel({
   doors = [],
   portals = [],
   guided = false,
-  targetType = missionId === 2 ? "poppy" : missionId === 3 ? "twowheel" : "backpack"
+  targetType = missionId === 2 ? "poppy" : missionId === 3 ? "twowheel" : missionId === 4 ? "bella" : "backpack"
 }) {
   const path = tracePath(start, solution, portals);
   return {
@@ -321,7 +402,7 @@ function createLevel({
     target: path[path.length - 1],
     targetType,
     solution,
-    moves: solution.length,
+    moves: expandedMoveCount(solution),
     obstacles,
     doors,
     portals,
@@ -562,7 +643,83 @@ function createTwoWheelLevels() {
   ];
 }
 
-allLevels.push(...createTwoWheelLevels());
+function createBellaLevels() {
+  const lessonOne = [
+    { start: { row: 0, col: 0 }, s: ["right", "loop2"], size: [1, 4] },
+    { start: { row: 0, col: 0 }, s: ["right", "loop3"], size: [1, 5] },
+    { start: { row: 0, col: 3 }, s: ["left", "loop2"], size: [1, 4] },
+    { start: { row: 4, col: 0 }, s: ["up", "loop3"], size: [5, 1] },
+    { start: { row: 0, col: 0 }, s: ["down", "loop2"], size: [4, 1] },
+    { start: { row: 0, col: 0 }, s: ["right", "loop4"], size: [1, 6] },
+    { start: { row: 5, col: 0 }, s: ["up", "loop4"], size: [6, 1] },
+    { start: { row: 0, col: 0 }, s: ["down", "loop3"], size: [5, 1] },
+    { start: { row: 0, col: 5 }, s: ["left", "loop4"], size: [1, 6] },
+    { start: { row: 0, col: 0 }, s: ["right", "loop2", "right", "loop2"], size: [1, 7] }
+  ];
+
+  const lessonTwo = [
+    { start: { row: 5, col: 0 }, s: ["up", "loop2", "right", "loop2"] },
+    { start: { row: 0, col: 0 }, s: ["right", "loop3", "down", "loop2"] },
+    { start: { row: 5, col: 5 }, s: ["left", "loop2", "up", "loop3"] },
+    { start: { row: 0, col: 5 }, s: ["down", "loop3", "left", "loop2"] },
+    { start: { row: 5, col: 0 }, s: ["up", "loop2", "right", "loop3", "down", "loop2"] },
+    { start: { row: 0, col: 0 }, s: ["down", "loop4", "right", "loop2", "up", "loop2"] },
+    { start: { row: 5, col: 5 }, s: ["left", "loop4", "up", "loop2", "right", "loop2"] },
+    { start: { row: 2, col: 0 }, s: ["right", "loop4", "down", "loop2"] },
+    { start: { row: 5, col: 2 }, s: ["up", "loop4", "right", "loop2"] },
+    { start: { row: 0, col: 3 }, s: ["down", "loop4", "left", "loop2"] }
+  ];
+
+  const lessonThree = [
+    { start: { row: 7, col: 0 }, s: ["up", "loop2", "right", "loop3"], o: [{ row: 6, col: 2 }, { row: 5, col: 5 }, { row: 2, col: 1 }] },
+    { start: { row: 0, col: 0 }, s: ["right", "loop3", "down", "loop2"], o: [{ row: 1, col: 2 }, { row: 4, col: 4 }, { row: 6, col: 1 }] },
+    { start: { row: 7, col: 7 }, s: ["left", "loop4", "up", "loop2"], o: [{ row: 6, col: 4 }, { row: 2, col: 2 }, { row: 3, col: 6 }] },
+    { start: { row: 0, col: 7 }, s: ["down", "loop4", "left", "loop3"], o: [{ row: 2, col: 5 }, { row: 6, col: 6 }, { row: 7, col: 2 }] },
+    { start: { row: 7, col: 0 }, s: ["up", "loop3", "right", "loop2", "down", "loop2", "right", "loop2"], o: [{ row: 6, col: 1 }, { row: 3, col: 4 }, { row: 5, col: 5 }] },
+    { start: { row: 7, col: 7 }, s: ["left", "loop3", "up", "loop3", "right", "loop2"], o: [{ row: 6, col: 2 }, { row: 4, col: 2 }, { row: 2, col: 5 }] },
+    { start: { row: 0, col: 0 }, s: ["down", "loop3", "right", "loop4", "down", "loop2"], o: [{ row: 2, col: 1 }, { row: 3, col: 4 }, { row: 6, col: 6 }] },
+    { start: { row: 0, col: 7 }, s: ["down", "loop4", "left", "loop4", "up", "loop2"], o: [{ row: 1, col: 4 }, { row: 4, col: 6 }, { row: 6, col: 1 }] },
+    { start: { row: 7, col: 0 }, s: ["up", "loop4", "right", "loop4", "down", "loop2"], o: [{ row: 6, col: 3 }, { row: 2, col: 6 }, { row: 4, col: 6 }] },
+    { start: { row: 7, col: 7 }, s: ["left", "loop4", "up", "loop4", "right", "loop2"], o: [{ row: 6, col: 5 }, { row: 3, col: 1 }, { row: 1, col: 6 }, { row: 5, col: 0 }] }
+  ];
+
+  return [
+    ...lessonOne.map((level, index) => createLevel({
+      missionId: 4,
+      lessonId: 1,
+      number: index + 1,
+      title: `Loop ทางตรงด่านที่ ${index + 1}`,
+      rows: level.size[0],
+      cols: level.size[1],
+      start: level.start,
+      solution: level.s,
+      guided: true
+    })),
+    ...lessonTwo.map((level, index) => createLevel({
+      missionId: 4,
+      lessonId: 2,
+      number: index + 1,
+      title: `Loop แล้วเลี้ยวด่านที่ ${index + 1}`,
+      rows: 6,
+      cols: 6,
+      start: level.start,
+      solution: level.s
+    })),
+    ...lessonThree.map((level, index) => createLevel({
+      missionId: 4,
+      lessonId: 3,
+      number: index + 1,
+      title: `Loop หาเบลล่าด่านที่ ${index + 1}`,
+      rows: 8,
+      cols: 8,
+      start: level.start,
+      solution: level.s,
+      obstacles: level.o
+    }))
+  ];
+}
+
+allLevels.push(...createTwoWheelLevels(), ...createBellaLevels());
 
 let currentMissionId = 1;
 let currentLessonId = 1;
@@ -614,12 +771,14 @@ function missionIsUnlocked(missionId) {
   if (missionId === 1) return true;
   if (missionId === 2) return true;
   if (missionId === 3) return true;
+  if (missionId === 4) return true;
   return false;
 }
 
 function lessonIsUnlocked(missionId, lessonId) {
   if (missionId === 2) return true;
   if (missionId === 3) return true;
+  if (missionId === 4) return true;
   if (lessonId === 1) return true;
   return completedLevels(missionId, lessonId - 1) >= 10;
 }
@@ -721,7 +880,7 @@ function renderLevels() {
   document.querySelector("#levelSelectDescription").textContent = lesson.description;
   document.querySelector("#lessonProgressText").textContent =
     `${completedLevels(currentMissionId, currentLessonId)}/10`;
-  const doneIcon = currentMissionId === 2 ? "🐰" : currentMissionId === 3 ? "🛞" : "🎒";
+  const doneIcon = currentMissionId === 2 ? "🐰" : currentMissionId === 3 ? "🛞" : currentMissionId === 4 ? "🌸" : "🎒";
   levelGrid.innerHTML = levels.map((level) => {
     const done = completed.includes(level.id);
     const unlocked = levelIsUnlocked(level);
@@ -754,6 +913,9 @@ function targetContent(level) {
   }
   if (level.targetType === "twowheel") {
     return '<img class="cell-target twowheel-target" src="assets/codekids/twowheel.png" alt="ทูวีล">';
+  }
+  if (level.targetType === "bella") {
+    return '<img class="cell-target bella-target" src="assets/codekids/bella.png" alt="Bella">';
   }
   return '<img class="cell-target" src="assets/codekids/backpack.png" alt="เป้">';
 }
@@ -950,9 +1112,30 @@ async function usePortal() {
   return true;
 }
 
-async function executeCommand(command) {
+async function executeLoop(command, index) {
+  const repeat = loopRepeat(command);
+  const previous = previousDirectionCommand(commands, index);
+  if (!repeat || !previous) {
+    playSound("bump");
+    tokoElement.classList.add("bump");
+    await sleep(360);
+    tokoElement.classList.remove("bump");
+    showToast("วาง Loop หลังคำสั่งเดินก่อนนะ");
+    return false;
+  }
+  playSound("loop");
+  await sleep(120);
+  for (let count = 0; count < repeat; count += 1) {
+    if (!await walk(previous)) return false;
+    if (reachedTarget) break;
+  }
+  return true;
+}
+
+async function executeCommand(command, index) {
   if (command === "key") return useKey();
   if (command === "portal") return usePortal();
+  if (loopRepeat(command)) return executeLoop(command, index);
   return walk(command);
 }
 
@@ -966,7 +1149,7 @@ async function runProgram() {
   let executedCount = 0;
   for (let index = 0; index < commands.length; index += 1) {
     renderQueue(index);
-    if (!await executeCommand(commands[index])) {
+    if (!await executeCommand(commands[index], index)) {
       failed = true;
       break;
     }
@@ -1024,7 +1207,7 @@ function resetLevel(clear = true) {
   setControlsDisabled(false);
   const targetName = currentLevel.targetType === "poppy"
     ? "Poppy"
-    : currentLevel.targetType === "twowheel" ? "ทูวีล" : "เป้";
+    : currentLevel.targetType === "twowheel" ? "ทูวีล" : currentLevel.targetType === "bella" ? "Bella" : "เป้";
   document.querySelector("#gameHint").textContent =
     `พา Toko ไปหา${targetName}ให้ได้ แผนที่นี้มีทางสั้นประมาณ ${currentLevel.moves} คำสั่ง`;
 }
@@ -1058,7 +1241,9 @@ function openLevel(levelId) {
   document.querySelector("#missionTitle").textContent =
     level.targetType === "poppy"
       ? "พา Toko เดินไปหา Poppy"
-      : level.targetType === "twowheel" ? "พา Toko เดินทางไปหาทูวีล" : "พา Toko เดินไปหยิบเป้";
+      : level.targetType === "twowheel"
+        ? "พา Toko เดินทางไปหาทูวีล"
+        : level.targetType === "bella" ? "พา Toko ใช้ Loop ไปหา Bella" : "พา Toko เดินไปหยิบเป้";
   document.querySelector("#missionDescription").textContent =
     level.targetType === "poppy"
       ? level.doors.length
@@ -1068,6 +1253,12 @@ function openLevel(levelId) {
         ? level.portals.length > 2
           ? "ใช้ประตูวาร์ปหลายคู่ให้ถูกสี แล้วเดินต่อไปหาทูวีล"
           : "เดินไปยืนบนประตูวาร์ป ใช้คำสั่งวาร์ป แล้วเดินต่อไปหาทูวีล"
+        : level.targetType === "bella"
+          ? level.lessonId === 1
+            ? "วางคำสั่งเดินหนึ่งครั้ง แล้วใช้ Loop เพื่อทำซ้ำทิศทางเดิมไปหา Bella"
+            : level.lessonId === 2
+              ? "แบ่งเส้นทางเป็นหลายช่วง ใช้ Loop กับแต่ละช่วง แล้วเปลี่ยนทิศให้ถูกจังหวะ"
+              : "ใช้ Loop ช่วยลดจำนวนบล็อก คิดเส้นทางหลบอุปสรรค และพา Toko ไปหา Bella"
       : level.guided
         ? "เดินตามช่องทางที่กำหนดไว้ แล้วสังเกตว่าไอคอนแต่ละตัวพา Toko ไปทางไหน"
         : level.obstacles.length
@@ -1079,19 +1270,23 @@ function openLevel(levelId) {
     level.targetType === "poppy"
       ? level.doors.length ? "ทางเดินมีประตู" : "เส้นทางหา Poppy"
       : level.targetType === "twowheel" ? "เส้นทางประตูวาร์ป"
+      : level.targetType === "bella" ? "เส้นทาง Loop"
       : level.guided ? "ทางเดินเตรียมตัว" : lesson.id === 2 ? "ห้องฝึกทิศทาง" : "แผนที่ผจญภัย";
   document.querySelector("#boardIcon").textContent =
-    level.targetType === "poppy" ? "🐰" : level.targetType === "twowheel" ? "🛞" : "🎒";
+    level.targetType === "poppy" ? "🐰" : level.targetType === "twowheel" ? "🛞" : level.targetType === "bella" ? "🌸" : "🎒";
   document.querySelector(".level-stars span").textContent =
-    level.targetType === "poppy" ? "🐰" : level.targetType === "twowheel" ? "🛞" : "🎒";
+    level.targetType === "poppy" ? "🐰" : level.targetType === "twowheel" ? "🛞" : level.targetType === "bella" ? "🌸" : "🎒";
   document.querySelector("#targetLegend").textContent =
     level.targetType === "poppy"
       ? "🐰 Poppy เป้าหมาย"
-      : level.targetType === "twowheel" ? "🛞 ทูวีลเป้าหมาย" : "🎒 เป้าหมาย";
+      : level.targetType === "twowheel" ? "🛞 ทูวีลเป้าหมาย" : level.targetType === "bella" ? "🌸 Bella เป้าหมาย" : "🎒 เป้าหมาย";
   document.querySelector("#doorLegend").hidden = !level.doors.length;
   document.querySelector("#portalLegend").hidden = !level.portals.length;
   document.querySelector("#keyCommand").hidden = !level.doors.length;
   document.querySelector("#portalCommand").hidden = !level.portals.length;
+  document.querySelectorAll(".loop-command").forEach((button) => {
+    button.hidden = level.targetType !== "bella";
+  });
   commands = [];
   openedDoors = new Set();
   renderBoard();
@@ -1106,27 +1301,35 @@ function showResult(success, failed = false) {
     success
       ? currentLevel.targetType === "poppy"
         ? "เก่งมาก Toko เจอ Poppy แล้ว!"
-        : currentLevel.targetType === "twowheel" ? "เยี่ยมมาก Toko เจอทูวีลแล้ว!" : "เก่งมาก Toko ได้เป้แล้ว!"
+        : currentLevel.targetType === "twowheel"
+          ? "เยี่ยมมาก Toko เจอทูวีลแล้ว!"
+          : currentLevel.targetType === "bella" ? "เยี่ยมมาก Toko เจอ Bella แล้ว!" : "เก่งมาก Toko ได้เป้แล้ว!"
       : "เกือบถึงแล้ว!";
   document.querySelector("#resultMessage").textContent = success
     ? currentLevel.targetType === "poppy"
       ? "Toko ผ่านเส้นทางและไปหา Poppy ได้สำเร็จ หนูวางแผนได้ดีมาก"
       : currentLevel.targetType === "twowheel"
         ? "Toko ใช้ประตูวาร์ปถูกจังหวะและเดินทางไปหาทูวีลได้สำเร็จ"
+        : currentLevel.targetType === "bella"
+          ? "Toko ใช้ Loop เดินซ้ำอย่างฉลาดและไปพบ Bella ได้สำเร็จ"
       : "Toko เดินไปหยิบเป้สำเร็จแล้ว หนูลองวิธีของตัวเองได้ดีมาก"
     : failed
       ? "คำสั่งพา Toko เดินผิดทาง ลองสังเกตช่องอีกครั้งนะ"
       : currentLevel.targetType === "poppy"
         ? "ลองเรียงคำสั่งใหม่ เพื่อให้ Toko ไปถึง Poppy"
-        : currentLevel.targetType === "twowheel" ? "ลองเช็กจังหวะวาร์ปอีกครั้ง เพื่อให้ Toko ไปถึงทูวีล" : "ลองเรียงคำสั่งใหม่ เพื่อให้ Toko ไปถึงเป้";
+        : currentLevel.targetType === "twowheel"
+          ? "ลองเช็กจังหวะวาร์ปอีกครั้ง เพื่อให้ Toko ไปถึงทูวีล"
+          : currentLevel.targetType === "bella" ? "ลองดูว่าคำสั่ง Loop ทำซ้ำทิศทางก่อนหน้าถูกช่วงหรือยังนะ" : "ลองเรียงคำสั่งใหม่ เพื่อให้ Toko ไปถึงเป้";
   document.querySelector("#resultStars").textContent =
     success
-      ? currentLevel.targetType === "poppy" ? "🐰" : currentLevel.targetType === "twowheel" ? "🛞" : "🎒"
+      ? currentLevel.targetType === "poppy" ? "🐰" : currentLevel.targetType === "twowheel" ? "🛞" : currentLevel.targetType === "bella" ? "🌸" : "🎒"
       : "↻";
   document.querySelector("#resultToko").src =
     success && currentLevel.targetType === "poppy"
       ? "assets/codekids/poppy.png"
-      : success && currentLevel.targetType === "twowheel" ? "assets/codekids/twowheel.png" : success ? frames.front[0] : frames.front[1];
+      : success && currentLevel.targetType === "twowheel"
+        ? "assets/codekids/twowheel.png"
+        : success && currentLevel.targetType === "bella" ? "assets/codekids/bella.png" : success ? frames.front[0] : frames.front[1];
   document.querySelector("#finishLevel").hidden = !success;
   const nextButton = document.querySelector("#nextLevel");
   const next = getNextLevel();

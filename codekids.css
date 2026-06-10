@@ -146,8 +146,9 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
 .arrow-pad button { display: grid; min-height: 88px; place-items: center; align-content: center; gap: 3px; border: 0; border-radius: 18px; color: white; background: linear-gradient(145deg,#80b7c1,#568e9b); box-shadow: 0 8px 0 #457683,0 12px 20px rgba(53,99,108,.18); }
 .arrow-pad .key-command { background: linear-gradient(145deg,#ffd66b,#dfa729); box-shadow: 0 8px 0 #ad7d1b,0 12px 20px rgba(123,88,28,.2); color: #684815; }
 .arrow-pad .portal-command { background: linear-gradient(145deg,#cba4ff,#8b6cea); box-shadow: 0 8px 0 #6a4fbb,0 12px 20px rgba(94,72,177,.22); color: #fff; }
+.arrow-pad .loop-command { background: linear-gradient(145deg,#ffbd43,#f08a1f); box-shadow: 0 8px 0 #b96b18,0 12px 20px rgba(158,94,30,.2); color: #fff; }
 .arrow-pad button:active { transform: translateY(5px); box-shadow: 0 2px 0 #457683; }
-.arrow-pad span { font: 900 42px Nunito,sans-serif; line-height: 1; }
+.arrow-pad span { font: 900 40px Nunito,sans-serif; line-height: 1; }
 .arrow-pad small { font-size: 15px; font-weight: 800; }
 .command-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 15px; }
 .command-actions button { border: 1px solid #ddd2c5; border-radius: 13px; padding: 12px; color: #806d60; background: white; font-size: 15px; font-weight: 800; }
@@ -179,6 +180,7 @@ button { font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparen
 .cell-target { position: absolute; z-index: 3; width: 118%; height: 118%; object-fit: contain; filter: drop-shadow(0 7px 5px rgba(68,53,34,.15)); animation: targetPulse 2s ease-in-out infinite; }
 .poppy-target { width: 126%; height: 126%; }
 .twowheel-target { width: 130%; height: 130%; }
+.bella-target { width: 132%; height: 132%; }
 .cell-target.collected { animation: collectStar .35s forwards; }
 .toko-player { position: absolute; z-index: 8; padding: 0; object-fit: contain; transform: translate(-50%,-50%); transform-origin: center bottom; transition: left .42s cubic-bezier(.34,1.2,.64,1),top .42s cubic-bezier(.34,1.2,.64,1); filter: drop-shadow(0 7px 4px rgba(54,48,32,.2)); }
 .toko-player.idle { animation: tokoIdle 2.2s ease-in-out infinite; }
