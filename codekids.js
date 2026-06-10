@@ -24,6 +24,80 @@ const commandCatalog = {
   key: { symbol: "🔑", label: "ใช้กุญแจ" }
 };
 
+let audioContext = null;
+
+function getAudioContext() {
+  if (!audioContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    audioContext = new AudioContextClass();
+  }
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+  return audioContext;
+}
+
+function playTone({
+  frequency,
+  duration = 0.12,
+  type = "sine",
+  volume = 0.08,
+  start = 0,
+  slideTo = null
+}) {
+  const context = getAudioContext();
+  if (!context) return;
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+  const startTime = context.currentTime + start;
+  const endTime = startTime + duration;
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, startTime);
+  if (slideTo) {
+    oscillator.frequency.exponentialRampToValueAtTime(slideTo, endTime);
+  }
+  gain.gain.setValueAtTime(0.001, startTime);
+  gain.gain.exponentialRampToValueAtTime(volume, startTime + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.001, endTime);
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start(startTime);
+  oscillator.stop(endTime + 0.02);
+}
+
+function playSound(name) {
+  const sounds = {
+    command() {
+      playTone({ frequency: 620, duration: 0.055, type: "triangle", volume: 0.035 });
+    },
+    step() {
+      playTone({ frequency: 360, duration: 0.07, type: "triangle", volume: 0.045, slideTo: 460 });
+    },
+    bump() {
+      playTone({ frequency: 180, duration: 0.12, type: "sawtooth", volume: 0.05, slideTo: 95 });
+    },
+    collect() {
+      playTone({ frequency: 660, duration: 0.08, type: "sine", volume: 0.065 });
+      playTone({ frequency: 990, duration: 0.12, type: "sine", volume: 0.075, start: 0.07 });
+    },
+    key() {
+      playTone({ frequency: 880, duration: 0.045, type: "square", volume: 0.045 });
+      playTone({ frequency: 1320, duration: 0.065, type: "triangle", volume: 0.055, start: 0.05 });
+    },
+    success() {
+      [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+        playTone({ frequency, duration: 0.13, type: "triangle", volume: 0.07, start: index * 0.09 });
+      });
+    },
+    tryAgain() {
+      playTone({ frequency: 330, duration: 0.09, type: "triangle", volume: 0.04 });
+      playTone({ frequency: 247, duration: 0.12, type: "triangle", volume: 0.04, start: 0.08 });
+    }
+  };
+  sounds[name]?.();
+}
+
 const frames = {
   front: ["assets/codekids/toko-front-a.png", "assets/codekids/toko-front-b.png"],
   back: ["assets/codekids/toko-back-a.png", "assets/codekids/toko-back-b.png"],
@@ -591,6 +665,7 @@ function addCommand(command) {
     showToast(`ลองรันก่อนนะ ตอนนี้มี ${maxCommands} คำสั่งแล้ว`);
     return;
   }
+  playSound("command");
   commands.push(command);
   renderQueue();
   setControlsDisabled(false);
@@ -618,18 +693,21 @@ async function walk(command) {
   tokoElement.classList.add("walking");
   tokoElement.src = frames[direction.facing][walkFrame];
   if (outside || obstacle || lockedDoor || offGuidedPath) {
+    playSound("bump");
     tokoElement.classList.add("bump");
     await sleep(360);
     tokoElement.classList.remove("bump", "walking");
     tokoElement.classList.add("idle");
     return false;
   }
+  playSound("step");
   player = next;
   positionToko();
   await sleep(430);
   reachedTarget =
     player.row === currentLevel.target.row && player.col === currentLevel.target.col;
   if (reachedTarget) {
+    playSound("collect");
     gameBoard.querySelector(".cell-target")?.classList.add("collected");
     document.querySelector("#levelTargetCount").textContent = "1/1";
     await sleep(180);
@@ -645,6 +723,7 @@ async function useKey() {
     return adjacent && !openedDoors.has(doorKey(door.row, door.col));
   });
   if (!closedDoor) {
+    playSound("bump");
     tokoElement.classList.add("bump");
     await sleep(360);
     tokoElement.classList.remove("bump");
@@ -653,6 +732,7 @@ async function useKey() {
   }
   const key = doorKey(closedDoor.row, closedDoor.col);
   openedDoors.add(key);
+  playSound("key");
   const doorCell = gameBoard.querySelector(
     `[data-row="${closedDoor.row}"][data-col="${closedDoor.col}"]`
   );
@@ -692,11 +772,13 @@ async function runProgram() {
     renderMissions();
     renderLessons();
     renderLevels();
+    playSound("success");
     showResult(true);
   } else {
     document.querySelector("#gameHint").textContent = failed
       ? "โอ๊ะ! Toko เดินผิดทางหรือชนสิ่งกีดขวาง ลองใหม่อีกครั้งนะ"
       : "ยังไม่ถึงเป้ ลองเรียงคำสั่งใหม่ดูนะ";
+    playSound("tryAgain");
     showResult(false, failed);
     setControlsDisabled(false);
   }
