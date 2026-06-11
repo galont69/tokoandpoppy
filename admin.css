@@ -295,3 +295,87 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   .lesson-save-bar { align-items: stretch; flex-direction: column; }
   .save-lesson-button { width: 100%; min-width: 0; margin-left: 0; }
 }
+
+/* Readability pass for admin pages: tables and editor controls need adult-friendly scanning, not tiny labels. */
+body { font-size: 16px; }
+.login-art > span,
+.page-kicker,
+.lesson-admin-hero span,
+.editor-heading > span { font-size: 14px; }
+.login-art h1 { font-size: clamp(44px, 5vw, 70px); }
+.login-art p { font-size: 18px; line-height: 1.7; }
+.login-badge { font-size: 14px; }
+.login-card h2 { font-size: 39px; }
+.login-card p { font-size: 16px; line-height: 1.65; }
+.login-card label,
+.login-card input { font-size: 16px; }
+.login-card button { font-size: 19px; }
+.login-card a,
+.config-warning { font-size: 14px; }
+.admin-brand strong { font-size: 22px; }
+.admin-brand small { font-size: 12px; }
+.nav-item { font-size: 16px; }
+.nav-item i,
+.sidebar-character p,
+.admin-logout { font-size: 14px; }
+.nav-item .badge { font-size: 12px; }
+.topbar h1,
+.lesson-admin-hero h1 { font-size: 31px; }
+.admin-profile strong { font-size: 15px; }
+.admin-profile small { font-size: 13px; }
+.welcome-strip span { font-size: 14px; }
+.welcome-strip h2 { font-size: 32px; }
+.welcome-strip p { font-size: 16px; line-height: 1.65; }
+.stat-card small { font-size: 14px; }
+.stat-card strong { font-size: 32px; }
+.stat-card i { font-size: 13px; }
+.panel-heading h2,
+.editor-heading h2 { font-size: 26px; }
+.panel-heading p,
+.empty-state p,
+.lesson-admin-hero p,
+.editor-note { font-size: 14px; line-height: 1.6; }
+.refresh-button,
+.search-box input,
+.filter-tabs button { font-size: 14px; }
+.student-table th { font-size: 13px; }
+.student-table td { font-size: 15px; }
+.student-cell strong,
+.status-pill,
+.review-button,
+.approve-button,
+.reject-button { font-size: 14px; }
+.student-cell small,
+.student-table td small { font-size: 12px; }
+.empty-state h3 { font-size: 21px; }
+.loading-cell { font-size: 14px; }
+.modal-heading span { font-size: 14px; }
+.modal-heading h2 { font-size: 30px; }
+.modal-heading p,
+.student-details dd,
+.reason-field textarea,
+.slip-loading { font-size: 15px; }
+.student-details dt { font-size: 13px; }
+.slip-title strong,
+.access-option strong { font-size: 15px; }
+.slip-title a,
+.access-option small { font-size: 13px; }
+.decision-group legend { font-size: 16px; }
+.decision-actions button,
+.modal-close,
+.toast { font-size: 15px; }
+.lesson-admin-hero a,
+.save-lesson-button,
+.publish-toggle strong { font-size: 16px; }
+.lesson-admin-item strong,
+.editor-form > label,
+.media-title strong,
+.file-drop strong { font-size: 15px; }
+.lesson-admin-item small,
+.media-title small,
+.file-drop small,
+.current-file,
+.upload-progress { font-size: 13px; }
+.editor-form input,
+.editor-form textarea { font-size: 16px; }
+.lesson-save-bar span { font-size: 14px; }

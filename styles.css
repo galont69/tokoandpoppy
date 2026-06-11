@@ -348,3 +348,70 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
 @media (prefers-reduced-motion: reduce) {
   *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* Readability pass: keep the watercolor layout, but make text friendlier for kids and tablets. */
+body { font-size: 16px; }
+.brand strong { font-size: 21px; }
+.brand small { font-size: 12px; }
+.nav-link,
+.btn-login { font-size: 15px; }
+.eyebrow,
+.story-card-label,
+.section-heading > span,
+.join-kicker { font-size: 15px; }
+.hero-lead,
+.section-heading p,
+.join-section p { font-size: clamp(17px, 1.6vw, 22px); }
+.trust-row p { font-size: 14px; }
+.trust-row strong { font-size: 15px; }
+.speech-bubble { font-size: 15px; }
+.speech-bubble strong { font-size: 17px; }
+.floating-card strong { font-size: 14px; }
+.floating-card small { font-size: 12px; }
+.course-chip { padding: 7px 12px; font-size: 13px; }
+.course-card h3 { font-size: clamp(28px, 3vw, 42px); }
+.course-card p { font-size: 17px; line-height: 1.75; }
+.course-card ul { font-size: 16px; line-height: 1.75; }
+.course-entry { padding: 10px 14px; font-size: 14px; }
+footer { font-size: 14px; }
+.auth-aside h2 { font-size: clamp(28px, 3vw, 42px); }
+.auth-aside p { font-size: 16px; line-height: 1.7; }
+.aside-note { font-size: 14px; }
+.auth-tab { font-size: 15px; }
+.form-intro span { font-size: 14px; }
+.form-intro h2 { font-size: clamp(32px, 3.5vw, 52px); }
+.form-intro p { font-size: 16px; line-height: 1.65; }
+.auth-form > label,
+.two-cols label,
+legend { font-size: 15px; }
+.auth-form input[type="text"],
+.auth-form input[type="tel"],
+.auth-form input[type="email"],
+.auth-form input[type="password"] {
+  padding: 15px 18px;
+  font-size: 17px;
+}
+.course-option strong,
+.payment-title strong,
+.upload-box strong { font-size: 15px; }
+.course-option small,
+.payment-title small,
+.upload-box small { font-size: 13px; }
+.best-value,
+.copy-account { font-size: 12px; }
+.bank-details p { font-size: 13px; }
+.bank-details strong { font-size: 17px; }
+.bank-details small { font-size: 12px; }
+
+@media (max-width: 580px) {
+  .auth-aside h2 { font-size: 24px; }
+  .auth-aside p { max-width: 72%; font-size: 13px; }
+  .aside-note { font-size: 12px; }
+  .auth-form input[type="text"],
+  .auth-form input[type="tel"],
+  .auth-form input[type="email"],
+  .auth-form input[type="password"] { font-size: 15px; }
+  .course-card p,
+  .course-card ul,
+  .form-intro p { font-size: 15px; }
+}
