@@ -35,6 +35,7 @@ const artLevelFilter = document.querySelector("#artLevelFilter");
 const artCategorySelect = document.querySelector("#artCategorySelect");
 const artLevelSelect = document.querySelector("#artLevelSelect");
 const artImageList = document.querySelector("#artImageList");
+const deleteArtLessonButton = document.querySelector("#deleteArtLessonButton");
 
 let applications = [];
 let activeStatus = "all";
@@ -765,6 +766,28 @@ async function renderArtImageList() {
   artImageList.innerHTML = cards.join("");
 }
 
+function clearArtEditor() {
+  document.querySelector("#artEditorNumber").textContent = "🎨";
+  document.querySelector("#artEditorHeading").textContent = "บทเรียนศิลปะใหม่";
+  document.querySelector("#artLessonTitle").value = "";
+  document.querySelector("#artLessonPrompt").value = "";
+  document.querySelector("#artVideoUrl").value = "";
+  document.querySelector("#artLessonPublished").checked = false;
+  document.querySelector("#artVideoFile").value = "";
+  document.querySelector("#artImageFiles").value = "";
+  document.querySelector("#artImageCaption").value = "";
+  document.querySelector("#currentArtVideo").textContent = "ยังไม่มีวิดีโอ";
+  document.querySelector("#currentArtVideo").className = "current-file";
+  document.querySelector("#currentArtImages").textContent = "ยังไม่มีภาพตัวอย่าง";
+  document.querySelector("#currentArtImages").className = "current-file";
+  document.querySelector("#artReadinessText").textContent =
+    "เลือกหรือเพิ่มบทเรียนศิลปะเพื่อเริ่มแก้ไข";
+  document.querySelector("#artReadinessText").className = "";
+  artImageList.innerHTML =
+    '<div class="gallery-empty">ยังไม่มีภาพตัวอย่างในบทเรียนนี้</div>';
+  deleteArtLessonButton.disabled = true;
+}
+
 function updateArtReadiness() {
   if (!activeArtLesson) return;
   const readiness = document.querySelector("#artReadinessText");
@@ -810,6 +833,7 @@ function selectArtLesson(lessonId) {
   document.querySelector("#artVideoFile").value = "";
   document.querySelector("#artImageFiles").value = "";
   document.querySelector("#artImageCaption").value = "";
+  deleteArtLessonButton.disabled = false;
 
   const currentVideo = document.querySelector("#currentArtVideo");
   const videoLabel = activeArtLesson.video_path || activeArtLesson.video_url;
@@ -857,7 +881,11 @@ async function loadArtStudio() {
     activeArtLesson = artLessons.find(({ id }) => id === activeArtLesson.id);
   }
   renderArtLessons();
-  if (activeArtLesson) selectArtLesson(activeArtLesson.id);
+  if (activeArtLesson) {
+    selectArtLesson(activeArtLesson.id);
+  } else {
+    clearArtEditor();
+  }
 }
 
 async function ensureActiveArtLesson() {
@@ -1077,6 +1105,55 @@ async function deleteArtImage(imageId) {
   selectArtLesson(activeArtLesson.id);
 }
 
+async function deleteActiveArtLesson() {
+  if (!activeArtLesson?.id) {
+    showToast("ยังไม่ได้เลือกบทเรียนศิลปะ", true);
+    return;
+  }
+
+  const title = activeArtLesson.title || "บทเรียนศิลปะนี้";
+  const confirmed = window.confirm(
+    `ต้องการลบ "${title}" ใช่ไหม?\n\nระบบจะลบบทเรียน วิดีโอที่อัปโหลด และภาพตัวอย่างของบทเรียนนี้ออกด้วย`
+  );
+  if (!confirmed) return;
+
+  deleteArtLessonButton.disabled = true;
+  artUploadProgress.hidden = false;
+  try {
+    const imagePaths = (activeArtLesson.art_lesson_images || [])
+      .map((image) => image.image_path)
+      .filter(Boolean);
+    if (imagePaths.length) {
+      const { error } = await supabaseClient.storage
+        .from("art-gallery")
+        .remove(imagePaths);
+      if (error) throw error;
+    }
+    if (activeArtLesson.video_path) {
+      const { error } = await supabaseClient.storage
+        .from("art-videos")
+        .remove([activeArtLesson.video_path]);
+      if (error) throw error;
+    }
+
+    const deletedLessonId = activeArtLesson.id;
+    const { error } = await supabaseClient
+      .from("art_lessons")
+      .delete()
+      .eq("id", deletedLessonId);
+    if (error) throw error;
+
+    showToast("ลบบทเรียนศิลปะแล้ว");
+    activeArtLesson = null;
+    await loadArtStudio();
+  } catch (error) {
+    showToast(`ลบบทเรียนไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    deleteArtLessonButton.disabled = false;
+    artUploadProgress.hidden = true;
+  }
+}
+
 artCategoryFilter.addEventListener("change", () => {
   renderArtOptions();
   renderArtLessons();
@@ -1093,6 +1170,7 @@ document.querySelector("#artVideoFile").addEventListener("change", (event) =>
   uploadArtVideo(event.currentTarget));
 document.querySelector("#artImageFiles").addEventListener("change", (event) =>
   uploadArtImages(event.currentTarget));
+deleteArtLessonButton.addEventListener("click", deleteActiveArtLesson);
 artImageList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-delete-art-image]");
   if (button) deleteArtImage(button.dataset.deleteArtImage);

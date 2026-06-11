@@ -243,6 +243,9 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .lesson-save-bar > span { color: #8b786b; font-size: 8px; }
 .lesson-save-bar > span.ready { color: #4f7949; font-weight: 700; }
 .lesson-save-bar > span.warning { color: #a16c24; font-weight: 700; }
+.delete-lesson-button { border: 1px solid #e3b8aa; border-radius: 13px; padding: 13px 18px; color: #b15945; background: #fff6f2; font-size: 10px; font-weight: 800; }
+.delete-lesson-button:hover { background: #ffece5; transform: translateY(-1px); }
+.delete-lesson-button:disabled { cursor: not-allowed; opacity: .55; transform: none; }
 .save-lesson-button { min-width: 210px; margin-left: auto; border: 0; border-radius: 13px; padding: 13px; color: white; background: linear-gradient(135deg, #709b5d, #4f774b); font-size: 10px; font-weight: 700; box-shadow: 0 9px 20px rgba(71,113,64,.16); }
 .save-lesson-button:disabled { cursor: wait; opacity: .65; }
 .upload-progress { display: flex; align-items: center; justify-content: center; gap: 8px; color: #718366; font-size: 8px; }
@@ -325,6 +328,7 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   .editor-heading { flex-wrap: wrap; }
   .publish-toggle { width: 100%; margin-left: 0; }
   .lesson-save-bar { align-items: stretch; flex-direction: column; }
+  .delete-lesson-button { width: 100%; }
   .save-lesson-button { width: 100%; min-width: 0; margin-left: 0; }
 }
 
@@ -397,6 +401,7 @@ body { font-size: 16px; }
 .modal-close,
 .toast { font-size: 15px; }
 .lesson-admin-hero a,
+.delete-lesson-button,
 .save-lesson-button,
 .publish-toggle strong { font-size: 16px; }
 .lesson-admin-item strong,
