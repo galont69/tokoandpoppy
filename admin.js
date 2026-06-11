@@ -641,6 +641,14 @@ function selectedArtCategoryId() {
     : artCategoryFilter.value;
 }
 
+function selectedArtLevelIdForCategory(categoryId) {
+  if (artLevelFilter.value !== "all") {
+    const selectedLevel = artLevels.find(({ id }) => id === artLevelFilter.value);
+    if (selectedLevel?.category_id === categoryId) return selectedLevel.id;
+  }
+  return null;
+}
+
 function renderArtOptions() {
   const categoryOptions = [
     '<option value="all">ทุกหมวด</option>',
@@ -852,16 +860,52 @@ async function loadArtStudio() {
   if (activeArtLesson) selectArtLesson(activeArtLesson.id);
 }
 
+async function ensureActiveArtLesson() {
+  if (activeArtLesson?.id) return activeArtLesson;
+  if (!artCategories.length) {
+    throw new Error("ยังไม่มีหมวดศิลปะ กรุณารัน SQL สำหรับสร้างหมวดก่อน");
+  }
+
+  const title =
+    document.querySelector("#artLessonTitle").value.trim() ||
+    "บทเรียนศิลปะใหม่";
+  const categoryId = artCategorySelect.value || selectedArtCategoryId();
+  const levelId = artLevelSelect.value || selectedArtLevelIdForCategory(categoryId);
+  const sortOrder =
+    Math.max(0, ...artLessons.map((lesson) => lesson.sort_order || 0)) + 1;
+
+  const { data, error } = await supabaseClient
+    .from("art_lessons")
+    .insert({
+      category_id: categoryId,
+      level_id: levelId || null,
+      title,
+      story_prompt: document.querySelector("#artLessonPrompt").value.trim(),
+      video_url: document.querySelector("#artVideoUrl").value.trim() || null,
+      sort_order: sortOrder,
+      is_published: false
+    })
+    .select("*, art_lesson_images(*)")
+    .single();
+
+  if (error) throw error;
+  activeArtLesson = {
+    ...data,
+    art_lesson_images: data.art_lesson_images || []
+  };
+  artLessons = [activeArtLesson, ...artLessons];
+  renderArtLessons();
+  selectArtLesson(activeArtLesson.id);
+  return activeArtLesson;
+}
+
 async function createArtLesson() {
   if (!artCategories.length) {
     showToast("ยังไม่มีหมวดศิลปะ กรุณารัน SQL สำหรับสร้างหมวดก่อน", true);
     return;
   }
   const categoryId = selectedArtCategoryId();
-  const levelId =
-    artLevelFilter.value !== "all"
-      ? artLevelFilter.value
-      : artLevels.find((level) => level.category_id === categoryId)?.id || null;
+  const levelId = selectedArtLevelIdForCategory(categoryId);
   const sortOrder =
     Math.max(0, ...artLessons.map((lesson) => lesson.sort_order || 0)) + 1;
 
@@ -905,7 +949,14 @@ async function uploadArtFile(bucket, file, lessonId) {
 
 async function uploadArtVideo(input) {
   const file = input.files[0];
-  if (!file || !activeArtLesson) return;
+  if (!file) return;
+  try {
+    await ensureActiveArtLesson();
+  } catch (error) {
+    input.value = "";
+    showToast(`ยังสร้างบทเรียนไม่ได้: ${error.message}`, true);
+    return;
+  }
   if (file.size > 500 * 1024 * 1024) {
     input.value = "";
     showToast("วิดีโอมีขนาดเกิน 500 MB แนะนำใช้ลิงก์วิดีโอแทน", true);
@@ -952,7 +1003,15 @@ async function uploadArtVideo(input) {
 
 async function uploadArtImages(input) {
   const files = Array.from(input.files || []);
-  if (!files.length || !activeArtLesson) return;
+  if (!files.length) return;
+  const caption = document.querySelector("#artImageCaption").value.trim();
+  try {
+    await ensureActiveArtLesson();
+  } catch (error) {
+    input.value = "";
+    showToast(`ยังสร้างบทเรียนไม่ได้: ${error.message}`, true);
+    return;
+  }
   const invalid = files.find((file) =>
     file.size > 8 * 1024 * 1024 ||
     !["image/jpeg", "image/png", "image/webp"].includes(file.type));
@@ -962,7 +1021,6 @@ async function uploadArtImages(input) {
     return;
   }
 
-  const caption = document.querySelector("#artImageCaption").value.trim();
   const dropZone = input.closest(".file-drop");
   const currentImages = document.querySelector("#currentArtImages");
   dropZone.classList.add("uploading");
@@ -988,8 +1046,9 @@ async function uploadArtImages(input) {
 
     showToast(`อัปโหลดภาพตัวอย่าง ${files.length} รูปสำเร็จ`);
     input.value = "";
+    const lessonId = activeArtLesson.id;
     await loadArtStudio();
-    selectArtLesson(activeArtLesson.id);
+    selectArtLesson(lessonId);
   } catch (error) {
     currentImages.className = "current-file selected";
     currentImages.textContent = "อัปโหลดภาพไม่สำเร็จ";
@@ -1041,7 +1100,12 @@ artImageList.addEventListener("click", (event) => {
 
 artEditor.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!activeArtLesson) return;
+  try {
+    await ensureActiveArtLesson();
+  } catch (error) {
+    showToast(`ยังสร้างบทเรียนไม่ได้: ${error.message}`, true);
+    return;
+  }
 
   const title = document.querySelector("#artLessonTitle").value.trim();
   const storyPrompt = document.querySelector("#artLessonPrompt").value.trim();
@@ -1074,9 +1138,9 @@ artEditor.addEventListener("submit", async (event) => {
     if (error) throw error;
 
     showToast("บันทึกบทเรียนศิลปะแล้ว");
-    activeArtLesson = { ...activeArtLesson, category_id: categoryId, level_id: levelId };
+    const lessonId = activeArtLesson.id;
     await loadArtStudio();
-    selectArtLesson(activeArtLesson.id);
+    selectArtLesson(lessonId);
   } catch (error) {
     showToast(`บันทึกบทเรียนศิลปะไม่สำเร็จ: ${error.message}`, true);
   } finally {
