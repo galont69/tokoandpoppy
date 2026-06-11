@@ -781,10 +781,10 @@ function updateArtReadiness() {
   } else if (hasVideo) {
     readiness.textContent =
       imageCount
-        ? "พร้อมเผยแพร่บทเรียนศิลปะ"
-        : "มีวิดีโอแล้ว แนะนำเพิ่มภาพตัวอย่างก่อนเผยแพร่";
+        ? "พร้อมเผยแพร่ กดบันทึกแล้วเด็กจะเห็นบทเรียนนี้"
+        : "มีวิดีโอแล้ว กดบันทึกเพื่อเผยแพร่ได้ และแนะนำเพิ่มภาพตัวอย่าง";
     readiness.classList.add(imageCount ? "ready" : "warning");
-    saveButton.textContent = "บันทึกบทเรียนศิลปะ";
+    saveButton.textContent = "บันทึกและเผยแพร่";
   } else {
     readiness.textContent = "ยังขาดวิดีโอหรือวิดีโอลิงก์สำหรับหน้าเด็ก";
     readiness.classList.add("warning");
@@ -1112,9 +1112,16 @@ artEditor.addEventListener("submit", async (event) => {
   const videoUrl = document.querySelector("#artVideoUrl").value.trim();
   const categoryId = artCategorySelect.value;
   const levelId = artLevelSelect.value || null;
-  const publish = document.querySelector("#artLessonPublished").checked;
+  const publishToggle = document.querySelector("#artLessonPublished");
+  const hasVideo = Boolean(activeArtLesson.video_path || videoUrl);
+  let publish = publishToggle.checked;
 
-  if (publish && !(activeArtLesson.video_path || videoUrl)) {
+  if (hasVideo) {
+    publish = true;
+    publishToggle.checked = true;
+  }
+
+  if (publish && !hasVideo) {
     showToast("กรุณาเพิ่มวิดีโอหรือวางลิงก์วิดีโอก่อนเผยแพร่", true);
     return;
   }
@@ -1137,7 +1144,7 @@ artEditor.addEventListener("submit", async (event) => {
       .eq("id", activeArtLesson.id);
     if (error) throw error;
 
-    showToast("บันทึกบทเรียนศิลปะแล้ว");
+    showToast(publish ? "บันทึกและเผยแพร่บทเรียนศิลปะแล้ว" : "บันทึกบทเรียนศิลปะแล้ว");
     const lessonId = activeArtLesson.id;
     await loadArtStudio();
     selectArtLesson(lessonId);
