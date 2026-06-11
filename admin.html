@@ -50,6 +50,7 @@
           <span>📋</span> ใบสมัครเรียน
           <i id="pendingBadge">0</i>
         </button>
+        <button class="nav-item" type="button" data-admin-view="branches"><span>🏫</span> สาขาเฟรนไชน์</button>
         <button class="nav-item" type="button" disabled><span>👨‍👩‍👧</span> นักเรียนทั้งหมด</button>
         <button class="nav-item" type="button" data-admin-view="lessons"><span>📚</span> จัดการบทเรียน</button>
         <button class="nav-item" type="button" data-admin-view="art"><span>🎨</span> บทเรียนศิลปะ</button>
@@ -129,8 +130,8 @@
               <thead>
                 <tr>
                   <th>นักเรียน / ผู้ปกครอง</th>
-                  <th>คอร์สที่สมัคร</th>
-                  <th>หลักฐานการชำระเงิน</th>
+                  <th>คอร์ส / ช่องทาง</th>
+                  <th>การชำระเงิน</th>
                   <th>วันที่สมัคร</th>
                   <th>สถานะ</th>
                   <th></th>
@@ -149,6 +150,56 @@
             <i></i><span>กำลังโหลดใบสมัคร...</span>
           </div>
         </section>
+      </section>
+
+      <section class="content admin-view" id="branchesView" hidden>
+        <div class="lesson-admin-hero branch-hero-admin">
+          <div>
+            <span>FRANCHISE CENTER</span>
+            <h2>จัดการสาขาเฟรนไชน์</h2>
+            <p>สาขาที่เปิดใช้งานจะแสดงใน dropdown หน้าแบบฟอร์มสมัครเรียน</p>
+          </div>
+        </div>
+
+        <div class="branch-admin-grid">
+          <form class="branch-form" id="branchForm">
+            <h3>เพิ่มสาขาใหม่</h3>
+            <label>ชื่อสาขา
+              <input id="branchName" type="text" maxlength="150" required placeholder="เช่น สาขาเชียงใหม่ นิมมาน">
+            </label>
+            <div class="art-form-grid">
+              <label>รหัสสาขา
+                <input id="branchCode" type="text" maxlength="40" placeholder="เช่น CNX-01">
+              </label>
+              <label>จังหวัด
+                <input id="branchProvince" type="text" maxlength="80" placeholder="เช่น เชียงใหม่">
+              </label>
+            </div>
+            <div class="art-form-grid">
+              <label>ผู้ติดต่อ
+                <input id="branchContactName" type="text" maxlength="120" placeholder="ชื่อผู้ดูแลสาขา">
+              </label>
+              <label>เบอร์โทร
+                <input id="branchContactPhone" type="tel" maxlength="30" placeholder="08x-xxx-xxxx">
+              </label>
+            </div>
+            <label>อัตราค่าแฟรนไชส์ (%) สำหรับคำนวณภายหลัง
+              <input id="branchFeeRate" type="number" min="0" step="0.01" placeholder="เช่น 20">
+            </label>
+            <button class="save-lesson-button" type="submit">เพิ่มสาขา</button>
+          </form>
+
+          <section class="applications-panel branch-list-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>รายการสาขา</h2>
+                <p>ปิดใช้งานแล้วจะไม่แสดงในหน้าสมัคร แต่ข้อมูลใบสมัครเดิมยังอยู่</p>
+              </div>
+              <button class="refresh-button" id="refreshBranchesButton" type="button">↻ รีเฟรช</button>
+            </div>
+            <div class="branch-list" id="branchRows"></div>
+          </section>
+        </div>
       </section>
 
       <section class="content admin-view" id="lessonsView" hidden>
@@ -369,7 +420,7 @@
       </div>
       <div class="review-grid">
         <div class="slip-panel">
-          <div class="slip-title"><span>🧾</span><strong>หลักฐานการโอนเงิน</strong></div>
+          <div class="slip-title"><span>🧾</span><strong>หลักฐานการชำระเงิน</strong></div>
           <div class="slip-frame" id="slipFrame">
             <div class="slip-loading">กำลังโหลดรูปสลิป...</div>
           </div>

@@ -7,6 +7,8 @@ const loginTab = document.querySelector("#loginTab");
 const slipInput = document.querySelector("#slipInput");
 const filePreview = document.querySelector("#filePreview");
 const uploadBox = document.querySelector("#uploadBox");
+const branchSelect = document.querySelector("#branchSelect");
+const branchSelectWrap = document.querySelector("#branchSelectWrap");
 const toast = document.querySelector("#toast");
 const authContent = document.querySelector(".auth-content");
 const fallbackSupabaseConfig = {
@@ -69,6 +71,50 @@ function closeAuth() {
   authModal.classList.remove("open");
   authModal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+}
+
+function calculateAgeFromBirthDate(value) {
+  if (!value) return "";
+  const birthDate = new Date(value);
+  if (Number.isNaN(birthDate.getTime())) return "";
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age -= 1;
+  }
+  return age > 0 ? String(age) : "";
+}
+
+async function loadBranches() {
+  if (!branchSelect || !enrollmentSupabase) return;
+  const { data, error } = await enrollmentSupabase
+    .from("branches")
+    .select("id, name")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+
+  if (error) {
+    branchSelect.innerHTML = '<option value="">ยังโหลดสาขาไม่ได้ ใช้สมัครออนไลน์ได้ก่อน</option>';
+    return;
+  }
+
+  const branches = data || [];
+  branchSelect.innerHTML = [
+    '<option value="">เลือกสาขาที่สมัคร</option>',
+    ...branches.map((branch) =>
+      `<option value="${branch.id}">${branch.name}</option>`
+    )
+  ].join("");
+}
+
+function syncEnrollmentSource() {
+  const selectedSource =
+    registerForm.querySelector("input[name=enrollmentSource]:checked")?.value || "online";
+  const isBranch = selectedSource === "branch";
+  branchSelectWrap.hidden = !isBranch;
+  branchSelect.required = isBranch;
+  if (!isBranch) branchSelect.value = "";
 }
 
 function showToast(message) {
@@ -139,6 +185,15 @@ function renderFile(file) {
 
 slipInput.addEventListener("change", () => renderFile(slipInput.files[0]));
 
+registerForm.querySelector("input[name=birthDate]").addEventListener("change", (event) => {
+  const ageInput = registerForm.querySelector("input[name=ageYears]");
+  if (!ageInput.value) ageInput.value = calculateAgeFromBirthDate(event.target.value);
+});
+
+registerForm.querySelectorAll("input[name=enrollmentSource]").forEach((input) => {
+  input.addEventListener("change", syncEnrollmentSource);
+});
+
 ["dragenter", "dragover"].forEach((eventName) => {
   uploadBox.addEventListener(eventName, (event) => {
     event.preventDefault();
@@ -162,7 +217,7 @@ uploadBox.addEventListener("drop", (event) => {
   renderFile(file);
 });
 
-document.querySelector(".copy-account").addEventListener("click", async () => {
+document.querySelector(".copy-account")?.addEventListener("click", async () => {
   try {
     await navigator.clipboard.writeText("xxx-x-xxxxx-x");
     showToast("คัดลอกเลขบัญชีแล้ว");
@@ -182,6 +237,12 @@ registerForm.addEventListener("submit", async (event) => {
   const submitButton = registerForm.querySelector(".submit-button");
   const formData = new FormData(registerForm);
   const slip = formData.get("slip");
+  const enrollmentSource = formData.get("enrollmentSource") || "online";
+  const paymentMethod = formData.get("paymentMethod") || "unpaid";
+  if (enrollmentSource === "branch" && !formData.get("branchId")) {
+    showToast("กรุณาเลือกสาขาที่สมัคร");
+    return;
+  }
   submitButton.disabled = true;
   submitButton.innerHTML = "กำลังส่งใบสมัคร...";
 
@@ -199,26 +260,42 @@ registerForm.addEventListener("submit", async (event) => {
       );
     }
 
-    const extension = slip.name.split(".").pop().toLowerCase();
-    const fileName = `${crypto.randomUUID()}.${extension}`;
-    const slipPath = `${authData.user.id}/${fileName}`;
+    let slipPath = null;
+    if (slip instanceof File && slip.size > 0) {
+      const extension = slip.name.split(".").pop().toLowerCase();
+      const fileName = `${crypto.randomUUID()}.${extension}`;
+      slipPath = `${authData.user.id}/${fileName}`;
 
-    const { error: uploadError } = await enrollmentSupabase.storage
-      .from("payment-slips")
-      .upload(slipPath, slip, {
-        cacheControl: "3600",
-        contentType: slip.type,
-        upsert: false
-      });
-    if (uploadError) throw uploadError;
+      const { error: uploadError } = await enrollmentSupabase.storage
+        .from("payment-slips")
+        .upload(slipPath, slip, {
+          cacheControl: "3600",
+          contentType: slip.type,
+          upsert: false
+        });
+      if (uploadError) throw uploadError;
+    }
 
     const { error: enrollmentError } = await enrollmentSupabase.rpc(
       "submit_enrollment",
       {
         p_student_name: formData.get("studentName"),
+        p_student_nickname: formData.get("studentNickname") || null,
+        p_parent_name: formData.get("parentName") || null,
         p_parent_phone: formData.get("phone"),
         p_course: formData.get("course"),
-        p_slip_path: slipPath
+        p_enrollment_source: enrollmentSource,
+        p_branch_id: enrollmentSource === "branch" ? formData.get("branchId") : null,
+        p_payment_method: paymentMethod,
+        p_paid_amount: Number(formData.get("paidAmount") || 0),
+        p_slip_path: slipPath,
+        p_birth_date: formData.get("birthDate") || null,
+        p_age_years: Number(formData.get("ageYears") || 0) || null,
+        p_allergy_food: formData.get("allergyFood") || null,
+        p_allergy_pollen: formData.get("allergyPollen") || null,
+        p_student_notes: formData.get("studentNotes") || null,
+        p_payment_note: formData.get("paymentNote") || null,
+        p_paid_at: formData.get("paidAt") || null
       }
     );
     if (enrollmentError) {
@@ -244,6 +321,7 @@ document.querySelector("#closeStatus").addEventListener("click", () => {
   registerForm.reset();
   filePreview.innerHTML = "";
   filePreview.classList.remove("show");
+  syncEnrollmentSource();
 });
 
 loginForm.addEventListener("submit", async (event) => {
@@ -290,3 +368,6 @@ loginForm.addEventListener("submit", async (event) => {
     showToast("บัญชียังอยู่ระหว่างรอการอนุมัติจากแอดมิน");
   }
 });
+
+syncEnrollmentSource();
+loadBranches();

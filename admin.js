@@ -36,10 +36,13 @@ const artCategorySelect = document.querySelector("#artCategorySelect");
 const artLevelSelect = document.querySelector("#artLevelSelect");
 const artImageList = document.querySelector("#artImageList");
 const deleteArtLessonButton = document.querySelector("#deleteArtLessonButton");
+const branchRows = document.querySelector("#branchRows");
+const branchForm = document.querySelector("#branchForm");
 
 let applications = [];
 let activeStatus = "all";
 let activeApplication = null;
+let branches = [];
 let robotLessons = [];
 let activeLesson = null;
 let artCategories = [];
@@ -57,6 +60,18 @@ const statusLabels = {
   pending: "รอตรวจสอบ",
   approved: "อนุมัติแล้ว",
   rejected: "ไม่อนุมัติ"
+};
+
+const paymentMethodLabels = {
+  unpaid: "ยังไม่ชำระ",
+  cash: "เงินสด",
+  transfer: "โอนเงิน",
+  admin_chat: "ชำระผ่านแอดมิน"
+};
+
+const sourceLabels = {
+  online: "สมัครออนไลน์",
+  branch: "ผ่านสาขา"
 };
 
 function showToast(message, isError = false) {
@@ -89,6 +104,18 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function formatMoney(value) {
+  const amount = Number(value || 0);
+  return amount.toLocaleString("th-TH", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  });
+}
+
+function getBranchName(application) {
+  return application.branches?.name || "ไม่ระบุสาขา";
+}
+
 async function verifyAdmin(user) {
   const { data, error } = await supabaseClient
     .from("profiles")
@@ -119,7 +146,7 @@ async function loadApplications() {
 
   const { data, error } = await supabaseClient
     .from("enrollment_applications")
-    .select("*")
+    .select("*, branches(name, code)")
     .order("created_at", { ascending: false });
 
   loadingState.hidden = true;
@@ -152,6 +179,7 @@ function showAdminView(viewName) {
   });
   const viewCopy = {
     applications: ["ใบสมัครเรียน", "ศูนย์จัดการสมาชิก"],
+    branches: ["สาขาเฟรนไชน์", "FRANCHISE CENTER"],
     lessons: ["จัดการบทเรียนโรบอท", "ROBOT COURSE STUDIO"],
     art: ["จัดการบทเรียนศิลปะ", "ART COURSE STUDIO"]
   };
@@ -159,8 +187,105 @@ function showAdminView(viewName) {
   document.querySelector(".topbar h1").textContent = title;
   document.querySelector(".page-kicker").textContent = kicker;
   document.querySelector(".sidebar").classList.remove("open");
+  if (viewName === "branches") loadBranchesAdmin();
   if (viewName === "lessons") loadRobotLessons();
   if (viewName === "art") loadArtStudio();
+}
+
+async function loadBranchesAdmin() {
+  if (!branchRows) return;
+  branchRows.innerHTML = '<div class="loading-state"><i></i><span>กำลังโหลดสาขา...</span></div>';
+  const { data, error } = await supabaseClient
+    .from("branches")
+    .select("*")
+    .order("is_active", { ascending: false })
+    .order("name", { ascending: true });
+
+  if (error) {
+    branchRows.innerHTML = "";
+    showToast(`โหลดสาขาไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  branches = data || [];
+  renderBranchesAdmin();
+}
+
+function renderBranchesAdmin() {
+  if (!branchRows) return;
+  if (!branches.length) {
+    branchRows.innerHTML = `
+      <div class="empty-state">
+        <div>🏫</div>
+        <h3>ยังไม่มีสาขา</h3>
+        <p>เพิ่มสาขาแรกเพื่อให้ผู้สมัครเลือกได้จากหน้าเว็บ</p>
+      </div>
+    `;
+    return;
+  }
+
+  branchRows.innerHTML = branches.map((branch) => `
+    <article class="branch-card ${branch.is_active ? "" : "inactive"}">
+      <div>
+        <strong>${escapeHtml(branch.name)}</strong>
+        <small>
+          ${escapeHtml(branch.code || "ไม่มีรหัส")} ·
+          ${escapeHtml(branch.province || "ไม่ระบุจังหวัด")} ·
+          ค่าธรรมเนียม ${formatMoney(branch.franchise_fee_rate)}%
+        </small>
+        <small>${escapeHtml(branch.contact_name || "-")} ${escapeHtml(branch.contact_phone || "")}</small>
+      </div>
+      <button type="button" data-branch-toggle="${branch.id}">
+        ${branch.is_active ? "ลบจาก dropdown" : "เปิดใช้งาน"}
+      </button>
+    </article>
+  `).join("");
+}
+
+async function createBranch(event) {
+  event.preventDefault();
+  const payload = {
+    name: document.querySelector("#branchName").value.trim(),
+    code: document.querySelector("#branchCode").value.trim() || null,
+    province: document.querySelector("#branchProvince").value.trim() || null,
+    contact_name: document.querySelector("#branchContactName").value.trim() || null,
+    contact_phone: document.querySelector("#branchContactPhone").value.trim() || null,
+    franchise_fee_rate: Number(document.querySelector("#branchFeeRate").value || 0),
+    is_active: true
+  };
+
+  const submitButton = branchForm.querySelector("button[type=submit]");
+  submitButton.disabled = true;
+  submitButton.textContent = "กำลังเพิ่มสาขา...";
+  const { error } = await supabaseClient.from("branches").insert(payload);
+  submitButton.disabled = false;
+  submitButton.textContent = "เพิ่มสาขา";
+
+  if (error) {
+    showToast(`เพิ่มสาขาไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  branchForm.reset();
+  showToast("เพิ่มสาขาเรียบร้อย");
+  await loadBranchesAdmin();
+}
+
+async function toggleBranch(branchId) {
+  const branch = branches.find(({ id }) => id === branchId);
+  if (!branch) return;
+  const { error } = await supabaseClient
+    .from("branches")
+    .update({ is_active: !branch.is_active })
+    .eq("id", branchId);
+
+  if (error) {
+    showToast(`แก้ไขสาขาไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  showToast(branch.is_active ? "ลบสาขาออกจาก dropdown แล้ว" : "เปิดใช้งานสาขาแล้ว");
+  await loadBranchesAdmin();
 }
 
 function renderApplications() {
@@ -170,8 +295,11 @@ function renderApplications() {
       activeStatus === "all" || application.status === activeStatus;
     const haystack = [
       application.student_name,
+      application.student_nickname,
+      application.parent_name,
       application.parent_email,
-      application.parent_phone
+      application.parent_phone,
+      getBranchName(application)
     ].join(" ").toLowerCase();
     return matchesStatus && haystack.includes(query);
   });
@@ -183,6 +311,15 @@ function renderApplications() {
       application.robot_access ? "โรบอท" : "",
       application.art_access ? "ศิลปะ" : ""
     ].filter(Boolean).join(" + ");
+    const sourceText = application.enrollment_source === "branch"
+      ? `${sourceLabels.branch}: ${getBranchName(application)}`
+      : sourceLabels.online;
+    const paymentText = paymentMethodLabels[application.payment_method] || "ไม่ระบุ";
+    const proofText = application.slip_path
+      ? "🧾 ดูหลักฐาน"
+      : application.payment_method === "cash"
+        ? "💵 เงินสด"
+        : "ไม่มีหลักฐาน";
 
     return `
       <tr>
@@ -191,6 +328,8 @@ function renderApplications() {
             <span class="student-avatar">🧒</span>
             <div>
               <strong>${escapeHtml(application.student_name)}</strong>
+              <small>ชื่อเล่น: ${escapeHtml(application.student_nickname || "-")}</small>
+              <small>ผู้ปกครอง: ${escapeHtml(application.parent_name || "-")}</small>
               <small>${escapeHtml(application.parent_email)}</small>
               <small>${escapeHtml(application.parent_phone)}</small>
             </div>
@@ -204,12 +343,17 @@ function renderApplications() {
                 ? `สิทธิ์ที่อนุมัติ: ${approvedCourses}`
                 : courseDescription
             )}</small>
+            <small>${escapeHtml(sourceText)}</small>
           </div>
         </td>
         <td>
           <button class="slip-button" type="button" data-review-id="${application.id}">
-            🧾 ดูสลิป
+            ${proofText}
           </button>
+          <div class="payment-mini">
+            <small>${escapeHtml(paymentText)}</small>
+            <small>${formatMoney(application.paid_amount)} บาท</small>
+          </div>
         </td>
         <td class="date-cell">
           <strong>${formatDate(application.created_at).split(" เวลา ")[0]}</strong>
@@ -237,10 +381,25 @@ async function openReview(applicationId) {
 
   const [courseName] =
     courseLabels[activeApplication.course] || [activeApplication.course];
+  const sourceText = activeApplication.enrollment_source === "branch"
+    ? `${sourceLabels.branch}: ${getBranchName(activeApplication)}`
+    : sourceLabels.online;
+  const paymentText = paymentMethodLabels[activeApplication.payment_method] || "ไม่ระบุ";
   document.querySelector("#studentDetails").innerHTML = `
+    <div><dt>ชื่อเล่นนักเรียน</dt><dd>${escapeHtml(activeApplication.student_nickname || "-")}</dd></div>
+    <div><dt>ชื่อผู้ปกครอง</dt><dd>${escapeHtml(activeApplication.parent_name || "-")}</dd></div>
     <div><dt>อีเมลผู้ปกครอง</dt><dd>${escapeHtml(activeApplication.parent_email)}</dd></div>
     <div><dt>เบอร์โทรศัพท์</dt><dd>${escapeHtml(activeApplication.parent_phone)}</dd></div>
+    <div><dt>ช่องทางสมัคร</dt><dd>${escapeHtml(sourceText)}</dd></div>
     <div><dt>คอร์สที่สมัคร</dt><dd>${escapeHtml(courseName)}</dd></div>
+    <div><dt>วิธีชำระเงิน</dt><dd>${escapeHtml(paymentText)}</dd></div>
+    <div><dt>ยอดชำระ</dt><dd>${formatMoney(activeApplication.paid_amount)} บาท</dd></div>
+    <div><dt>วันที่ชำระ</dt><dd>${escapeHtml(activeApplication.paid_at || "-")}</dd></div>
+    <div><dt>วันเกิด / อายุ</dt><dd>${escapeHtml(activeApplication.birth_date || "-")} · ${escapeHtml(activeApplication.age_years || "-")} ปี</dd></div>
+    <div><dt>แพ้อาหาร</dt><dd>${escapeHtml(activeApplication.allergy_food || "-")}</dd></div>
+    <div><dt>แพ้เกสร / ภูมิแพ้</dt><dd>${escapeHtml(activeApplication.allergy_pollen || "-")}</dd></div>
+    <div><dt>ข้อมูลเพิ่มเติม</dt><dd>${escapeHtml(activeApplication.student_notes || "-")}</dd></div>
+    <div><dt>หมายเหตุชำระเงิน</dt><dd>${escapeHtml(activeApplication.payment_note || "-")}</dd></div>
     <div><dt>สถานะการชำระเงิน</dt><dd>${escapeHtml(activeApplication.payment_status)}</dd></div>
   `;
 
@@ -260,6 +419,16 @@ async function openReview(applicationId) {
   document.body.style.overflow = "hidden";
   slipFrame.innerHTML = '<div class="slip-loading">กำลังโหลดรูปสลิป...</div>';
   openSlipLink.removeAttribute("href");
+
+  if (!activeApplication.slip_path) {
+    slipFrame.innerHTML = `
+      <div class="slip-loading">
+        ไม่มีไฟล์หลักฐานแนบมา<br>
+        ${escapeHtml(paymentText)}
+      </div>
+    `;
+    return;
+  }
 
   const { data, error } = await supabaseClient.storage
     .from("payment-slips")
@@ -1292,6 +1461,12 @@ document.querySelector("#filterTabs").addEventListener("click", (event) => {
   document.querySelectorAll("#filterTabs button").forEach((item) =>
     item.classList.toggle("active", item === button));
   renderApplications();
+});
+branchForm.addEventListener("submit", createBranch);
+document.querySelector("#refreshBranchesButton").addEventListener("click", loadBranchesAdmin);
+branchRows.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-branch-toggle]");
+  if (button) toggleBranch(button.dataset.branchToggle);
 });
 document.querySelector("#closeReview").addEventListener("click", closeReview);
 reviewModal.addEventListener("click", (event) => {

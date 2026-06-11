@@ -198,11 +198,27 @@
             <input required name="studentName" type="text" placeholder="เช่น ด.ช. ต้นกล้า ใจดี">
           </label>
           <div class="two-cols">
+            <label>ชื่อเล่นนักเรียน
+              <input name="studentNickname" type="text" maxlength="80" placeholder="เช่น ต้นกล้า">
+            </label>
+            <label>ชื่อผู้ปกครอง
+              <input name="parentName" type="text" maxlength="150" placeholder="เช่น คุณแม่มะลิ">
+            </label>
+          </div>
+          <div class="two-cols">
             <label>เบอร์โทรศัพท์
               <input required name="phone" type="tel" inputmode="tel" placeholder="08x-xxx-xxxx">
             </label>
             <label>อีเมลผู้ปกครอง
               <input required name="email" type="email" placeholder="parent@email.com">
+            </label>
+          </div>
+          <div class="two-cols">
+            <label>วันเกิดนักเรียน
+              <input name="birthDate" type="date">
+            </label>
+            <label>อายุ
+              <input name="ageYears" type="number" min="1" max="18" inputmode="numeric" placeholder="เช่น 6">
             </label>
           </div>
           <label>รหัสผ่าน
@@ -237,32 +253,84 @@
             </div>
           </fieldset>
 
+          <fieldset class="enrollment-source">
+            <legend>สมัครผ่านช่องทางไหน</legend>
+            <div class="source-options">
+              <label class="source-option">
+                <input type="radio" name="enrollmentSource" value="online" checked>
+                <span>💬</span>
+                <strong>สมัครเรียนออนไลน์</strong>
+                <small>คุยรายละเอียดและชำระเงินกับแอดมิน</small>
+              </label>
+              <label class="source-option">
+                <input type="radio" name="enrollmentSource" value="branch">
+                <span>🏫</span>
+                <strong>สมัครผ่านสาขาเฟรนไชน์</strong>
+                <small>เลือกสาขาที่ดูแลนักเรียนคนนี้</small>
+              </label>
+            </div>
+            <label class="branch-select" id="branchSelectWrap" hidden>เลือกสาขา
+              <select id="branchSelect" name="branchId">
+                <option value="">กำลังโหลดรายชื่อสาขา...</option>
+              </select>
+            </label>
+          </fieldset>
+
           <div class="payment-box">
             <div class="payment-title">
               <span>💳</span>
-              <div><strong>ข้อมูลการชำระเงิน</strong><small>โอนเงินแล้วแนบหลักฐานด้านล่าง</small></div>
+              <div><strong>ข้อมูลการชำระเงิน</strong><small>จ่ายที่สาขา จ่ายสด หรือโอนผ่านแอดมินได้</small></div>
             </div>
-            <div class="bank-details">
-              <div class="qr-placeholder" aria-label="พื้นที่ QR Code">
-                <div class="qr-pattern"></div>
-                <span>QR CODE</span>
-              </div>
-              <div>
-                <p>ธนาคารกสิกรไทย</p>
-                <strong>xxx-x-xxxxx-x</strong>
-                <small>ชื่อบัญชี: สถาบัน Toko & Poppy</small>
-                <button type="button" class="copy-account">คัดลอกเลขบัญชี</button>
-              </div>
+            <div class="payment-fields">
+              <label>วิธีชำระเงิน
+                <select name="paymentMethod" id="paymentMethod">
+                  <option value="unpaid">ยังไม่ชำระ</option>
+                  <option value="cash">เงินสดที่สาขา</option>
+                  <option value="transfer">โอนเงิน</option>
+                  <option value="admin_chat">คุย/ชำระผ่านแอดมิน</option>
+                </select>
+              </label>
+              <label>ยอดชำระ (บาท)
+                <input name="paidAmount" type="number" min="0" step="1" inputmode="decimal" placeholder="เช่น 2500">
+              </label>
+              <label>วันที่ชำระ
+                <input name="paidAt" type="date">
+              </label>
+              <label>หมายเหตุการชำระเงิน
+                <input name="paymentNote" type="text" maxlength="220" placeholder="เช่น จ่ายสดที่สาขา / โอนให้แอดมิน">
+              </label>
             </div>
           </div>
 
+          <div class="student-notes">
+            <div class="two-cols">
+              <label>แพ้อาหาร
+                <input name="allergyFood" type="text" maxlength="220" placeholder="เช่น แพ้นม ถั่ว ไข่ หรือไม่มี">
+              </label>
+              <label>แพ้เกสร / ภูมิแพ้
+                <input name="allergyPollen" type="text" maxlength="220" placeholder="เช่น แพ้เกสร ฝุ่น หรือไม่มี">
+              </label>
+            </div>
+            <label>ข้อมูลเพิ่มเติมของเด็ก
+              <textarea name="studentNotes" rows="3" maxlength="600" placeholder="สิ่งที่ครูควรรู้ เช่น นิสัย สิ่งที่ชอบ ข้อควรระวัง"></textarea>
+            </label>
+          </div>
+
           <label class="upload-box" id="uploadBox">
-            <input required id="slipInput" name="slip" type="file" accept="image/png,image/jpeg,image/webp">
+            <input id="slipInput" name="slip" type="file" accept="image/png,image/jpeg,image/webp">
             <span class="upload-icon">☁</span>
-            <strong>อัปโหลดสลิปการโอนเงิน</strong>
-            <small>แตะเพื่อเลือกไฟล์ PNG, JPG หรือ WEBP (ไม่เกิน 5 MB)</small>
+            <strong>อัปโหลดหลักฐานการชำระเงิน (ถ้ามี)</strong>
+            <small>ใช้กรณีโอนเงิน PNG, JPG หรือ WEBP (ไม่เกิน 5 MB) ถ้าจ่ายสดไม่ต้องแนบรูป</small>
             <div class="file-preview" id="filePreview"></div>
           </label>
+
+          <div class="form-helper">
+            <span>ℹ️</span>
+            <div>
+              <strong>หลังส่งใบสมัคร</strong>
+              <p>แอดมินจะตรวจสอบช่องทางสมัคร สถานะชำระเงิน และเปิดสิทธิ์คอร์สให้เด็กก่อนเข้าเรียน</p>
+              </div>
+            </div>
 
           <label class="consent">
             <input required type="checkbox">
@@ -303,7 +371,7 @@
       <div class="status-icon">⏳</div>
       <span class="status-chip">ส่งใบสมัครสำเร็จ</span>
       <h2>รอการอนุมัติจากแอดมิน</h2>
-      <p>เราได้รับข้อมูลและหลักฐานการชำระเงินแล้ว ทีมงานจะตรวจสอบและแจ้งผลทางอีเมล</p>
+      <p>เราได้รับข้อมูลการสมัครแล้ว ทีมงานจะตรวจสอบรายละเอียด สถานะการชำระเงิน และแจ้งผลทางอีเมล</p>
       <div class="status-line"><i></i><span></span><i></i></div>
       <small>ระหว่างนี้ยังไม่สามารถเข้าดูเนื้อหาบทเรียนได้</small>
       <button type="button" id="closeStatus">เข้าใจแล้ว</button>

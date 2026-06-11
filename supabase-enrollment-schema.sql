@@ -50,9 +50,45 @@ exception
 end
 $$;
 
+do $$
+begin
+  create type public.enrollment_source as enum ('online', 'branch');
+exception
+  when duplicate_object then null;
+end
+$$;
+
+do $$
+begin
+  create type public.payment_method as enum (
+    'unpaid',
+    'cash',
+    'transfer',
+    'admin_chat'
+  );
+exception
+  when duplicate_object then null;
+end
+$$;
+
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   role public.user_role not null default 'parent',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.branches (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique
+    check (char_length(trim(name)) between 2 and 150),
+  code text unique,
+  province text,
+  contact_name text,
+  contact_phone text,
+  franchise_fee_rate numeric(5,2) not null default 0
+    check (franchise_fee_rate >= 0),
+  is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -66,10 +102,11 @@ create table if not exists public.enrollment_applications (
     check (char_length(trim(parent_phone)) between 8 and 30),
   parent_email text not null,
   course public.course_code not null,
-  slip_path text not null
+  slip_path text
     check (
-      slip_path <> ''
-      and split_part(slip_path, '/', 1) = parent_user_id::text
+      slip_path is null
+      or slip_path = ''
+      or split_part(slip_path, '/', 1) = parent_user_id::text
     ),
   status public.application_status not null default 'pending',
   payment_status public.payment_status not null default 'pending',
@@ -82,13 +119,48 @@ create table if not exists public.enrollment_applications (
 
 alter table public.enrollment_applications
   add column if not exists robot_access boolean not null default false,
-  add column if not exists art_access boolean not null default false;
+  add column if not exists art_access boolean not null default false,
+  add column if not exists student_nickname text,
+  add column if not exists parent_name text,
+  add column if not exists birth_date date,
+  add column if not exists age_years integer
+    check (age_years is null or age_years between 1 and 18),
+  add column if not exists allergy_food text,
+  add column if not exists allergy_pollen text,
+  add column if not exists student_notes text,
+  add column if not exists enrollment_source public.enrollment_source not null default 'online',
+  add column if not exists branch_id uuid references public.branches(id) on delete set null,
+  add column if not exists payment_method public.payment_method not null default 'unpaid',
+  add column if not exists paid_amount numeric(10,2) not null default 0
+    check (paid_amount >= 0),
+  add column if not exists paid_at date,
+  add column if not exists payment_note text;
+
+alter table public.enrollment_applications
+  alter column slip_path drop not null;
+
+alter table public.enrollment_applications
+  drop constraint if exists enrollment_applications_slip_path_check;
+
+alter table public.enrollment_applications
+  add constraint enrollment_applications_slip_path_check
+  check (
+    slip_path is null
+    or slip_path = ''
+    or split_part(slip_path, '/', 1) = parent_user_id::text
+  );
 
 create index if not exists enrollment_parent_user_id_idx
   on public.enrollment_applications(parent_user_id);
 
 create index if not exists enrollment_status_created_at_idx
   on public.enrollment_applications(status, created_at desc);
+
+create index if not exists enrollment_branch_id_idx
+  on public.enrollment_applications(branch_id);
+
+create index if not exists branches_is_active_name_idx
+  on public.branches(is_active, name);
 
 create schema if not exists private;
 revoke all on schema private from public;
@@ -134,6 +206,11 @@ create trigger enrollment_set_updated_at
 before update on public.enrollment_applications
 for each row execute function public.set_updated_at();
 
+drop trigger if exists branches_set_updated_at on public.branches;
+create trigger branches_set_updated_at
+before update on public.branches
+for each row execute function public.set_updated_at();
+
 create or replace function public.handle_new_auth_user()
 returns trigger
 language plpgsql
@@ -160,11 +237,31 @@ select id, 'parent'
 from auth.users
 on conflict (id) do nothing;
 
+drop function if exists public.submit_enrollment(
+  text,
+  text,
+  public.course_code,
+  text
+);
+
 create or replace function public.submit_enrollment(
   p_student_name text,
+  p_student_nickname text,
+  p_parent_name text,
   p_parent_phone text,
   p_course public.course_code,
-  p_slip_path text
+  p_enrollment_source public.enrollment_source,
+  p_branch_id uuid,
+  p_payment_method public.payment_method,
+  p_paid_amount numeric,
+  p_slip_path text default null,
+  p_birth_date date default null,
+  p_age_years integer default null,
+  p_allergy_food text default null,
+  p_allergy_pollen text default null,
+  p_student_notes text default null,
+  p_payment_note text default null,
+  p_paid_at date default null
 )
 returns public.enrollment_applications
 language plpgsql
@@ -188,10 +285,27 @@ begin
     raise exception 'Invalid phone number';
   end if;
 
-  if p_slip_path is null
-     or p_slip_path = ''
-     or split_part(p_slip_path, '/', 1) <> v_user_id::text then
+  if p_slip_path is not null
+     and p_slip_path <> ''
+     and split_part(p_slip_path, '/', 1) <> v_user_id::text then
     raise exception 'Invalid payment slip path';
+  end if;
+
+  if p_enrollment_source = 'branch' and p_branch_id is null then
+    raise exception 'Branch is required for franchise enrollment';
+  end if;
+
+  if p_branch_id is not null and not exists (
+    select 1
+    from public.branches
+    where id = p_branch_id
+      and is_active = true
+  ) then
+    raise exception 'Selected branch is not active';
+  end if;
+
+  if p_age_years is not null and p_age_years not between 1 and 18 then
+    raise exception 'Invalid student age';
   end if;
 
   select email
@@ -202,22 +316,52 @@ begin
   insert into public.enrollment_applications (
     parent_user_id,
     student_name,
+    student_nickname,
+    parent_name,
     parent_phone,
     parent_email,
     course,
     slip_path,
+    enrollment_source,
+    branch_id,
+    payment_method,
+    paid_amount,
+    paid_at,
+    birth_date,
+    age_years,
+    allergy_food,
+    allergy_pollen,
+    student_notes,
+    payment_note,
     status,
     payment_status
   )
   values (
     v_user_id,
     trim(p_student_name),
+    nullif(trim(coalesce(p_student_nickname, '')), ''),
+    nullif(trim(coalesce(p_parent_name, '')), ''),
     trim(p_parent_phone),
     v_parent_email,
     p_course,
-    p_slip_path,
+    nullif(p_slip_path, ''),
+    p_enrollment_source,
+    case when p_enrollment_source = 'branch' then p_branch_id else null end,
+    p_payment_method,
+    coalesce(p_paid_amount, 0),
+    p_paid_at,
+    p_birth_date,
+    p_age_years,
+    nullif(trim(coalesce(p_allergy_food, '')), ''),
+    nullif(trim(coalesce(p_allergy_pollen, '')), ''),
+    nullif(trim(coalesce(p_student_notes, '')), ''),
+    nullif(trim(coalesce(p_payment_note, '')), ''),
     'pending',
-    'pending'
+    case
+      when p_payment_method in ('cash', 'transfer', 'admin_chat')
+           and coalesce(p_paid_amount, 0) > 0 then 'pending'
+      else 'pending'
+    end
   )
   returning * into v_application;
 
@@ -228,15 +372,41 @@ $$;
 revoke all on function public.submit_enrollment(
   text,
   text,
+  text,
+  text,
   public.course_code,
-  text
+  public.enrollment_source,
+  uuid,
+  public.payment_method,
+  numeric,
+  text,
+  date,
+  integer,
+  text,
+  text,
+  text,
+  text,
+  date
 ) from public;
 
 grant execute on function public.submit_enrollment(
   text,
   text,
+  text,
+  text,
   public.course_code,
-  text
+  public.enrollment_source,
+  uuid,
+  public.payment_method,
+  numeric,
+  text,
+  date,
+  integer,
+  text,
+  text,
+  text,
+  text,
+  date
 ) to authenticated;
 
 create or replace function public.review_enrollment(
@@ -317,6 +487,7 @@ grant execute on function public.review_enrollment(
 
 alter table public.profiles enable row level security;
 alter table public.enrollment_applications enable row level security;
+alter table public.branches enable row level security;
 
 drop policy if exists "Parents can read their profile"
   on public.profiles;
@@ -349,14 +520,43 @@ to authenticated
 using ((select private.is_admin()))
 with check ((select private.is_admin()));
 
+drop policy if exists "Anyone can read active branches"
+  on public.branches;
+create policy "Anyone can read active branches"
+on public.branches
+for select
+to anon, authenticated
+using (is_active = true);
+
+drop policy if exists "Admins can read all branches"
+  on public.branches;
+create policy "Admins can read all branches"
+on public.branches
+for select
+to authenticated
+using ((select private.is_admin()));
+
+drop policy if exists "Admins can manage branches"
+  on public.branches;
+create policy "Admins can manage branches"
+on public.branches
+for all
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
 -- Direct inserts are disabled. The browser must use submit_enrollment(),
 -- which always creates a pending application owned by the signed-in user.
 revoke all on public.profiles from anon;
 revoke all on public.enrollment_applications from anon;
+revoke all on public.branches from anon;
 revoke insert, update, delete on public.profiles from authenticated;
 revoke insert, delete on public.enrollment_applications from authenticated;
+revoke all on public.branches from authenticated;
 grant select on public.profiles to authenticated;
 grant select, update on public.enrollment_applications to authenticated;
+grant select on public.branches to anon;
+grant select, insert, update, delete on public.branches to authenticated;
 
 -- Private bucket for payment slips.
 insert into storage.buckets (

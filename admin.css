@@ -95,6 +95,22 @@ button { cursor: pointer; }
 .stat-card strong { margin-top: 2px; font: 900 25px Nunito, sans-serif; }
 .stat-card i { margin-left: auto; color: #aa998d; font-size: 8px; font-style: normal; }
 .applications-panel { margin-top: 20px; border: 1px solid var(--line); border-radius: 24px; background: white; box-shadow: 0 8px 26px rgba(79,61,50,.045); }
+.branch-admin-grid { display: grid; grid-template-columns: minmax(320px, .82fr) 1.18fr; gap: 20px; margin-top: 22px; }
+.branch-form { display: grid; gap: 14px; border: 1px solid var(--line); border-radius: 24px; padding: 22px; background: white; box-shadow: 0 8px 26px rgba(79,61,50,.045); }
+.branch-form h3 { margin: 0; font-size: 21px; }
+.branch-form label { display: grid; gap: 7px; color: var(--brown); font-size: 13px; font-weight: 800; }
+.branch-form input {
+  width: 100%; outline: none; border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px;
+  color: var(--brown); background: #fffefa; font: inherit;
+}
+.branch-list-panel { margin-top: 0; }
+.branch-list { display: grid; gap: 10px; padding: 0 22px 22px; }
+.branch-card { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; border: 1px solid #efe7de; border-radius: 16px; padding: 14px; background: #fffefa; }
+.branch-card.inactive { opacity: .62; background: #f4f0ea; }
+.branch-card strong { display: block; font-size: 16px; }
+.branch-card small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.branch-card button { border: 0; border-radius: 11px; padding: 9px 12px; color: white; background: #668b55; font-size: 13px; font-weight: 800; }
+.branch-card.inactive button { background: #c5875d; }
 .panel-heading { display: flex; align-items: center; padding: 20px 22px 14px; }
 .panel-heading h2 { margin: 0; font-size: 17px; }
 .panel-heading p { margin: 3px 0 0; color: var(--muted); font-size: 8px; }
@@ -116,6 +132,8 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .student-cell strong, .course-cell strong { font-size: 10px; }
 .student-cell small, .course-cell small, .date-cell small { color: #99867a; font-size: 8px; }
 .slip-button { border: 1px solid #eadcb8; border-radius: 9px; padding: 7px 9px; color: #9a6c2f; background: #fff9e7; font-size: 8px; font-weight: 700; }
+.payment-mini { display: grid; gap: 2px; margin-top: 6px; color: #99867a; font-size: 8px; }
+.payment-mini small { font-size: inherit; }
 .status-pill { display: inline-flex; align-items: center; gap: 5px; border-radius: 99px; padding: 5px 8px; font-size: 8px; font-weight: 700; }
 .status-pill:before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .status-pill.pending { color: #9f741e; background: #fff2cd; }
@@ -297,6 +315,7 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   .sidebar.open { transform: translateX(0); }
   .menu-button { display: block; }
   .review-grid { grid-template-columns: 1fr; }
+  .branch-admin-grid { grid-template-columns: 1fr; }
   .slip-frame { min-height: 320px; }
   .lesson-admin-layout { grid-template-columns: 1fr; }
   .art-admin-layout { grid-template-columns: 1fr; }
@@ -382,7 +401,8 @@ body { font-size: 16px; }
 .approve-button,
 .reject-button { font-size: 14px; }
 .student-cell small,
-.student-table td small { font-size: 12px; }
+.student-table td small,
+.payment-mini { font-size: 12px; }
 .empty-state h3 { font-size: 21px; }
 .loading-cell { font-size: 14px; }
 .modal-heading span { font-size: 14px; }

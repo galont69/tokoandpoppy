@@ -246,6 +246,33 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
 .bank-details strong { color: #4f7347; font: 900 14px Nunito, sans-serif; letter-spacing: .05em; }
 .bank-details small { color: #8f7a6b; font-size: 8px; }
 .copy-account { justify-self: start; border: 0; padding: 3px 0; color: #c07862; background: transparent; font-size: 8px; font-weight: 700; }
+.source-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.source-option {
+  position: relative; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 8px;
+  border: 1.5px solid #e4d8cd; border-radius: 15px; padding: 12px; background: #fffefa; cursor: pointer;
+}
+.source-option input { position: absolute; opacity: 0; }
+.source-option > span { grid-row: span 2; display: grid; width: 38px; height: 38px; place-items: center; border-radius: 12px; background: #e8f2e0; font-size: 18px; }
+.source-option strong { font-size: 12px; }
+.source-option small { color: #9c887a; font-size: 9px; line-height: 1.45; }
+.source-option:has(input:checked) { border-color: #71965c; background: #f5faef; box-shadow: 0 0 0 3px rgba(113,150,92,.1); }
+.branch-select { margin-top: 10px; }
+.branch-select select,
+.payment-fields select {
+  width: 100%; outline: none; border: 1.5px solid #dfd2c5; border-radius: 13px; padding: 12px 14px;
+  color: #49372d; background: white; font-weight: 700;
+}
+.payment-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; border-top: 1px dashed #e7d6b3; padding-top: 12px; }
+.payment-fields label,
+.student-notes label { display: grid; gap: 6px; color: #5b463a; font-weight: 700; }
+.student-notes textarea {
+  width: 100%; resize: vertical; outline: none; border: 1.5px solid #dfd2c5; border-radius: 13px; padding: 13px 15px;
+  color: #49372d; background: rgba(255,255,255,.9); font-weight: 600;
+}
+.form-helper { display: flex; gap: 10px; border-radius: 16px; padding: 12px; color: #6b7d58; background: #f4f8ec; }
+.form-helper > span { display: grid; width: 34px; height: 34px; flex: 0 0 34px; place-items: center; border-radius: 11px; background: white; }
+.form-helper strong { font-size: 13px; }
+.form-helper p { margin: 2px 0 0; color: #8b7a6d; font-size: 11px; line-height: 1.55; }
 .upload-box {
   position: relative; display: grid !important; place-items: center; border: 2px dashed #d7c7ba; border-radius: 16px; padding: 16px;
   color: #7e6859 !important; background: #fff; text-align: center; cursor: pointer; transition: .2s;
@@ -339,7 +366,7 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
   .story-card-label { top: 15px; }
   .floating-card { display: none; }
   .sun-doodle { font-size: 48px; }
-  .two-cols, .course-options { grid-template-columns: 1fr; }
+  .two-cols, .course-options, .source-options, .payment-fields { grid-template-columns: 1fr; }
   .course-option.wide { grid-column: auto; }
   .auth-aside { min-height: 165px; }
   .bank-details { align-items: flex-start; }
@@ -387,10 +414,20 @@ legend { font-size: 15px; }
 .auth-form input[type="text"],
 .auth-form input[type="tel"],
 .auth-form input[type="email"],
-.auth-form input[type="password"] {
+.auth-form input[type="password"],
+.auth-form input[type="number"],
+.auth-form input[type="date"],
+.auth-form select,
+.auth-form textarea {
   padding: 15px 18px;
   font-size: 17px;
 }
+.source-option strong,
+.payment-fields label,
+.student-notes label,
+.form-helper strong { font-size: 15px; }
+.source-option small,
+.form-helper p { font-size: 13px; }
 .course-option strong,
 .payment-title strong,
 .upload-box strong { font-size: 15px; }
@@ -410,7 +447,11 @@ legend { font-size: 15px; }
   .auth-form input[type="text"],
   .auth-form input[type="tel"],
   .auth-form input[type="email"],
-  .auth-form input[type="password"] { font-size: 15px; }
+  .auth-form input[type="password"],
+  .auth-form input[type="number"],
+  .auth-form input[type="date"],
+  .auth-form select,
+  .auth-form textarea { font-size: 15px; }
   .course-card p,
   .course-card ul,
   .form-intro p { font-size: 15px; }
