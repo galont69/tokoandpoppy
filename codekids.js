@@ -23,6 +23,7 @@ const commandCatalog = {
   ...directions,
   key: { symbol: "🔑", label: "ใช้กุญแจ" },
   portal: { symbol: "🌀", label: "วาร์ป" },
+  loop: { symbol: "↻", label: "Loop" },
   loop2: { symbol: "↻2", label: "ทำซ้ำ 2" },
   loop3: { symbol: "↻3", label: "ทำซ้ำ 3" },
   loop4: { symbol: "↻4", label: "ทำซ้ำ 4" }
@@ -324,18 +325,27 @@ function findPortalPair(portals, position) {
 }
 
 function loopRepeat(command) {
-  return command.startsWith("loop") ? Number(command.replace("loop", "")) || 0 : 0;
+  return typeof command === "string" && command.startsWith("loop")
+    ? Number(command.replace("loop", "")) || 0
+    : 0;
+}
+
+function isLoopBlock(command) {
+  return typeof command === "object" && command?.type === "loop";
 }
 
 function previousDirectionCommand(commandsList, index) {
   for (let scan = index - 1; scan >= 0; scan -= 1) {
-    if (directions[commandsList[scan]]) return commandsList[scan];
+    const command = commandsList[scan];
+    if (isLoopBlock(command) && directions[command.command]) return command.command;
+    if (directions[command]) return command;
   }
   return null;
 }
 
 function expandedMoveCount(solution) {
   return solution.reduce((total, command, index) => {
+    if (isLoopBlock(command)) return total + (command.command ? command.count : 0);
     const repeat = loopRepeat(command);
     if (repeat) return total + repeat;
     return total + (directions[command] || commandCatalog[command] ? 1 : 0);
@@ -355,6 +365,10 @@ function tracePath(start, solution, portals = []) {
     path.push({ ...position });
   };
   solution.forEach((command, index) => {
+    if (isLoopBlock(command)) {
+      for (let count = 0; command.command && count < command.count; count += 1) step(command.command);
+      return;
+    }
     const repeat = loopRepeat(command);
     if (repeat) {
       const previous = previousDirectionCommand(solution, index);
@@ -644,43 +658,44 @@ function createTwoWheelLevels() {
 }
 
 function createBellaLevels() {
+  const loop = (command, count) => ({ type: "loop", command, count });
   const lessonOne = [
-    { start: { row: 0, col: 0 }, s: ["right", "loop2"], size: [1, 4] },
-    { start: { row: 0, col: 0 }, s: ["right", "loop3"], size: [1, 5] },
-    { start: { row: 0, col: 3 }, s: ["left", "loop2"], size: [1, 4] },
-    { start: { row: 4, col: 0 }, s: ["up", "loop3"], size: [5, 1] },
-    { start: { row: 0, col: 0 }, s: ["down", "loop2"], size: [4, 1] },
-    { start: { row: 0, col: 0 }, s: ["right", "loop4"], size: [1, 6] },
-    { start: { row: 5, col: 0 }, s: ["up", "loop4"], size: [6, 1] },
-    { start: { row: 0, col: 0 }, s: ["down", "loop3"], size: [5, 1] },
-    { start: { row: 0, col: 5 }, s: ["left", "loop4"], size: [1, 6] },
-    { start: { row: 0, col: 0 }, s: ["right", "loop2", "right", "loop2"], size: [1, 7] }
+    { start: { row: 0, col: 0 }, s: [loop("right", 3)], size: [1, 4] },
+    { start: { row: 0, col: 0 }, s: [loop("right", 4)], size: [1, 5] },
+    { start: { row: 0, col: 3 }, s: [loop("left", 3)], size: [1, 4] },
+    { start: { row: 4, col: 0 }, s: [loop("up", 4)], size: [5, 1] },
+    { start: { row: 0, col: 0 }, s: [loop("down", 3)], size: [4, 1] },
+    { start: { row: 0, col: 0 }, s: [loop("right", 5)], size: [1, 6] },
+    { start: { row: 5, col: 0 }, s: [loop("up", 5)], size: [6, 1] },
+    { start: { row: 0, col: 0 }, s: [loop("down", 4)], size: [5, 1] },
+    { start: { row: 0, col: 5 }, s: [loop("left", 5)], size: [1, 6] },
+    { start: { row: 0, col: 0 }, s: [loop("right", 3), loop("right", 3)], size: [1, 7] }
   ];
 
   const lessonTwo = [
-    { start: { row: 5, col: 0 }, s: ["up", "loop2", "right", "loop2"] },
-    { start: { row: 0, col: 0 }, s: ["right", "loop3", "down", "loop2"] },
-    { start: { row: 5, col: 5 }, s: ["left", "loop2", "up", "loop3"] },
-    { start: { row: 0, col: 5 }, s: ["down", "loop3", "left", "loop2"] },
-    { start: { row: 5, col: 0 }, s: ["up", "loop2", "right", "loop3", "down", "loop2"] },
-    { start: { row: 0, col: 0 }, s: ["down", "loop4", "right", "loop2", "up", "loop2"] },
-    { start: { row: 5, col: 5 }, s: ["left", "loop4", "up", "loop2", "right", "loop2"] },
-    { start: { row: 2, col: 0 }, s: ["right", "loop4", "down", "loop2"] },
-    { start: { row: 5, col: 2 }, s: ["up", "loop4", "right", "loop2"] },
-    { start: { row: 0, col: 3 }, s: ["down", "loop4", "left", "loop2"] }
+    { start: { row: 5, col: 0 }, s: [loop("up", 3), loop("right", 3)] },
+    { start: { row: 0, col: 0 }, s: [loop("right", 4), loop("down", 3)] },
+    { start: { row: 5, col: 5 }, s: [loop("left", 3), loop("up", 4)] },
+    { start: { row: 0, col: 5 }, s: [loop("down", 4), loop("left", 3)] },
+    { start: { row: 5, col: 0 }, s: [loop("up", 3), loop("right", 4), loop("down", 3)] },
+    { start: { row: 0, col: 0 }, s: [loop("down", 5), loop("right", 3), loop("up", 3)] },
+    { start: { row: 5, col: 5 }, s: [loop("left", 5), loop("up", 3), loop("right", 3)] },
+    { start: { row: 2, col: 0 }, s: [loop("right", 5), loop("down", 3)] },
+    { start: { row: 5, col: 2 }, s: [loop("up", 5), loop("right", 3)] },
+    { start: { row: 0, col: 3 }, s: [loop("down", 5), loop("left", 3)] }
   ];
 
   const lessonThree = [
-    { start: { row: 7, col: 0 }, s: ["up", "loop2", "right", "loop3"], o: [{ row: 6, col: 2 }, { row: 5, col: 5 }, { row: 2, col: 1 }] },
-    { start: { row: 0, col: 0 }, s: ["right", "loop3", "down", "loop2"], o: [{ row: 1, col: 2 }, { row: 4, col: 4 }, { row: 6, col: 1 }] },
-    { start: { row: 7, col: 7 }, s: ["left", "loop4", "up", "loop2"], o: [{ row: 6, col: 4 }, { row: 2, col: 2 }, { row: 3, col: 6 }] },
-    { start: { row: 0, col: 7 }, s: ["down", "loop4", "left", "loop3"], o: [{ row: 2, col: 5 }, { row: 6, col: 6 }, { row: 7, col: 2 }] },
-    { start: { row: 7, col: 0 }, s: ["up", "loop3", "right", "loop2", "down", "loop2", "right", "loop2"], o: [{ row: 6, col: 1 }, { row: 3, col: 4 }, { row: 5, col: 5 }] },
-    { start: { row: 7, col: 7 }, s: ["left", "loop3", "up", "loop3", "right", "loop2"], o: [{ row: 6, col: 2 }, { row: 4, col: 2 }, { row: 2, col: 5 }] },
-    { start: { row: 0, col: 0 }, s: ["down", "loop3", "right", "loop4", "down", "loop2"], o: [{ row: 2, col: 1 }, { row: 3, col: 4 }, { row: 6, col: 6 }] },
-    { start: { row: 0, col: 7 }, s: ["down", "loop4", "left", "loop4", "up", "loop2"], o: [{ row: 1, col: 4 }, { row: 4, col: 6 }, { row: 6, col: 1 }] },
-    { start: { row: 7, col: 0 }, s: ["up", "loop4", "right", "loop4", "down", "loop2"], o: [{ row: 6, col: 3 }, { row: 2, col: 6 }, { row: 4, col: 6 }] },
-    { start: { row: 7, col: 7 }, s: ["left", "loop4", "up", "loop4", "right", "loop2"], o: [{ row: 6, col: 5 }, { row: 3, col: 1 }, { row: 1, col: 6 }, { row: 5, col: 0 }] }
+    { start: { row: 7, col: 0 }, s: [loop("up", 3), loop("right", 4)], o: [{ row: 6, col: 2 }, { row: 5, col: 5 }, { row: 2, col: 1 }] },
+    { start: { row: 0, col: 0 }, s: [loop("right", 4), loop("down", 3)], o: [{ row: 1, col: 2 }, { row: 4, col: 4 }, { row: 6, col: 1 }] },
+    { start: { row: 7, col: 7 }, s: [loop("left", 5), loop("up", 3)], o: [{ row: 6, col: 4 }, { row: 2, col: 2 }, { row: 3, col: 6 }] },
+    { start: { row: 0, col: 7 }, s: [loop("down", 5), loop("left", 4)], o: [{ row: 2, col: 5 }, { row: 6, col: 6 }, { row: 7, col: 2 }] },
+    { start: { row: 7, col: 0 }, s: [loop("up", 4), loop("right", 3), loop("down", 3), loop("right", 3)], o: [{ row: 6, col: 1 }, { row: 3, col: 4 }, { row: 5, col: 5 }] },
+    { start: { row: 7, col: 7 }, s: [loop("left", 4), loop("up", 4), loop("right", 3)], o: [{ row: 6, col: 2 }, { row: 4, col: 2 }, { row: 2, col: 5 }] },
+    { start: { row: 0, col: 0 }, s: [loop("down", 4), loop("right", 5), loop("down", 3)], o: [{ row: 2, col: 1 }, { row: 3, col: 4 }, { row: 6, col: 6 }] },
+    { start: { row: 0, col: 7 }, s: [loop("down", 5), loop("left", 5), loop("up", 3)], o: [{ row: 1, col: 4 }, { row: 4, col: 6 }, { row: 6, col: 1 }] },
+    { start: { row: 7, col: 0 }, s: [loop("up", 5), loop("right", 5), loop("down", 3)], o: [{ row: 6, col: 3 }, { row: 2, col: 6 }, { row: 4, col: 6 }] },
+    { start: { row: 7, col: 7 }, s: [loop("left", 5), loop("up", 5), loop("right", 3)], o: [{ row: 6, col: 5 }, { row: 3, col: 1 }, { row: 1, col: 6 }, { row: 5, col: 0 }] }
   ];
 
   return [
@@ -976,25 +991,76 @@ function positionToko(animate = true) {
   if (!animate) requestAnimationFrame(() => { tokoElement.style.transition = ""; });
 }
 
+function commandDisplay(command) {
+  if (isLoopBlock(command)) return commandCatalog.loop;
+  return commandCatalog[command] || { symbol: "?", label: "คำสั่ง" };
+}
+
+function hasIncompleteLoop() {
+  return commands.some((command) => isLoopBlock(command) && !command.command);
+}
+
+function expandedProgram() {
+  return commands.flatMap((command, sourceIndex) => {
+    if (isLoopBlock(command)) {
+      if (!command.command) return [];
+      return Array.from({ length: command.count }, () => ({
+        command: command.command,
+        sourceIndex
+      }));
+    }
+    return [{ command, sourceIndex }];
+  });
+}
+
+function renderLoopBlock(command, index, activeIndex) {
+  const inner = command.command
+    ? `
+      <span class="loop-inner-command">
+        <span>${directions[command.command].symbol}</span>
+        <small>${directions[command.command].label}</small>
+      </span>
+      <button class="loop-clear" type="button" data-loop-clear="${index}" aria-label="ล้างลูกศรใน Loop">×</button>
+    `
+    : '<span class="loop-slot">วางลูกศร<br>ตรงนี้</span>';
+  const options = [2, 3, 4, 5, 6].map((count) =>
+    `<option value="${count}" ${command.count === count ? "selected" : ""}>${count} ครั้ง</option>`
+  ).join("");
+  return `
+    <div class="loop-block ${index === activeIndex ? "active" : ""} ${index < activeIndex ? "done" : ""}">
+      <div class="loop-label"><span>↻</span><strong>Loop</strong></div>
+      <div class="loop-body" data-loop-slot="${index}">${inner}</div>
+      <label class="loop-repeat">ทำซ้ำ
+        <select class="loop-count" data-loop-index="${index}" aria-label="จำนวนรอบ Loop">
+          ${options}
+        </select>
+      </label>
+    </div>
+  `;
+}
+
 function renderQueue(activeIndex = -1) {
   document.querySelector("#commandCount").textContent =
-    `${commands.length} คำสั่ง`;
+    `${commands.length} บล็อก`;
   if (!commands.length) {
     commandQueue.innerHTML =
       '<div class="queue-empty">แตะหรือ ลากไอคอน<br>มาวางตรงนี้</div>';
     return;
   }
-  commandQueue.innerHTML = commands.map((command, index) => `
-    <span class="command-token ${index === activeIndex ? "active" : ""} ${index < activeIndex ? "done" : ""}">
-      ${commandCatalog[command].symbol}
-    </span>
-  `).join("");
+  commandQueue.innerHTML = commands.map((command, index) => {
+    if (isLoopBlock(command)) return renderLoopBlock(command, index, activeIndex);
+    return `
+      <span class="command-token ${index === activeIndex ? "active" : ""} ${index < activeIndex ? "done" : ""}" title="${commandDisplay(command).label}">
+        ${commandDisplay(command).symbol}
+      </span>
+    `;
+  }).join("");
 }
 
 function setControlsDisabled(disabled) {
-  document.querySelectorAll(".arrow-pad button,.command-actions button")
+  document.querySelectorAll(".arrow-pad button,.command-actions button,.loop-count,.loop-clear")
     .forEach((button) => { button.disabled = disabled; });
-  runButton.disabled = disabled || commands.length === 0;
+  runButton.disabled = disabled || commands.length === 0 || hasIncompleteLoop();
 }
 
 function addCommand(command) {
@@ -1005,6 +1071,20 @@ function addCommand(command) {
     return;
   }
   playSound("command");
+  const lastCommand = commands[commands.length - 1];
+  if (command === "loop") {
+    commands.push({ type: "loop", command: null, count: 2 });
+    renderQueue();
+    setControlsDisabled(false);
+    showToast("เลือกหรือลากลูกศรใส่ในบล็อก Loop ได้เลย");
+    return;
+  }
+  if (isLoopBlock(lastCommand) && !lastCommand.command && directions[command]) {
+    lastCommand.command = command;
+    renderQueue();
+    setControlsDisabled(false);
+    return;
+  }
   commands.push(command);
   renderQueue();
   setControlsDisabled(false);
@@ -1141,19 +1221,24 @@ async function executeCommand(command, index) {
 
 async function runProgram() {
   if (running || !commands.length) return;
+  if (hasIncompleteLoop()) {
+    showToast("ใส่ลูกศรในบล็อก Loop ก่อนนะ");
+    return;
+  }
   running = true;
   resetPlayerOnly();
   setControlsDisabled(true);
   document.querySelector("#gameHint").textContent = "Toko กำลังเดินตามแผนของหนู...";
   let failed = false;
   let executedCount = 0;
-  for (let index = 0; index < commands.length; index += 1) {
-    renderQueue(index);
-    if (!await executeCommand(commands[index], index)) {
+  const steps = expandedProgram();
+  for (let index = 0; index < steps.length; index += 1) {
+    renderQueue(steps[index].sourceIndex);
+    if (!await executeCommand(steps[index].command, steps[index].sourceIndex)) {
       failed = true;
       break;
     }
-    executedCount = index + 1;
+    executedCount = steps[index].sourceIndex + 1;
     if (reachedTarget) break;
   }
   renderQueue(executedCount);
@@ -1402,7 +1487,40 @@ commandQueue.addEventListener("dragleave", () => {
 commandQueue.addEventListener("drop", (event) => {
   event.preventDefault();
   commandQueue.classList.remove("dragging");
-  addCommand(event.dataTransfer.getData("text/plain"));
+  const droppedCommand = event.dataTransfer.getData("text/plain");
+  const loopSlot = event.target.closest("[data-loop-slot]");
+  if (loopSlot && directions[droppedCommand]) {
+    const loopIndex = Number(loopSlot.dataset.loopSlot);
+    if (isLoopBlock(commands[loopIndex])) {
+      commands[loopIndex].command = droppedCommand;
+      playSound("command");
+      renderQueue();
+      setControlsDisabled(false);
+      return;
+    }
+  }
+  addCommand(droppedCommand);
+});
+commandQueue.addEventListener("change", (event) => {
+  const select = event.target.closest("[data-loop-index]");
+  if (!select || running) return;
+  const loopIndex = Number(select.dataset.loopIndex);
+  if (isLoopBlock(commands[loopIndex])) {
+    commands[loopIndex].count = Number(select.value);
+    playSound("loop");
+    renderQueue();
+    setControlsDisabled(false);
+  }
+});
+commandQueue.addEventListener("click", (event) => {
+  const clearButton = event.target.closest("[data-loop-clear]");
+  if (!clearButton || running) return;
+  const loopIndex = Number(clearButton.dataset.loopClear);
+  if (isLoopBlock(commands[loopIndex])) {
+    commands[loopIndex].command = null;
+    renderQueue();
+    setControlsDisabled(false);
+  }
 });
 document.querySelector("#undoCommand").addEventListener("click", () => {
   if (!running) {
