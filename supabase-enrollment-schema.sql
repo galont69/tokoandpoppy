@@ -384,11 +384,11 @@ begin
     nullif(trim(coalesce(p_allergy_pollen, '')), ''),
     nullif(trim(coalesce(p_student_notes, '')), ''),
     nullif(trim(coalesce(p_payment_note, '')), ''),
-    'pending',
+    'pending'::public.application_status,
     case
       when p_payment_method in ('cash', 'transfer', 'admin_chat')
-           and coalesce(p_paid_amount, 0) > 0 then 'pending'
-      else 'pending'
+           and coalesce(p_paid_amount, 0) > 0 then 'pending'::public.payment_status
+      else 'pending'::public.payment_status
     end
   )
   returning * into v_application;
