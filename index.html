@@ -194,29 +194,29 @@
             <h2 id="authTitle">เริ่มต้นสร้างบัญชี</h2>
             <p>กรอกข้อมูลให้ครบ แล้วรอแอดมินยืนยันการสมัคร</p>
           </div>
-          <label>ชื่อ - นามสกุลนักเรียน
+          <label>ชื่อ - นามสกุลนักเรียน <span class="field-badge required">จำเป็น</span>
             <input required name="studentName" type="text" placeholder="เช่น ด.ช. ต้นกล้า ใจดี">
           </label>
           <div class="two-cols">
-            <label>ชื่อเล่นนักเรียน
-              <input name="studentNickname" type="text" maxlength="80" placeholder="เช่น ต้นกล้า">
+            <label>ชื่อเล่นนักเรียน <span class="field-badge required">จำเป็น</span>
+              <input required name="studentNickname" type="text" maxlength="80" placeholder="เช่น ต้นกล้า">
             </label>
-            <label>ชื่อผู้ปกครอง
-              <input name="parentName" type="text" maxlength="150" placeholder="เช่น คุณแม่มะลิ">
+            <label>ชื่อผู้ปกครอง <span class="field-badge required">จำเป็น</span>
+              <input required name="parentName" type="text" maxlength="150" placeholder="เช่น คุณแม่มะลิ">
             </label>
           </div>
           <div class="two-cols">
-            <label>เบอร์โทรศัพท์
+            <label>เบอร์โทรศัพท์ <span class="field-badge required">จำเป็น</span>
               <input required name="phone" type="tel" inputmode="tel" placeholder="08x-xxx-xxxx">
             </label>
-            <label>อีเมลผู้ปกครอง
+            <label>อีเมลผู้ปกครอง <span class="field-badge required">จำเป็น</span>
               <input required name="email" type="email" placeholder="parent@email.com">
             </label>
           </div>
-          <label>วันเกิดนักเรียน
-            <input name="birthDate" type="date">
+          <label>วันเกิดนักเรียน <span class="field-badge required">จำเป็น</span>
+            <input required name="birthDate" type="date">
           </label>
-          <label>รหัสผ่าน
+          <label>รหัสผ่าน <span class="field-badge required">จำเป็น</span>
             <div class="password-field">
               <input required minlength="8" name="password" type="password" placeholder="อย่างน้อย 8 ตัวอักษร">
               <button class="toggle-password" type="button" aria-label="แสดงรหัสผ่าน">👁</button>
@@ -224,7 +224,7 @@
           </label>
 
           <fieldset>
-            <legend>เลือกคอร์สที่สนใจ</legend>
+            <legend>เลือกคอร์สที่สนใจ <span class="field-badge required">จำเป็น</span></legend>
             <div class="course-options">
               <label class="course-option">
                 <input type="radio" name="course" value="robot" required>
@@ -249,7 +249,7 @@
           </fieldset>
 
           <fieldset class="enrollment-source">
-            <legend>สมัครผ่านช่องทางไหน</legend>
+            <legend>สมัครผ่านช่องทางไหน <span class="field-badge required">จำเป็น</span></legend>
             <div class="source-options">
               <label class="source-option">
                 <input type="radio" name="enrollmentSource" value="online" checked>
@@ -264,7 +264,7 @@
                 <small>เลือกสาขาที่ดูแลนักเรียนคนนี้</small>
               </label>
             </div>
-            <label class="branch-select" id="branchSelectWrap" hidden>เลือกสาขา
+            <label class="branch-select" id="branchSelectWrap" hidden>เลือกสาขา <span class="field-badge required">จำเป็นเมื่อสมัครผ่านสาขา</span>
               <select id="branchSelect" name="branchId">
                 <option value="">กำลังโหลดรายชื่อสาขา...</option>
               </select>
@@ -277,21 +277,21 @@
               <div><strong>ข้อมูลการชำระเงิน</strong><small>จ่ายที่สาขา จ่ายสด หรือโอนผ่านแอดมินได้</small></div>
             </div>
             <div class="payment-fields">
-              <label>วิธีชำระเงิน
-                <select name="paymentMethod" id="paymentMethod">
+              <label>วิธีชำระเงิน <span class="field-badge required">จำเป็น</span>
+                <select required name="paymentMethod" id="paymentMethod">
                   <option value="unpaid">ยังไม่ชำระ</option>
                   <option value="cash">เงินสดที่สาขา</option>
                   <option value="transfer">โอนเงิน</option>
                   <option value="admin_chat">คุย/ชำระผ่านแอดมิน</option>
                 </select>
               </label>
-              <label>ยอดชำระ (บาท)
+              <label>ยอดชำระ (บาท) <span class="field-badge optional" id="paidAmountBadge">จำเป็นเมื่อชำระแล้ว</span>
                 <input name="paidAmount" type="number" min="0" step="1" inputmode="decimal" placeholder="เช่น 2500">
               </label>
-              <label>วันที่ชำระ
+              <label>วันที่ชำระ <span class="field-badge optional" id="paidAtBadge">จำเป็นเมื่อชำระแล้ว</span>
                 <input name="paidAt" type="date">
               </label>
-              <label>หมายเหตุการชำระเงิน
+              <label>หมายเหตุการชำระเงิน <span class="field-badge optional">เว้นว่างได้</span>
                 <input name="paymentNote" type="text" maxlength="220" placeholder="เช่น จ่ายสดที่สาขา / โอนให้แอดมิน">
               </label>
             </div>
@@ -299,14 +299,14 @@
 
           <div class="student-notes">
             <div class="two-cols">
-              <label>แพ้อาหาร
+              <label>แพ้อาหาร <span class="field-badge optional">เว้นว่างได้</span>
                 <input name="allergyFood" type="text" maxlength="220" placeholder="เช่น แพ้นม ถั่ว ไข่ หรือไม่มี">
               </label>
-              <label>แพ้เกสร / ภูมิแพ้
+              <label>แพ้เกสร / ภูมิแพ้ <span class="field-badge optional">เว้นว่างได้</span>
                 <input name="allergyPollen" type="text" maxlength="220" placeholder="เช่น แพ้เกสร ฝุ่น หรือไม่มี">
               </label>
             </div>
-            <label>ข้อมูลเพิ่มเติมของเด็ก
+            <label>ข้อมูลเพิ่มเติมของเด็ก <span class="field-badge optional">เว้นว่างได้</span>
               <textarea name="studentNotes" rows="3" maxlength="600" placeholder="สิ่งที่ครูควรรู้ เช่น นิสัย สิ่งที่ชอบ ข้อควรระวัง"></textarea>
             </label>
           </div>
@@ -314,7 +314,7 @@
           <label class="upload-box" id="uploadBox">
             <input id="slipInput" name="slip" type="file" accept="image/png,image/jpeg,image/webp">
             <span class="upload-icon">☁</span>
-            <strong>อัปโหลดหลักฐานการชำระเงิน (ถ้ามี)</strong>
+            <strong>อัปโหลดหลักฐานการชำระเงิน <span class="field-badge optional" id="slipBadge">จำเป็นเมื่อโอนเงิน</span></strong>
             <small>ใช้กรณีโอนเงิน PNG, JPG หรือ WEBP (ไม่เกิน 5 MB) ถ้าจ่ายสดไม่ต้องแนบรูป</small>
             <div class="file-preview" id="filePreview"></div>
           </label>

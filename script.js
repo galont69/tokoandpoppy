@@ -9,6 +9,12 @@ const filePreview = document.querySelector("#filePreview");
 const uploadBox = document.querySelector("#uploadBox");
 const branchSelect = document.querySelector("#branchSelect");
 const branchSelectWrap = document.querySelector("#branchSelectWrap");
+const paymentMethodInput = document.querySelector("#paymentMethod");
+const paidAmountInput = registerForm.querySelector("input[name=paidAmount]");
+const paidAtInput = registerForm.querySelector("input[name=paidAt]");
+const paidAmountBadge = document.querySelector("#paidAmountBadge");
+const paidAtBadge = document.querySelector("#paidAtBadge");
+const slipBadge = document.querySelector("#slipBadge");
 const toast = document.querySelector("#toast");
 const authContent = document.querySelector(".auth-content");
 const fallbackSupabaseConfig = {
@@ -104,6 +110,55 @@ function syncEnrollmentSource() {
   if (!isBranch) branchSelect.value = "";
 }
 
+function syncPaymentRequirements() {
+  const method = paymentMethodInput.value;
+  const isPaid = ["cash", "transfer", "admin_chat"].includes(method);
+  const needsSlip = method === "transfer";
+
+  paidAmountInput.required = isPaid;
+  paidAtInput.required = isPaid;
+  slipInput.required = needsSlip;
+  paidAmountInput.setCustomValidity("");
+  paidAtInput.setCustomValidity("");
+  slipInput.setCustomValidity("");
+  uploadBox.classList.toggle("required-upload", needsSlip);
+
+  paidAmountBadge.textContent = isPaid ? "จำเป็นเมื่อชำระแล้ว" : "เว้นว่างได้";
+  paidAtBadge.textContent = isPaid ? "จำเป็นเมื่อชำระแล้ว" : "เว้นว่างได้";
+  slipBadge.textContent = needsSlip ? "จำเป็นเมื่อโอนเงิน" : "เว้นว่างได้";
+}
+
+function setFriendlyValidationMessages() {
+  const messages = {
+    studentName: "กรุณากรอกชื่อ - นามสกุลนักเรียน",
+    studentNickname: "กรุณากรอกชื่อเล่นนักเรียน",
+    parentName: "กรุณากรอกชื่อผู้ปกครอง",
+    phone: "กรุณากรอกเบอร์โทรศัพท์ผู้ปกครอง",
+    email: "กรุณากรอกอีเมลผู้ปกครองให้ถูกต้อง",
+    birthDate: "กรุณาเลือกวันเกิดนักเรียน",
+    password: "กรุณาตั้งรหัสผ่านอย่างน้อย 8 ตัวอักษร",
+    branchId: "กรุณาเลือกสาขาที่สมัคร",
+    paymentMethod: "กรุณาเลือกวิธีชำระเงิน",
+    paidAmount: "กรุณากรอกยอดชำระ",
+    paidAt: "กรุณาเลือกวันที่ชำระ",
+    slip: "กรุณาแนบหลักฐานการโอนเงิน"
+  };
+
+  registerForm.querySelectorAll("input, select, textarea").forEach((field) => {
+    const message = messages[field.name];
+    if (!message) return;
+    field.addEventListener("invalid", () => {
+      field.setCustomValidity(message);
+    });
+    field.addEventListener("input", () => {
+      field.setCustomValidity("");
+    });
+    field.addEventListener("change", () => {
+      field.setCustomValidity("");
+    });
+  });
+}
+
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
@@ -176,6 +231,8 @@ registerForm.querySelectorAll("input[name=enrollmentSource]").forEach((input) =>
   input.addEventListener("change", syncEnrollmentSource);
 });
 
+paymentMethodInput.addEventListener("change", syncPaymentRequirements);
+
 ["dragenter", "dragover"].forEach((eventName) => {
   uploadBox.addEventListener(eventName, (event) => {
     event.preventDefault();
@@ -210,6 +267,7 @@ document.querySelector(".copy-account")?.addEventListener("click", async () => {
 
 registerForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  syncPaymentRequirements();
   if (!registerForm.checkValidity()) {
     registerForm.reportValidity();
     return;
@@ -223,6 +281,23 @@ registerForm.addEventListener("submit", async (event) => {
   const paymentMethod = formData.get("paymentMethod") || "unpaid";
   if (enrollmentSource === "branch" && !formData.get("branchId")) {
     showToast("กรุณาเลือกสาขาที่สมัคร");
+    return;
+  }
+  if (["cash", "transfer", "admin_chat"].includes(paymentMethod)) {
+    if (!Number(formData.get("paidAmount") || 0)) {
+      showToast("กรุณากรอกยอดชำระ");
+      paidAmountInput.focus();
+      return;
+    }
+    if (!formData.get("paidAt")) {
+      showToast("กรุณาเลือกวันที่ชำระ");
+      paidAtInput.focus();
+      return;
+    }
+  }
+  if (paymentMethod === "transfer" && !(slip instanceof File && slip.size > 0)) {
+    showToast("กรุณาแนบหลักฐานการโอนเงิน");
+    uploadBox.scrollIntoView({ behavior: "smooth", block: "center" });
     return;
   }
   submitButton.disabled = true;
@@ -303,6 +378,7 @@ document.querySelector("#closeStatus").addEventListener("click", () => {
   filePreview.innerHTML = "";
   filePreview.classList.remove("show");
   syncEnrollmentSource();
+  syncPaymentRequirements();
 });
 
 loginForm.addEventListener("submit", async (event) => {
@@ -351,4 +427,6 @@ loginForm.addEventListener("submit", async (event) => {
 });
 
 syncEnrollmentSource();
+syncPaymentRequirements();
+setFriendlyValidationMessages();
 loadBranches();

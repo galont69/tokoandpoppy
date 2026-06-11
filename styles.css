@@ -197,11 +197,17 @@ footer { color: #866f60; background: #fffaf0; font-size: 12px; }
 .form-intro h2 { margin: 3px 0 4px; font-size: 27px; }
 .form-intro p { margin: 0; color: #998477; font-size: 11px; }
 .auth-form > label, .two-cols label { display: grid; gap: 7px; color: #604d40; font-size: 11px; font-weight: 700; }
-.auth-form input[type=text], .auth-form input[type=email], .auth-form input[type=tel], .auth-form input[type=password] {
+.auth-form input[type=text], .auth-form input[type=email], .auth-form input[type=tel], .auth-form input[type=password], .auth-form input[type=number], .auth-form input[type=date] {
   width: 100%; outline: none; border: 1.5px solid #e5dacf; border-radius: 13px; padding: 12px 14px;
   color: #4d3d33; background: white; font-size: 12px; font-weight: 500; transition: .2s;
 }
 .auth-form input:focus { border-color: #80a36b; box-shadow: 0 0 0 4px rgba(111,157,85,.1); }
+.field-badge {
+  display: inline-flex; align-items: center; justify-content: center; width: max-content; margin-left: 5px;
+  border-radius: 999px; padding: 2px 7px; vertical-align: middle; font: 800 8px Nunito, sans-serif;
+}
+.field-badge.required { color: #c9705f; background: #fff0ea; }
+.field-badge.optional { color: #7a9365; background: #edf6e6; }
 .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .password-field { position: relative; }
 .password-field input { padding-right: 45px !important; }
@@ -278,6 +284,7 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
   color: #7e6859 !important; background: #fff; text-align: center; cursor: pointer; transition: .2s;
 }
 .upload-box:hover, .upload-box.dragging { border-color: #71965c; background: #f8fbf3; }
+.upload-box.required-upload { border-color: #d79b68; background: #fffaf0; }
 .upload-box input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .upload-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; color: #709158; background: #eaf3e1; font-size: 19px; }
 .upload-box strong { font-size: 10px; }
@@ -435,7 +442,8 @@ legend { font-size: 15px; }
 .payment-title small,
 .upload-box small { font-size: 13px; }
 .best-value,
-.copy-account { font-size: 12px; }
+.copy-account,
+.field-badge { font-size: 12px; }
 .bank-details p { font-size: 13px; }
 .bank-details strong { font-size: 17px; }
 .bank-details small { font-size: 12px; }

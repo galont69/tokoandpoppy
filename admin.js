@@ -15,6 +15,12 @@ const configWarning = document.querySelector("#configWarning");
 const rows = document.querySelector("#applicationRows");
 const emptyState = document.querySelector("#emptyState");
 const loadingState = document.querySelector("#loadingState");
+const searchInput = document.querySelector("#searchInput");
+const sourceFilter = document.querySelector("#sourceFilter");
+const branchFilter = document.querySelector("#branchFilter");
+const dateFromFilter = document.querySelector("#dateFromFilter");
+const dateToFilter = document.querySelector("#dateToFilter");
+const clearFiltersButton = document.querySelector("#clearFiltersButton");
 const reviewModal = document.querySelector("#reviewModal");
 const slipFrame = document.querySelector("#slipFrame");
 const openSlipLink = document.querySelector("#openSlipLink");
@@ -116,6 +122,39 @@ function getBranchName(application) {
   return application.branches?.name || "ไม่ระบุสาขา";
 }
 
+function toLocalDateInputValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  const localTime = date.getTime() - date.getTimezoneOffset() * 60000;
+  return new Date(localTime).toISOString().slice(0, 10);
+}
+
+function renderBranchFilterOptions() {
+  const currentValue = branchFilter.value || "all";
+  const seen = new Set();
+  const branchOptions = applications
+    .filter((application) => application.branch_id && application.branches?.name)
+    .filter((application) => {
+      if (seen.has(application.branch_id)) return false;
+      seen.add(application.branch_id);
+      return true;
+    })
+    .sort((a, b) => getBranchName(a).localeCompare(getBranchName(b), "th"))
+    .map((application) =>
+      `<option value="${application.branch_id}">${escapeHtml(getBranchName(application))}</option>`
+    );
+
+  branchFilter.innerHTML = [
+    '<option value="all">ทุกสาขา / ออนไลน์</option>',
+    '<option value="online">เฉพาะออนไลน์</option>',
+    '<option value="unassigned">ยังไม่ระบุสาขา</option>',
+    ...branchOptions
+  ].join("");
+  branchFilter.value = [...branchFilter.options].some(({ value }) => value === currentValue)
+    ? currentValue
+    : "all";
+}
+
 async function verifyAdmin(user) {
   const { data, error } = await supabaseClient
     .from("profiles")
@@ -156,6 +195,7 @@ async function loadApplications() {
   }
 
   applications = data || [];
+  renderBranchFilterOptions();
   updateStats();
   renderApplications();
 }
@@ -289,19 +329,41 @@ async function toggleBranch(branchId) {
 }
 
 function renderApplications() {
-  const query = document.querySelector("#searchInput").value.trim().toLowerCase();
+  const query = searchInput.value.trim().toLowerCase();
+  const selectedSource = sourceFilter.value;
+  const selectedBranch = branchFilter.value;
+  const dateFrom = dateFromFilter.value;
+  const dateTo = dateToFilter.value;
   const filtered = applications.filter((application) => {
     const matchesStatus =
       activeStatus === "all" || application.status === activeStatus;
+    const matchesSource =
+      selectedSource === "all" || application.enrollment_source === selectedSource;
+    const matchesBranch =
+      selectedBranch === "all" ||
+      (selectedBranch === "online" && application.enrollment_source === "online") ||
+      (selectedBranch === "unassigned" && application.enrollment_source === "branch" && !application.branch_id) ||
+      application.branch_id === selectedBranch;
+    const createdDate = toLocalDateInputValue(application.created_at);
+    const matchesDateFrom = !dateFrom || createdDate >= dateFrom;
+    const matchesDateTo = !dateTo || createdDate <= dateTo;
     const haystack = [
       application.student_name,
       application.student_nickname,
       application.parent_name,
       application.parent_email,
       application.parent_phone,
-      getBranchName(application)
+      getBranchName(application),
+      application.paid_amount,
+      application.payment_method,
+      application.enrollment_source
     ].join(" ").toLowerCase();
-    return matchesStatus && haystack.includes(query);
+    return matchesStatus &&
+      matchesSource &&
+      matchesBranch &&
+      matchesDateFrom &&
+      matchesDateTo &&
+      haystack.includes(query);
   });
 
   rows.innerHTML = filtered.map((application) => {
@@ -1449,7 +1511,22 @@ document.querySelector("#logoutButton").addEventListener("click", async () => {
 });
 
 document.querySelector("#refreshButton").addEventListener("click", loadApplications);
-document.querySelector("#searchInput").addEventListener("input", renderApplications);
+searchInput.addEventListener("input", renderApplications);
+sourceFilter.addEventListener("change", renderApplications);
+branchFilter.addEventListener("change", renderApplications);
+dateFromFilter.addEventListener("change", renderApplications);
+dateToFilter.addEventListener("change", renderApplications);
+clearFiltersButton.addEventListener("click", () => {
+  searchInput.value = "";
+  sourceFilter.value = "all";
+  branchFilter.value = "all";
+  dateFromFilter.value = "";
+  dateToFilter.value = "";
+  activeStatus = "all";
+  document.querySelectorAll("#filterTabs button").forEach((item) =>
+    item.classList.toggle("active", item.dataset.status === "all"));
+  renderApplications();
+});
 document.querySelector("#applicationRows").addEventListener("click", (event) => {
   const button = event.target.closest("[data-review-id]");
   if (button) openReview(button.dataset.reviewId);

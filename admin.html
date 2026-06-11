@@ -115,7 +115,7 @@
           <div class="toolbar">
             <label class="search-box">
               <span>⌕</span>
-              <input id="searchInput" type="search" placeholder="ค้นหาชื่อนักเรียน อีเมล หรือเบอร์โทร">
+              <input id="searchInput" type="search" placeholder="ค้นหาชื่อนักเรียน ชื่อเล่น ผู้ปกครอง อีเมล หรือเบอร์โทร">
             </label>
             <div class="filter-tabs" id="filterTabs">
               <button class="active" type="button" data-status="all">ทั้งหมด</button>
@@ -123,6 +123,30 @@
               <button type="button" data-status="approved">อนุมัติแล้ว</button>
               <button type="button" data-status="rejected">ไม่อนุมัติ</button>
             </div>
+          </div>
+
+          <div class="advanced-filters">
+            <label>ช่องทาง
+              <select id="sourceFilter">
+                <option value="all">ทุกช่องทาง</option>
+                <option value="online">สมัครออนไลน์</option>
+                <option value="branch">ผ่านสาขาเฟรนไชน์</option>
+              </select>
+            </label>
+            <label>สาขา
+              <select id="branchFilter">
+                <option value="all">ทุกสาขา / ออนไลน์</option>
+                <option value="online">เฉพาะออนไลน์</option>
+                <option value="unassigned">ยังไม่ระบุสาขา</option>
+              </select>
+            </label>
+            <label>สมัครตั้งแต่
+              <input id="dateFromFilter" type="date">
+            </label>
+            <label>ถึงวันที่
+              <input id="dateToFilter" type="date">
+            </label>
+            <button class="clear-filter-button" id="clearFiltersButton" type="button">ล้างตัวกรอง</button>
           </div>
 
           <div class="table-wrap">
