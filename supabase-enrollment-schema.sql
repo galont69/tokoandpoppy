@@ -244,6 +244,26 @@ drop function if exists public.submit_enrollment(
   text
 );
 
+drop function if exists public.submit_enrollment(
+  text,
+  text,
+  text,
+  text,
+  public.course_code,
+  public.enrollment_source,
+  uuid,
+  public.payment_method,
+  numeric,
+  text,
+  date,
+  integer,
+  text,
+  text,
+  text,
+  text,
+  date
+);
+
 create or replace function public.submit_enrollment(
   p_student_name text,
   p_student_nickname text,
@@ -256,7 +276,6 @@ create or replace function public.submit_enrollment(
   p_paid_amount numeric,
   p_slip_path text default null,
   p_birth_date date default null,
-  p_age_years integer default null,
   p_allergy_food text default null,
   p_allergy_pollen text default null,
   p_student_notes text default null,
@@ -271,6 +290,7 @@ as $$
 declare
   v_user_id uuid := (select auth.uid());
   v_parent_email text;
+  v_age_years integer;
   v_application public.enrollment_applications;
 begin
   if v_user_id is null then
@@ -304,8 +324,16 @@ begin
     raise exception 'Selected branch is not active';
   end if;
 
-  if p_age_years is not null and p_age_years not between 1 and 18 then
-    raise exception 'Invalid student age';
+  if p_birth_date is not null then
+    if p_birth_date > current_date then
+      raise exception 'Birth date cannot be in the future';
+    end if;
+
+    v_age_years := date_part('year', age(current_date, p_birth_date))::integer;
+
+    if v_age_years not between 1 and 18 then
+      raise exception 'Invalid student age';
+    end if;
   end if;
 
   select email
@@ -351,7 +379,7 @@ begin
     coalesce(p_paid_amount, 0),
     p_paid_at,
     p_birth_date,
-    p_age_years,
+    v_age_years,
     nullif(trim(coalesce(p_allergy_food, '')), ''),
     nullif(trim(coalesce(p_allergy_pollen, '')), ''),
     nullif(trim(coalesce(p_student_notes, '')), ''),
@@ -381,7 +409,6 @@ revoke all on function public.submit_enrollment(
   numeric,
   text,
   date,
-  integer,
   text,
   text,
   text,
@@ -401,7 +428,6 @@ grant execute on function public.submit_enrollment(
   numeric,
   text,
   date,
-  integer,
   text,
   text,
   text,

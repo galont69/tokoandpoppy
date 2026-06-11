@@ -73,19 +73,6 @@ function closeAuth() {
   document.body.style.overflow = "";
 }
 
-function calculateAgeFromBirthDate(value) {
-  if (!value) return "";
-  const birthDate = new Date(value);
-  if (Number.isNaN(birthDate.getTime())) return "";
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age -= 1;
-  }
-  return age > 0 ? String(age) : "";
-}
-
 async function loadBranches() {
   if (!branchSelect || !enrollmentSupabase) return;
   const { data, error } = await enrollmentSupabase
@@ -184,11 +171,6 @@ function renderFile(file) {
 }
 
 slipInput.addEventListener("change", () => renderFile(slipInput.files[0]));
-
-registerForm.querySelector("input[name=birthDate]").addEventListener("change", (event) => {
-  const ageInput = registerForm.querySelector("input[name=ageYears]");
-  if (!ageInput.value) ageInput.value = calculateAgeFromBirthDate(event.target.value);
-});
 
 registerForm.querySelectorAll("input[name=enrollmentSource]").forEach((input) => {
   input.addEventListener("change", syncEnrollmentSource);
@@ -290,7 +272,6 @@ registerForm.addEventListener("submit", async (event) => {
         p_paid_amount: Number(formData.get("paidAmount") || 0),
         p_slip_path: slipPath,
         p_birth_date: formData.get("birthDate") || null,
-        p_age_years: Number(formData.get("ageYears") || 0) || null,
         p_allergy_food: formData.get("allergyFood") || null,
         p_allergy_pollen: formData.get("allergyPollen") || null,
         p_student_notes: formData.get("studentNotes") || null,
