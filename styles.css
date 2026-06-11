@@ -322,8 +322,8 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
 .status-line i:last-child { border-color: #ddd4c7; }
 .status-card button { width: 100%; margin-top: 20px; border: 0; border-radius: 14px; padding: 12px; color: white; background: #6f9659; font-size: 11px; font-weight: 700; }
 .toast {
-  position: fixed; left: 50%; bottom: 24px; z-index: 150; visibility: hidden; border-radius: 999px; padding: 11px 17px;
-  color: white; background: #4d4038; box-shadow: 0 10px 30px rgba(0,0,0,.2); font-size: 11px; opacity: 0; transform: translate(-50%, 15px); transition: .25s;
+  position: fixed; left: 50%; bottom: 24px; z-index: 150; visibility: hidden; width: min(760px, calc(100% - 28px)); border-radius: 22px; padding: 13px 18px;
+  color: white; background: #4d4038; box-shadow: 0 10px 30px rgba(0,0,0,.2); font-size: 13px; line-height: 1.55; text-align: center; opacity: 0; transform: translate(-50%, 15px); transition: .25s;
 }
 .toast.show { visibility: visible; opacity: 1; transform: translate(-50%, 0); }
 

@@ -159,11 +159,97 @@ function setFriendlyValidationMessages() {
   });
 }
 
-function showToast(message) {
+function showToast(message, duration = 4000) {
   toast.textContent = message;
   toast.classList.add("show");
   window.clearTimeout(showToast.timer);
-  showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2600);
+  showToast.timer = window.setTimeout(() => toast.classList.remove("show"), duration);
+}
+
+function isExistingUserError(error) {
+  const message = `${error?.message || ""}`.toLowerCase();
+  return message.includes("already registered") ||
+    message.includes("already exists") ||
+    message.includes("user already") ||
+    message.includes("email rate limit");
+}
+
+function getFriendlySupabaseError(error) {
+  const message = error?.message || "ไม่ทราบสาเหตุ";
+  const lowerMessage = message.toLowerCase();
+
+  if (lowerMessage.includes("email not confirmed")) {
+    return "บัญชีนี้ถูกสร้างแล้ว แต่ยังไม่ได้ยืนยันอีเมล กรุณาปิด Confirm email ใน Supabase Auth หรือยืนยันอีเมลก่อน แล้วกดสมัครอีกครั้ง";
+  }
+  if (lowerMessage.includes("invalid login credentials")) {
+    return "อีเมลนี้มีบัญชีอยู่แล้ว แต่รหัสผ่านที่กรอกไม่ตรงกับบัญชีเดิม กรุณาใช้รหัสเดิมหรือลองสมัครด้วยอีเมลใหม่";
+  }
+  if (lowerMessage.includes("branch is required")) {
+    return "กรุณาเลือกสาขาที่สมัคร";
+  }
+  if (lowerMessage.includes("selected branch is not active")) {
+    return "สาขาที่เลือกยังไม่เปิดใช้งาน กรุณาเลือกสาขาใหม่";
+  }
+  if (lowerMessage.includes("row-level security") || lowerMessage.includes("permission denied")) {
+    return "สิทธิ์ Supabase ยังไม่ครบ กรุณารัน SQL schema ล่าสุดอีกครั้งใน Supabase";
+  }
+  return message;
+}
+
+async function getEnrollmentUser(formData) {
+  const email = formData.get("email");
+  const password = formData.get("password");
+  const { data: signUpData, error: signUpError } =
+    await enrollmentSupabase.auth.signUp({ email, password });
+
+  if (!signUpError && signUpData.session && signUpData.user) {
+    return signUpData.user;
+  }
+
+  if (!signUpError && signUpData.user && !signUpData.session) {
+    const { data: signInData, error: signInError } =
+      await enrollmentSupabase.auth.signInWithPassword({ email, password });
+    if (!signInError && signInData.user) return signInData.user;
+    throw signInError || new Error(
+      "สร้างบัญชีแล้ว แต่ยังไม่มี session สำหรับบันทึกใบสมัคร กรุณาปิด Confirm email ใน Supabase Auth Settings"
+    );
+  }
+
+  if (isExistingUserError(signUpError)) {
+    const { data: signInData, error: signInError } =
+      await enrollmentSupabase.auth.signInWithPassword({ email, password });
+    if (!signInError && signInData.user) {
+      showToast("พบอีเมลนี้อยู่แล้ว ระบบจะส่งใบสมัครต่อให้ด้วยบัญชีเดิม", 6500);
+      return signInData.user;
+    }
+    throw signInError || signUpError;
+  }
+
+  throw signUpError;
+}
+
+async function uploadPaymentSlip(userId, slip) {
+  if (!(slip instanceof File && slip.size > 0)) return { slipPath: null, warning: "" };
+
+  const extension = slip.name.split(".").pop().toLowerCase();
+  const fileName = `${crypto.randomUUID()}.${extension}`;
+  const slipPath = `${userId}/${fileName}`;
+  const { error } = await enrollmentSupabase.storage
+    .from("payment-slips")
+    .upload(slipPath, slip, {
+      cacheControl: "3600",
+      contentType: slip.type,
+      upsert: false
+    });
+
+  if (error) {
+    return {
+      slipPath: null,
+      warning: `ระบบอัปโหลดหลักฐานไม่สำเร็จ: ${error.message}`
+    };
+  }
+
+  return { slipPath, warning: "" };
 }
 
 document.querySelectorAll("[data-open-auth]").forEach((button) => {
@@ -304,34 +390,12 @@ registerForm.addEventListener("submit", async (event) => {
   submitButton.innerHTML = "กำลังส่งใบสมัคร...";
 
   try {
-    const { data: authData, error: signUpError } =
-      await enrollmentSupabase.auth.signUp({
-        email: formData.get("email"),
-        password: formData.get("password")
-      });
-
-    if (signUpError) throw signUpError;
-    if (!authData.session || !authData.user) {
-      throw new Error(
-        "กรุณายืนยันอีเมลก่อนสมัคร หรือปิด Confirm email ใน Supabase Auth Settings"
-      );
-    }
-
-    let slipPath = null;
-    if (slip instanceof File && slip.size > 0) {
-      const extension = slip.name.split(".").pop().toLowerCase();
-      const fileName = `${crypto.randomUUID()}.${extension}`;
-      slipPath = `${authData.user.id}/${fileName}`;
-
-      const { error: uploadError } = await enrollmentSupabase.storage
-        .from("payment-slips")
-        .upload(slipPath, slip, {
-          cacheControl: "3600",
-          contentType: slip.type,
-          upsert: false
-        });
-      if (uploadError) throw uploadError;
-    }
+    const user = await getEnrollmentUser(formData);
+    const uploadResult = await uploadPaymentSlip(user.id, slip);
+    const paymentNoteParts = [
+      formData.get("paymentNote") || "",
+      uploadResult.warning
+    ].filter(Boolean);
 
     const { error: enrollmentError } = await enrollmentSupabase.rpc(
       "submit_enrollment",
@@ -345,12 +409,12 @@ registerForm.addEventListener("submit", async (event) => {
         p_branch_id: enrollmentSource === "branch" ? formData.get("branchId") : null,
         p_payment_method: paymentMethod,
         p_paid_amount: Number(formData.get("paidAmount") || 0),
-        p_slip_path: slipPath,
+        p_slip_path: uploadResult.slipPath,
         p_birth_date: formData.get("birthDate") || null,
         p_allergy_food: formData.get("allergyFood") || null,
         p_allergy_pollen: formData.get("allergyPollen") || null,
         p_student_notes: formData.get("studentNotes") || null,
-        p_payment_note: formData.get("paymentNote") || null,
+        p_payment_note: paymentNoteParts.join("\n") || null,
         p_paid_at: formData.get("paidAt") || null
       }
     );
@@ -362,8 +426,11 @@ registerForm.addEventListener("submit", async (event) => {
     statusModal.classList.add("open");
     statusModal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
+    if (uploadResult.warning) {
+      showToast("ใบสมัครถูกบันทึกแล้ว แต่หลักฐานแนบไม่สำเร็จ แอดมินจะเห็นหมายเหตุในใบสมัคร", 9000);
+    }
   } catch (error) {
-    showToast(`ส่งใบสมัครไม่สำเร็จ: ${error.message}`);
+    showToast(`ส่งใบสมัครไม่สำเร็จ: ${getFriendlySupabaseError(error)}`, 12000);
   } finally {
     submitButton.disabled = false;
     submitButton.innerHTML = 'ส่งใบสมัคร <span>→</span>';
