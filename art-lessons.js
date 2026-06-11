@@ -25,6 +25,21 @@ let lessons = [];
 let completedLessonIds = new Set();
 let activeCategoryId = "all";
 let activeLesson = null;
+let adminPreviewMode = false;
+
+function wantsAdminPreview() {
+  return new URLSearchParams(window.location.search).get("adminPreview") === "1";
+}
+
+async function isAdminUser() {
+  const { data, error } = await client
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.role === "admin";
+}
 
 function showToast(message, error = false) {
   toast.textContent = message;
@@ -264,6 +279,50 @@ function closeLesson() {
 }
 
 async function loadCourse() {
+  if (wantsAdminPreview()) {
+    if (!(await isAdminUser())) {
+      setAccessMessage(
+        "สำหรับผู้ดูแลเท่านั้น",
+        "เปิดโหมดพรีวิวไม่ได้",
+        "บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ"
+      );
+      return;
+    }
+
+    const [
+      { data: categoryData, error: categoryError },
+      { data: levelData, error: levelError },
+      { data: lessonData, error: lessonError }
+    ] = await Promise.all([
+      client.from("art_categories").select("*").order("sort_order"),
+      client.from("art_levels").select("*").order("sort_order"),
+      client
+        .from("art_lessons")
+        .select("*, art_lesson_images(*)")
+        .order("sort_order")
+    ]);
+    if (categoryError) throw categoryError;
+    if (levelError) throw levelError;
+    if (lessonError) throw lessonError;
+
+    adminPreviewMode = true;
+    categories = categoryData || [];
+    levels = levelData || [];
+    lessons = (lessonData || []).map((lesson) => ({
+      ...lesson,
+      art_lesson_images: (lesson.art_lesson_images || [])
+        .sort((a, b) => a.sort_order - b.sort_order)
+    }));
+    completedLessonIds = new Set();
+    document.querySelector("#studentWelcome").textContent =
+      "โหมดพรีวิวแอดมิน: ดูบทเรียนเหมือนหน้าเด็ก โดยไม่บันทึกผลงานที่เรียนแล้ว";
+    document.querySelector("#artLogout").hidden = false;
+    accessScreen.hidden = true;
+    studioSection.hidden = false;
+    renderLibrary();
+    return;
+  }
+
   application = await hasArtAccess();
   if (!application || application.status !== "approved" || !application.art_access) {
     setAccessMessage(
@@ -352,6 +411,10 @@ lessonModal.addEventListener("click", (event) => {
 
 completeButton.addEventListener("click", async () => {
   if (!activeLesson || completedLessonIds.has(activeLesson.id)) return;
+  if (adminPreviewMode) {
+    showToast("โหมดพรีวิวแอดมินจะไม่บันทึกความคืบหน้า");
+    return;
+  }
   completeButton.disabled = true;
   const { error } = await client.from("art_lesson_progress").insert({
     user_id: user.id,

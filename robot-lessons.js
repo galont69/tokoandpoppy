@@ -20,6 +20,21 @@ let user = null;
 let lessons = [];
 let completedLessonIds = new Set();
 let activeLesson = null;
+let adminPreviewMode = false;
+
+function wantsAdminPreview() {
+  return new URLSearchParams(window.location.search).get("adminPreview") === "1";
+}
+
+async function isAdminUser() {
+  const { data, error } = await client
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.role === "admin";
+}
 
 function showToast(message, error = false) {
   toast.textContent = message;
@@ -170,6 +185,34 @@ function closeLesson() {
 }
 
 async function loadCourse() {
+  if (wantsAdminPreview()) {
+    if (!(await isAdminUser())) {
+      setAccessMessage(
+        "สำหรับผู้ดูแลเท่านั้น",
+        "เปิดโหมดพรีวิวไม่ได้",
+        "บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ"
+      );
+      return;
+    }
+
+    const { data: lessonData, error: lessonError } = await client
+      .from("robot_lessons")
+      .select("*")
+      .order("lesson_number");
+    if (lessonError) throw lessonError;
+
+    adminPreviewMode = true;
+    lessons = lessonData || [];
+    completedLessonIds = new Set();
+    document.querySelector("#studentWelcome").textContent =
+      "โหมดพรีวิวแอดมิน: ดูบทเรียนเหมือนหน้าเด็ก โดยไม่บันทึกความคืบหน้า";
+    document.querySelector("#robotLogout").hidden = false;
+    accessScreen.hidden = true;
+    missionSection.hidden = false;
+    renderMissionMap();
+    return;
+  }
+
   const application = await hasRobotAccess();
   if (!application || application.status !== "approved" ||
       !application.robot_access) {
@@ -235,6 +278,10 @@ lessonModal.addEventListener("click", (event) => {
 });
 completeButton.addEventListener("click", async () => {
   if (!activeLesson || completedLessonIds.has(activeLesson.id)) return;
+  if (adminPreviewMode) {
+    showToast("โหมดพรีวิวแอดมินจะไม่บันทึกความคืบหน้า");
+    return;
+  }
   completeButton.disabled = true;
   const { error } = await client.from("robot_lesson_progress").insert({
     user_id: user.id,
