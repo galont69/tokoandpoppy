@@ -52,6 +52,7 @@
         </button>
         <button class="nav-item" type="button" disabled><span>👨‍👩‍👧</span> นักเรียนทั้งหมด</button>
         <button class="nav-item" type="button" data-admin-view="lessons"><span>📚</span> จัดการบทเรียน</button>
+        <button class="nav-item" type="button" data-admin-view="art"><span>🎨</span> บทเรียนศิลปะ</button>
       </nav>
       <div class="sidebar-character">
         <img src="logo.png" alt="Toko และ Poppy">
@@ -233,6 +234,123 @@
             <div class="lesson-save-bar">
               <span id="lessonReadinessText">ไฟล์วิดีโอและ PDF จะอัปโหลดทันทีหลังเลือก</span>
               <button class="save-lesson-button" type="submit">บันทึกข้อมูลบทเรียน</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section class="content admin-view" id="artView" hidden>
+        <div class="lesson-admin-hero art-hero-admin">
+          <div>
+            <span>ART COURSE STUDIO</span>
+            <h2>จัดการบทเรียนศิลปะ</h2>
+            <p>เพิ่มบทเรียนแบบยืดหยุ่น เลือกหมวดและ Level พร้อมวิดีโอและภาพตัวอย่างผลงาน</p>
+          </div>
+          <a href="art-lessons.html" target="_blank" rel="noopener">ดูหน้าเด็ก ↗</a>
+        </div>
+
+        <div class="art-admin-layout">
+          <section class="art-catalog-panel">
+            <div class="lesson-list-heading">
+              <div><strong>บทเรียนศิลปะทั้งหมด</strong><small><span id="artLessonCount">0</span> บทเรียน</small></div>
+              <button id="refreshArtButton" type="button">↻</button>
+            </div>
+            <div class="art-admin-tools">
+              <label>หมวด
+                <select id="artCategoryFilter"></select>
+              </label>
+              <label>Level / หัวข้อ
+                <select id="artLevelFilter"></select>
+              </label>
+              <button id="addArtLessonButton" type="button">＋ เพิ่มบทเรียน</button>
+            </div>
+            <div class="lesson-admin-list art-admin-list" id="artAdminList"></div>
+          </section>
+
+          <form class="lesson-editor art-editor" id="artEditor">
+            <div class="editor-heading">
+              <div class="editor-number art-number" id="artEditorNumber">🎨</div>
+              <div>
+                <span>กำลังแก้ไข</span>
+                <h2 id="artEditorHeading">บทเรียนศิลปะ</h2>
+              </div>
+              <label class="publish-toggle">
+                <input id="artLessonPublished" type="checkbox">
+                <span></span>
+                เผยแพร่
+              </label>
+            </div>
+
+            <div class="art-form-grid">
+              <label>หมวดคอร์ส
+                <select id="artCategorySelect" required></select>
+              </label>
+              <label>Level / หัวข้อ
+                <select id="artLevelSelect"></select>
+              </label>
+            </div>
+
+            <label>ชื่อบทเรียน
+              <input id="artLessonTitle" type="text" maxlength="180" required placeholder="เช่น ระบายสีบ้านของ Poppy">
+            </label>
+            <label>ภารกิจวันนี้ / คำอธิบายสำหรับเด็ก
+              <textarea id="artLessonPrompt" rows="3" maxlength="1200" placeholder="วันนี้เราจะฟังนิทาน แล้วฝึกเทคนิคอะไร"></textarea>
+            </label>
+
+            <div class="media-upload-grid">
+              <section class="media-upload-card art-video-card">
+                <div class="media-card-title">
+                  <span>🎬</span>
+                  <div><strong>วิดีโอคุณครู</strong><small>อัปโหลดไฟล์ หรือวางลิงก์วิดีโอ</small></div>
+                </div>
+                <label class="compact-label">ลิงก์วิดีโอ
+                  <input id="artVideoUrl" type="url" placeholder="https://youtube.com/...">
+                </label>
+                <label class="file-drop">
+                  <input id="artVideoFile" type="file" accept="video/mp4,video/webm,video/quicktime">
+                  <span>＋</span>
+                  <strong>เลือกไฟล์วิดีโอ</strong>
+                  <small>แนะนำใช้ลิงก์สำหรับวิดีโอใหญ่ · ไฟล์สูงสุด 500 MB</small>
+                </label>
+                <div class="current-file" id="currentArtVideo">ยังไม่มีวิดีโอ</div>
+              </section>
+
+              <section class="media-upload-card art-gallery-card">
+                <div class="media-card-title">
+                  <span>🖼️</span>
+                  <div><strong>ภาพตัวอย่างผลงาน</strong><small>อัปโหลดได้หลายรูปพร้อมกัน</small></div>
+                </div>
+                <label class="compact-label">คำอธิบายภาพรอบนี้
+                  <input id="artImageCaption" type="text" maxlength="160" placeholder="เช่น ตัวอย่างใช้สีอบอุ่น">
+                </label>
+                <label class="file-drop">
+                  <input id="artImageFiles" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+                  <span>＋</span>
+                  <strong>เลือกภาพตัวอย่าง</strong>
+                  <small>PNG, JPG หรือ WEBP · รูปละไม่เกิน 8 MB</small>
+                </label>
+                <div class="current-file" id="currentArtImages">ยังไม่มีภาพตัวอย่าง</div>
+              </section>
+            </div>
+
+            <section class="art-gallery-manager">
+              <div class="media-card-title">
+                <span>🧺</span>
+                <div><strong>แกลเลอรีของบทเรียนนี้</strong><small>ภาพเหล่านี้จะแสดงใต้คลิปวิดีโอในหน้าเด็ก</small></div>
+              </div>
+              <div class="admin-gallery-grid" id="artImageList"></div>
+            </section>
+
+            <div class="upload-progress" id="artUploadProgress" hidden>
+              <i></i><span>กำลังอัปโหลดและบันทึกบทเรียนศิลปะ...</span>
+            </div>
+            <div class="editor-note">
+              <span>💡</span>
+              บทเรียนที่เผยแพร่แล้วจะแสดงในหน้าเด็กตามหมวดและ Level ที่เลือก
+            </div>
+            <div class="lesson-save-bar">
+              <span id="artReadinessText">เลือกหรือเพิ่มบทเรียนศิลปะเพื่อเริ่มแก้ไข</span>
+              <button class="save-lesson-button" type="submit">บันทึกบทเรียนศิลปะ</button>
             </div>
           </form>
         </div>

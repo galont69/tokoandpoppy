@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#fff4f1">
+  <title>ศิลปะแสนสนุก | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="art-lessons.css">
+</head>
+<body>
+  <div class="paper-noise" aria-hidden="true"></div>
+
+  <header class="art-header">
+    <a class="art-brand" href="index.html">
+      <img src="logo.png" alt="">
+      <span><strong>Toko & Poppy</strong><small>ART STORY STUDIO</small></span>
+    </a>
+    <div class="art-progress">
+      <span>ผลงานที่เรียนแล้ว</span>
+      <div><i id="artProgressBar"></i></div>
+      <strong id="artProgressText">0/0</strong>
+    </div>
+    <button id="artLogout" type="button" hidden>ออกจากระบบ</button>
+  </header>
+
+  <main>
+    <section class="art-hero">
+      <div class="hero-copy">
+        <span class="hero-chip">CREATIVE ART JOURNEY</span>
+        <h1>ศิลปะแสนสนุก<br><em>เรียนรู้ผ่านนิทาน</em></h1>
+        <p>เลือกหมวดที่ชอบ ดูวิดีโอคุณครู แล้วดูตัวอย่างผลงานเพื่อสร้างแรงบันดาลใจของตัวเอง</p>
+        <div class="student-welcome" id="studentWelcome">กำลังตรวจสอบสิทธิ์การเรียน...</div>
+      </div>
+      <div class="hero-art">
+        <span class="paint-dot dot-one"></span>
+        <span class="paint-dot dot-two"></span>
+        <span class="paint-dot dot-three"></span>
+        <img src="logo.png" alt="Toko และ Poppy">
+      </div>
+    </section>
+
+    <section class="studio-section" id="studioSection" hidden>
+      <div class="section-heading">
+        <div>
+          <span>ART LIBRARY</span>
+          <h2>เลือกบทเรียนศิลปะวันนี้</h2>
+          <p>แต่ละหมวดมี Level และบทเรียนที่คุณครูเพิ่มได้เรื่อยๆ</p>
+        </div>
+        <div class="art-summary"><span>🎨</span><strong id="lessonCount">0</strong><small>บทเรียน</small></div>
+      </div>
+
+      <div class="category-tabs" id="categoryTabs"></div>
+      <div class="art-library" id="artLibrary"></div>
+    </section>
+  </main>
+
+  <section class="access-screen" id="accessScreen">
+    <div class="access-card">
+      <img src="logo.png" alt="Toko and Poppy">
+      <span id="accessKicker">กำลังตรวจสอบ...</span>
+      <h2 id="accessTitle">ขอเวลา Poppy เตรียมพู่กันสักครู่</h2>
+      <p id="accessMessage">ระบบกำลังตรวจสอบบัญชีและสิทธิ์คอร์สศิลปะ</p>
+      <form id="artLoginForm" hidden>
+        <input name="email" type="email" placeholder="อีเมลผู้ปกครอง" required>
+        <input name="password" type="password" placeholder="รหัสผ่าน" required>
+        <button type="submit">เข้าสู่ห้องเรียน <span>→</span></button>
+      </form>
+      <a href="index.html">← กลับหน้าแรก</a>
+    </div>
+  </section>
+
+  <div class="lesson-backdrop" id="lessonModal" aria-hidden="true">
+    <article class="lesson-modal">
+      <button class="lesson-close" id="closeLesson" type="button" aria-label="ปิด">×</button>
+      <header class="lesson-heading">
+        <span id="lessonPath">ศิลปะ</span>
+        <h2 id="lessonModalTitle">บทเรียนศิลปะ</h2>
+        <p id="lessonModalDescription"></p>
+      </header>
+
+      <section class="video-panel">
+        <div class="panel-title">
+          <span>🎬</span>
+          <div><strong>วิดีโอคุณครู</strong><small>ฟังนิทานและดูเทคนิคศิลปะ</small></div>
+        </div>
+        <div class="video-stage" id="videoStage">
+          <div class="media-loading">กำลังเตรียมวิดีโอ...</div>
+        </div>
+      </section>
+
+      <section class="gallery-panel">
+        <div class="panel-title">
+          <span>🖼️</span>
+          <div><strong>ภาพตัวอย่างผลงาน</strong><small>ดูเป็นแรงบันดาลใจก่อนลงมือทำ</small></div>
+        </div>
+        <div class="inspiration-grid" id="inspirationGrid"></div>
+      </section>
+
+      <footer class="lesson-footer">
+        <p>ดูวิดีโอและภาพตัวอย่างแล้ว พร้อมสร้างผลงานของตัวเองหรือยัง?</p>
+        <button id="completeLesson" type="button">เรียนบทนี้แล้ว <span>★</span></button>
+      </footer>
+    </article>
+  </div>
+
+  <div class="celebration" id="celebration" aria-hidden="true">
+    <div class="celebration-card">
+      <div class="confetti">✦ ● ★ ✦ ●</div>
+      <img src="logo.png" alt="">
+      <span>ART LESSON COMPLETE</span>
+      <h2>เก่งมาก ศิลปินตัวน้อย!</h2>
+      <p>สะสมแรงบันดาลใจเพิ่มอีกหนึ่งบทแล้ว</p>
+      <button id="closeCelebration" type="button">เลือกบทเรียนต่อไป</button>
+    </div>
+  </div>
+
+  <div class="toast" id="artToast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="art-lessons.js"></script>
+</body>
+</html>

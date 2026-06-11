@@ -628,6 +628,393 @@ using (
   )
 );
 
+-- Creative Art course content management
+create table if not exists public.art_categories (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  title text not null check (char_length(trim(title)) between 2 and 180),
+  subtitle text,
+  age_group text,
+  sort_order integer not null default 0,
+  is_published boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.art_levels (
+  id uuid primary key default gen_random_uuid(),
+  category_id uuid not null references public.art_categories(id) on delete cascade,
+  level_number smallint not null check (level_number between 1 and 20),
+  title text not null check (char_length(trim(title)) between 2 and 180),
+  subtitle text,
+  sort_order integer not null default 0,
+  is_published boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (category_id, level_number)
+);
+
+create table if not exists public.art_lessons (
+  id uuid primary key default gen_random_uuid(),
+  category_id uuid not null references public.art_categories(id) on delete restrict,
+  level_id uuid references public.art_levels(id) on delete set null,
+  title text not null check (char_length(trim(title)) between 2 and 180),
+  story_prompt text,
+  video_path text,
+  video_url text,
+  sort_order integer not null default 0,
+  is_published boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  check (
+    video_url is null
+    or video_url ~* '^https?://'
+  )
+);
+
+create table if not exists public.art_lesson_images (
+  id uuid primary key default gen_random_uuid(),
+  lesson_id uuid not null references public.art_lessons(id) on delete cascade,
+  image_path text not null check (image_path <> ''),
+  caption text,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.art_lesson_progress (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  lesson_id uuid not null references public.art_lessons(id) on delete cascade,
+  completed_at timestamptz not null default now(),
+  primary key (user_id, lesson_id)
+);
+
+create index if not exists art_levels_category_idx
+  on public.art_levels(category_id, sort_order);
+
+create index if not exists art_lessons_category_level_idx
+  on public.art_lessons(category_id, level_id, sort_order);
+
+create index if not exists art_lesson_images_lesson_idx
+  on public.art_lesson_images(lesson_id, sort_order);
+
+drop trigger if exists art_categories_set_updated_at
+  on public.art_categories;
+create trigger art_categories_set_updated_at
+before update on public.art_categories
+for each row execute function public.set_updated_at();
+
+drop trigger if exists art_levels_set_updated_at
+  on public.art_levels;
+create trigger art_levels_set_updated_at
+before update on public.art_levels
+for each row execute function public.set_updated_at();
+
+drop trigger if exists art_lessons_set_updated_at
+  on public.art_lessons;
+create trigger art_lessons_set_updated_at
+before update on public.art_lessons
+for each row execute function public.set_updated_at();
+
+drop trigger if exists art_lesson_images_set_updated_at
+  on public.art_lesson_images;
+create trigger art_lesson_images_set_updated_at
+before update on public.art_lesson_images
+for each row execute function public.set_updated_at();
+
+insert into public.art_categories (
+  slug,
+  title,
+  subtitle,
+  age_group,
+  sort_order
+)
+values
+  (
+    'try-play-3-5',
+    'ศิลปะสำหรับเด็ก 3-5 ปี TRY & PLAY',
+    'ระบายสี ปั้น ตัด แปะ ไปกับนิทานแสนสนุก',
+    '3-5 ปี',
+    1
+  ),
+  (
+    'creative-art-5-8',
+    'ศิลปะสำหรับเด็กอายุ 5-8 ปี',
+    'ฝึกคิด วางแผน ออกแบบ และเล่าเรื่องผ่านงานศิลปะ',
+    '5-8 ปี',
+    2
+  ),
+  (
+    'watercolor',
+    'สีน้ำ (Water Color)',
+    'เรียนรู้สี น้ำหนักแสง เงา และบรรยากาศแบบสีน้ำ',
+    'ทุกวัย',
+    3
+  ),
+  (
+    'clay',
+    'ปั้นดินเบา (CLAY)',
+    'สร้างตัวละครและชิ้นงานสามมิติจากดินเบา',
+    'ทุกวัย',
+    4
+  )
+on conflict (slug) do update set
+  title = excluded.title,
+  subtitle = excluded.subtitle,
+  age_group = excluded.age_group,
+  sort_order = excluded.sort_order;
+
+insert into public.art_levels (
+  category_id,
+  level_number,
+  title,
+  subtitle,
+  sort_order
+)
+select id, 1, 'Level 1', 'ระบายสี ปั้น ตัด แปะ ไปกับนิทานแสนสนุก', 1
+from public.art_categories where slug = 'try-play-3-5'
+union all
+select id, 2, 'Level 2', 'ฝึกฝนการวาดรูปง่าย ๆ จากเรขาคณิตพื้นฐาน ไปกับนิทานแสนสนุก', 2
+from public.art_categories where slug = 'try-play-3-5'
+union all
+select id, 3, 'Level 3', 'พัฒนาการวาดไปอีกขั้นเพื่อแก้ไขปัญหาให้กับตัวละครสุดน่ารัก', 3
+from public.art_categories where slug = 'try-play-3-5'
+union all
+select id, 1, 'Level 1', 'ฝึกความคิดสร้างสรรค์ คิดวางแผน ก่อนลงมือทำ', 1
+from public.art_categories where slug = 'creative-art-5-8'
+union all
+select id, 2, 'Level 2', 'ฝึกความคิดสร้างสรรค์ คิดวางแผน ก่อนลงมือทำ ไปอีกขั้น', 2
+from public.art_categories where slug = 'creative-art-5-8'
+union all
+select id, 3, 'Level 3', 'ฝึกการวาดแบบสเกตและออกแบบเนื้อเรื่องและพื้นหลัง', 3
+from public.art_categories where slug = 'creative-art-5-8'
+on conflict (category_id, level_number) do update set
+  title = excluded.title,
+  subtitle = excluded.subtitle,
+  sort_order = excluded.sort_order;
+
+create or replace function private.has_art_access()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.enrollment_applications
+    where parent_user_id = (select auth.uid())
+      and status = 'approved'
+      and art_access = true
+  );
+$$;
+
+revoke all on function private.has_art_access() from public;
+grant execute on function private.has_art_access() to authenticated;
+
+alter table public.art_categories enable row level security;
+alter table public.art_levels enable row level security;
+alter table public.art_lessons enable row level security;
+alter table public.art_lesson_images enable row level security;
+alter table public.art_lesson_progress enable row level security;
+
+drop policy if exists "Art students read published categories"
+  on public.art_categories;
+create policy "Art students read published categories"
+on public.art_categories
+for select
+to authenticated
+using (
+  (is_published and (select private.has_art_access()))
+  or (select private.is_admin())
+);
+
+drop policy if exists "Admins manage art categories"
+  on public.art_categories;
+create policy "Admins manage art categories"
+on public.art_categories
+for all
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+drop policy if exists "Art students read published levels"
+  on public.art_levels;
+create policy "Art students read published levels"
+on public.art_levels
+for select
+to authenticated
+using (
+  (is_published and (select private.has_art_access()))
+  or (select private.is_admin())
+);
+
+drop policy if exists "Admins manage art levels"
+  on public.art_levels;
+create policy "Admins manage art levels"
+on public.art_levels
+for all
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+drop policy if exists "Art students read published lessons"
+  on public.art_lessons;
+create policy "Art students read published lessons"
+on public.art_lessons
+for select
+to authenticated
+using (
+  (is_published and (select private.has_art_access()))
+  or (select private.is_admin())
+);
+
+drop policy if exists "Admins manage art lessons"
+  on public.art_lessons;
+create policy "Admins manage art lessons"
+on public.art_lessons
+for all
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+drop policy if exists "Art students read lesson images"
+  on public.art_lesson_images;
+create policy "Art students read lesson images"
+on public.art_lesson_images
+for select
+to authenticated
+using (
+  exists (
+    select 1
+    from public.art_lessons
+    where art_lessons.id = art_lesson_images.lesson_id
+      and art_lessons.is_published
+      and (select private.has_art_access())
+  )
+  or (select private.is_admin())
+);
+
+drop policy if exists "Admins manage art lesson images"
+  on public.art_lesson_images;
+create policy "Admins manage art lesson images"
+on public.art_lesson_images
+for all
+to authenticated
+using ((select private.is_admin()))
+with check ((select private.is_admin()));
+
+drop policy if exists "Students read their art progress"
+  on public.art_lesson_progress;
+create policy "Students read their art progress"
+on public.art_lesson_progress
+for select
+to authenticated
+using (
+  user_id = (select auth.uid())
+  and (select private.has_art_access())
+);
+
+drop policy if exists "Students complete art lessons"
+  on public.art_lesson_progress;
+create policy "Students complete art lessons"
+on public.art_lesson_progress
+for insert
+to authenticated
+with check (
+  user_id = (select auth.uid())
+  and (select private.has_art_access())
+);
+
+drop policy if exists "Students reset their art progress"
+  on public.art_lesson_progress;
+create policy "Students reset their art progress"
+on public.art_lesson_progress
+for delete
+to authenticated
+using (
+  user_id = (select auth.uid())
+  and (select private.has_art_access())
+);
+
+revoke all on public.art_categories from anon;
+revoke all on public.art_levels from anon;
+revoke all on public.art_lessons from anon;
+revoke all on public.art_lesson_images from anon;
+revoke all on public.art_lesson_progress from anon;
+grant select, insert, update, delete on public.art_categories to authenticated;
+grant select, insert, update, delete on public.art_levels to authenticated;
+grant select, insert, update, delete on public.art_lessons to authenticated;
+grant select, insert, update, delete on public.art_lesson_images to authenticated;
+grant select, insert, delete on public.art_lesson_progress to authenticated;
+
+insert into storage.buckets (
+  id,
+  name,
+  public,
+  file_size_limit,
+  allowed_mime_types
+)
+values (
+  'art-videos',
+  'art-videos',
+  false,
+  524288000,
+  array['video/mp4', 'video/webm', 'video/quicktime']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+insert into storage.buckets (
+  id,
+  name,
+  public,
+  file_size_limit,
+  allowed_mime_types
+)
+values (
+  'art-gallery',
+  'art-gallery',
+  false,
+  8388608,
+  array['image/jpeg', 'image/png', 'image/webp']
+)
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Admins manage art course files"
+  on storage.objects;
+create policy "Admins manage art course files"
+on storage.objects
+for all
+to authenticated
+using (
+  bucket_id in ('art-videos', 'art-gallery')
+  and (select private.is_admin())
+)
+with check (
+  bucket_id in ('art-videos', 'art-gallery')
+  and (select private.is_admin())
+);
+
+drop policy if exists "Art students read course files"
+  on storage.objects;
+create policy "Art students read course files"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id in ('art-videos', 'art-gallery')
+  and (
+    (select private.has_art_access())
+    or (select private.is_admin())
+  )
+);
+
 -- Promote an existing user to admin after replacing the email below:
 --
 -- update public.profiles

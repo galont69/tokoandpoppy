@@ -27,12 +27,24 @@ const rejectButton = document.querySelector("#rejectButton");
 const lessonAdminList = document.querySelector("#lessonAdminList");
 const lessonEditor = document.querySelector("#lessonEditor");
 const lessonUploadProgress = document.querySelector("#lessonUploadProgress");
+const artAdminList = document.querySelector("#artAdminList");
+const artEditor = document.querySelector("#artEditor");
+const artUploadProgress = document.querySelector("#artUploadProgress");
+const artCategoryFilter = document.querySelector("#artCategoryFilter");
+const artLevelFilter = document.querySelector("#artLevelFilter");
+const artCategorySelect = document.querySelector("#artCategorySelect");
+const artLevelSelect = document.querySelector("#artLevelSelect");
+const artImageList = document.querySelector("#artImageList");
 
 let applications = [];
 let activeStatus = "all";
 let activeApplication = null;
 let robotLessons = [];
 let activeLesson = null;
+let artCategories = [];
+let artLevels = [];
+let artLessons = [];
+let activeArtLesson = null;
 
 const courseLabels = {
   robot: ["โรบอท + โค้ดดิ้ง", "SPIKE Essential"],
@@ -137,12 +149,17 @@ function showAdminView(viewName) {
   document.querySelectorAll("[data-admin-view]").forEach((button) => {
     button.classList.toggle("active", button.dataset.adminView === viewName);
   });
-  document.querySelector(".topbar h1").textContent =
-    viewName === "lessons" ? "จัดการบทเรียนโรบอท" : "ใบสมัครเรียน";
-  document.querySelector(".page-kicker").textContent =
-    viewName === "lessons" ? "ROBOT COURSE STUDIO" : "ศูนย์จัดการสมาชิก";
+  const viewCopy = {
+    applications: ["ใบสมัครเรียน", "ศูนย์จัดการสมาชิก"],
+    lessons: ["จัดการบทเรียนโรบอท", "ROBOT COURSE STUDIO"],
+    art: ["จัดการบทเรียนศิลปะ", "ART COURSE STUDIO"]
+  };
+  const [title, kicker] = viewCopy[viewName] || viewCopy.applications;
+  document.querySelector(".topbar h1").textContent = title;
+  document.querySelector(".page-kicker").textContent = kicker;
   document.querySelector(".sidebar").classList.remove("open");
   if (viewName === "lessons") loadRobotLessons();
+  if (viewName === "art") loadArtStudio();
 }
 
 function renderApplications() {
@@ -607,6 +624,464 @@ lessonEditor.addEventListener("submit", async (event) => {
   } finally {
     saveButton.disabled = false;
     lessonUploadProgress.hidden = true;
+  }
+});
+
+function categoryById(categoryId) {
+  return artCategories.find(({ id }) => id === categoryId);
+}
+
+function levelById(levelId) {
+  return artLevels.find(({ id }) => id === levelId);
+}
+
+function selectedArtCategoryId() {
+  return artCategoryFilter.value === "all"
+    ? (artCategories[0]?.id || "")
+    : artCategoryFilter.value;
+}
+
+function renderArtOptions() {
+  const categoryOptions = [
+    '<option value="all">ทุกหมวด</option>',
+    ...artCategories.map((category) =>
+      `<option value="${category.id}">${escapeHtml(category.title)}</option>`)
+  ].join("");
+  const currentFilter = artCategoryFilter.value || "all";
+  artCategoryFilter.innerHTML = categoryOptions;
+  artCategoryFilter.value = artCategories.some(({ id }) => id === currentFilter)
+    ? currentFilter
+    : "all";
+
+  const filteredLevels = artLevels.filter((level) =>
+    artCategoryFilter.value === "all" ||
+    level.category_id === artCategoryFilter.value);
+  const currentLevel = artLevelFilter.value || "all";
+  artLevelFilter.innerHTML = [
+    '<option value="all">ทุก Level / ไม่มี Level</option>',
+    ...filteredLevels.map((level) =>
+      `<option value="${level.id}">${escapeHtml(level.title)}</option>`)
+  ].join("");
+  artLevelFilter.value = filteredLevels.some(({ id }) => id === currentLevel)
+    ? currentLevel
+    : "all";
+
+  artCategorySelect.innerHTML = artCategories.map((category) =>
+    `<option value="${category.id}">${escapeHtml(category.title)}</option>`
+  ).join("");
+  renderArtLevelSelect();
+}
+
+function renderArtLevelSelect() {
+  const categoryId = artCategorySelect.value || activeArtLesson?.category_id;
+  const levels = artLevels.filter((level) => level.category_id === categoryId);
+  const selectedLevel = artLevelSelect.value || activeArtLesson?.level_id || "";
+  artLevelSelect.innerHTML = [
+    '<option value="">ไม่ผูกกับ Level</option>',
+    ...levels.map((level) =>
+      `<option value="${level.id}">${escapeHtml(level.title)}</option>`)
+  ].join("");
+  artLevelSelect.value = levels.some(({ id }) => id === selectedLevel)
+    ? selectedLevel
+    : "";
+}
+
+function renderArtLessons() {
+  const filtered = artLessons.filter((lesson) => {
+    const matchesCategory =
+      artCategoryFilter.value === "all" ||
+      lesson.category_id === artCategoryFilter.value;
+    const matchesLevel =
+      artLevelFilter.value === "all" ||
+      lesson.level_id === artLevelFilter.value;
+    return matchesCategory && matchesLevel;
+  });
+
+  document.querySelector("#artLessonCount").textContent = filtered.length;
+  if (!filtered.length) {
+    artAdminList.innerHTML =
+      '<div class="loading-state art-empty"><span>ยังไม่มีบทเรียนในหมวดนี้</span></div>';
+    return;
+  }
+
+  artAdminList.innerHTML = filtered.map((lesson, index) => {
+    const category = categoryById(lesson.category_id);
+    const level = levelById(lesson.level_id);
+    const hasVideo = Boolean(lesson.video_path || lesson.video_url);
+    const imageCount = lesson.art_lesson_images?.length || 0;
+    return `
+      <button class="lesson-admin-item art-item ${activeArtLesson?.id === lesson.id ? "active" : ""}"
+        type="button" data-art-lesson-id="${lesson.id}">
+        <span>${String(index + 1).padStart(2, "0")}</span>
+        <div>
+          <strong>${escapeHtml(lesson.title || "บทเรียนศิลปะ")}</strong>
+          <small>${escapeHtml(level?.title || category?.title || "ไม่มีหมวด")} · ${hasVideo ? "มีวิดีโอ" : "ยังไม่มีวิดีโอ"} · ${imageCount} รูป</small>
+        </div>
+        <i class="${lesson.is_published ? "ready" : ""}"></i>
+      </button>
+    `;
+  }).join("");
+}
+
+async function renderArtImageList() {
+  const images = activeArtLesson?.art_lesson_images || [];
+  const currentImages = document.querySelector("#currentArtImages");
+  currentImages.textContent = images.length
+    ? `มีภาพตัวอย่างแล้ว ${images.length} รูป`
+    : "ยังไม่มีภาพตัวอย่าง";
+  currentImages.classList.toggle("ready", images.length > 0);
+
+  if (!images.length) {
+    artImageList.innerHTML =
+      '<div class="gallery-empty">ยังไม่มีภาพตัวอย่างในบทเรียนนี้</div>';
+    return;
+  }
+
+  const cards = await Promise.all(images.map(async (image) => {
+    const { data } = await supabaseClient.storage
+      .from("art-gallery")
+      .createSignedUrl(image.image_path, 300);
+    return `
+      <article class="admin-gallery-item">
+        ${data?.signedUrl
+          ? `<img src="${escapeHtml(data.signedUrl)}" alt="${escapeHtml(image.caption || "ภาพตัวอย่างศิลปะ")}">`
+          : `<div class="image-missing">เปิดรูปไม่ได้</div>`}
+        <div>
+          <strong>${escapeHtml(image.caption || "ภาพตัวอย่าง")}</strong>
+          <small>${escapeHtml(image.image_path)}</small>
+        </div>
+        <button type="button" data-delete-art-image="${image.id}">ลบรูป</button>
+      </article>
+    `;
+  }));
+  artImageList.innerHTML = cards.join("");
+}
+
+function updateArtReadiness() {
+  if (!activeArtLesson) return;
+  const readiness = document.querySelector("#artReadinessText");
+  const saveButton = artEditor.querySelector(".save-lesson-button");
+  const hasVideo = Boolean(activeArtLesson.video_path || activeArtLesson.video_url);
+  const imageCount = activeArtLesson.art_lesson_images?.length || 0;
+
+  readiness.className = "";
+  if (activeArtLesson.is_published) {
+    readiness.textContent =
+      `✓ เผยแพร่แล้ว มีวิดีโอ${hasVideo ? "" : " (ควรเพิ่ม)"} และภาพ ${imageCount} รูป`;
+    readiness.classList.add("ready");
+    saveButton.textContent = "บันทึกการแก้ไข";
+  } else if (hasVideo) {
+    readiness.textContent =
+      imageCount
+        ? "พร้อมเผยแพร่บทเรียนศิลปะ"
+        : "มีวิดีโอแล้ว แนะนำเพิ่มภาพตัวอย่างก่อนเผยแพร่";
+    readiness.classList.add(imageCount ? "ready" : "warning");
+    saveButton.textContent = "บันทึกบทเรียนศิลปะ";
+  } else {
+    readiness.textContent = "ยังขาดวิดีโอหรือวิดีโอลิงก์สำหรับหน้าเด็ก";
+    readiness.classList.add("warning");
+    saveButton.textContent = "บันทึกข้อมูลบทเรียน";
+  }
+}
+
+function selectArtLesson(lessonId) {
+  activeArtLesson = artLessons.find((lesson) => lesson.id === lessonId);
+  if (!activeArtLesson) return;
+  document.querySelector("#artEditorNumber").textContent = "🎨";
+  document.querySelector("#artEditorHeading").textContent =
+    activeArtLesson.title || "บทเรียนศิลปะ";
+  artCategorySelect.value = activeArtLesson.category_id || artCategories[0]?.id || "";
+  renderArtLevelSelect();
+  artLevelSelect.value = activeArtLesson.level_id || "";
+  document.querySelector("#artLessonTitle").value = activeArtLesson.title || "";
+  document.querySelector("#artLessonPrompt").value =
+    activeArtLesson.story_prompt || "";
+  document.querySelector("#artVideoUrl").value = activeArtLesson.video_url || "";
+  document.querySelector("#artLessonPublished").checked =
+    activeArtLesson.is_published;
+  document.querySelector("#artVideoFile").value = "";
+  document.querySelector("#artImageFiles").value = "";
+  document.querySelector("#artImageCaption").value = "";
+
+  const currentVideo = document.querySelector("#currentArtVideo");
+  const videoLabel = activeArtLesson.video_path || activeArtLesson.video_url;
+  currentVideo.textContent = videoLabel
+    ? `มีวิดีโอแล้ว: ${videoLabel}`
+    : "ยังไม่มีวิดีโอ";
+  currentVideo.classList.toggle("ready", Boolean(videoLabel));
+  updateArtReadiness();
+  renderArtLessons();
+  renderArtImageList();
+}
+
+async function loadArtStudio() {
+  artAdminList.innerHTML =
+    '<div class="loading-state"><i></i><span>กำลังโหลดบทเรียนศิลปะ...</span></div>';
+  const [categoryResult, levelResult, lessonResult] = await Promise.all([
+    supabaseClient.from("art_categories").select("*").order("sort_order"),
+    supabaseClient.from("art_levels").select("*").order("sort_order"),
+    supabaseClient
+      .from("art_lessons")
+      .select("*, art_lesson_images(*)")
+      .order("sort_order")
+  ]);
+
+  const firstError =
+    categoryResult.error || levelResult.error || lessonResult.error;
+  if (firstError) {
+    artAdminList.innerHTML = "";
+    showToast(`โหลดบทเรียนศิลปะไม่สำเร็จ: ${firstError.message}`, true);
+    return;
+  }
+
+  artCategories = categoryResult.data || [];
+  artLevels = levelResult.data || [];
+  artLessons = (lessonResult.data || []).map((lesson) => ({
+    ...lesson,
+    art_lesson_images: [...(lesson.art_lesson_images || [])]
+      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+  }));
+
+  renderArtOptions();
+  if (!activeArtLesson || !artLessons.some(({ id }) => id === activeArtLesson.id)) {
+    activeArtLesson = artLessons[0] || null;
+  } else {
+    activeArtLesson = artLessons.find(({ id }) => id === activeArtLesson.id);
+  }
+  renderArtLessons();
+  if (activeArtLesson) selectArtLesson(activeArtLesson.id);
+}
+
+async function createArtLesson() {
+  if (!artCategories.length) {
+    showToast("ยังไม่มีหมวดศิลปะ กรุณารัน SQL สำหรับสร้างหมวดก่อน", true);
+    return;
+  }
+  const categoryId = selectedArtCategoryId();
+  const levelId =
+    artLevelFilter.value !== "all"
+      ? artLevelFilter.value
+      : artLevels.find((level) => level.category_id === categoryId)?.id || null;
+  const sortOrder =
+    Math.max(0, ...artLessons.map((lesson) => lesson.sort_order || 0)) + 1;
+
+  const { data, error } = await supabaseClient
+    .from("art_lessons")
+    .insert({
+      category_id: categoryId,
+      level_id: levelId,
+      title: "บทเรียนศิลปะใหม่",
+      story_prompt: "",
+      sort_order: sortOrder,
+      is_published: false
+    })
+    .select()
+    .single();
+
+  if (error) {
+    showToast(`เพิ่มบทเรียนไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  activeArtLesson = data;
+  showToast("เพิ่มบทเรียนศิลปะใหม่แล้ว");
+  await loadArtStudio();
+  selectArtLesson(data.id);
+}
+
+async function uploadArtFile(bucket, file, lessonId) {
+  const folder = `lesson-${lessonId}`;
+  const path = `${folder}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+  const { error } = await supabaseClient.storage
+    .from(bucket)
+    .upload(path, file, {
+      contentType: file.type,
+      cacheControl: "3600",
+      upsert: false
+    });
+  if (error) throw error;
+  return path;
+}
+
+async function uploadArtVideo(input) {
+  const file = input.files[0];
+  if (!file || !activeArtLesson) return;
+  if (file.size > 500 * 1024 * 1024) {
+    input.value = "";
+    showToast("วิดีโอมีขนาดเกิน 500 MB แนะนำใช้ลิงก์วิดีโอแทน", true);
+    return;
+  }
+  if (!["video/mp4", "video/webm", "video/quicktime"].includes(file.type)) {
+    input.value = "";
+    showToast("ชนิดไฟล์วิดีโอไม่ถูกต้อง", true);
+    return;
+  }
+
+  const dropZone = input.closest(".file-drop");
+  const currentVideo = document.querySelector("#currentArtVideo");
+  dropZone.classList.add("uploading");
+  currentVideo.className = "current-file selected uploading";
+  currentVideo.textContent =
+    `เลือกแล้ว: ${file.name} (${formatFileSize(file.size)}) · กำลังอัปโหลด`;
+
+  try {
+    const path = await uploadArtFile("art-videos", file, activeArtLesson.id);
+    const { error } = await supabaseClient
+      .from("art_lessons")
+      .update({ video_path: path })
+      .eq("id", activeArtLesson.id);
+    if (error) throw error;
+    activeArtLesson.video_path = path;
+    const index = artLessons.findIndex(({ id }) => id === activeArtLesson.id);
+    if (index >= 0) artLessons[index].video_path = path;
+    currentVideo.className = "current-file ready";
+    currentVideo.textContent =
+      `อัปโหลดสำเร็จ: ${file.name} (${formatFileSize(file.size)})`;
+    updateArtReadiness();
+    renderArtLessons();
+    showToast("อัปโหลดวิดีโอศิลปะสำเร็จ");
+  } catch (error) {
+    currentVideo.className = "current-file selected";
+    currentVideo.textContent = `อัปโหลดไม่สำเร็จ: ${file.name}`;
+    showToast(`อัปโหลดวิดีโอไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    input.value = "";
+    dropZone.classList.remove("uploading");
+  }
+}
+
+async function uploadArtImages(input) {
+  const files = Array.from(input.files || []);
+  if (!files.length || !activeArtLesson) return;
+  const invalid = files.find((file) =>
+    file.size > 8 * 1024 * 1024 ||
+    !["image/jpeg", "image/png", "image/webp"].includes(file.type));
+  if (invalid) {
+    input.value = "";
+    showToast("รูปต้องเป็น PNG, JPG หรือ WEBP และไม่เกิน 8 MB ต่อรูป", true);
+    return;
+  }
+
+  const caption = document.querySelector("#artImageCaption").value.trim();
+  const dropZone = input.closest(".file-drop");
+  const currentImages = document.querySelector("#currentArtImages");
+  dropZone.classList.add("uploading");
+  currentImages.className = "current-file selected uploading";
+  currentImages.textContent = `กำลังอัปโหลด ${files.length} รูป`;
+
+  try {
+    const currentCount = activeArtLesson.art_lesson_images?.length || 0;
+    const rowsToInsert = [];
+    for (const [index, file] of files.entries()) {
+      const path = await uploadArtFile("art-gallery", file, activeArtLesson.id);
+      rowsToInsert.push({
+        lesson_id: activeArtLesson.id,
+        image_path: path,
+        caption: caption || file.name.replace(/\.[^.]+$/, ""),
+        sort_order: currentCount + index + 1
+      });
+    }
+    const { error } = await supabaseClient
+      .from("art_lesson_images")
+      .insert(rowsToInsert);
+    if (error) throw error;
+
+    showToast(`อัปโหลดภาพตัวอย่าง ${files.length} รูปสำเร็จ`);
+    input.value = "";
+    await loadArtStudio();
+    selectArtLesson(activeArtLesson.id);
+  } catch (error) {
+    currentImages.className = "current-file selected";
+    currentImages.textContent = "อัปโหลดภาพไม่สำเร็จ";
+    showToast(`อัปโหลดภาพไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    dropZone.classList.remove("uploading");
+  }
+}
+
+async function deleteArtImage(imageId) {
+  if (!activeArtLesson) return;
+  const image = activeArtLesson.art_lesson_images?.find(({ id }) => id === imageId);
+  const { error } = await supabaseClient
+    .from("art_lesson_images")
+    .delete()
+    .eq("id", imageId);
+  if (error) {
+    showToast(`ลบรูปไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+  if (image?.image_path) {
+    await supabaseClient.storage.from("art-gallery").remove([image.image_path]);
+  }
+  showToast("ลบรูปตัวอย่างแล้ว");
+  await loadArtStudio();
+  selectArtLesson(activeArtLesson.id);
+}
+
+artCategoryFilter.addEventListener("change", () => {
+  renderArtOptions();
+  renderArtLessons();
+});
+artLevelFilter.addEventListener("change", renderArtLessons);
+artCategorySelect.addEventListener("change", renderArtLevelSelect);
+document.querySelector("#addArtLessonButton").addEventListener("click", createArtLesson);
+document.querySelector("#refreshArtButton").addEventListener("click", loadArtStudio);
+artAdminList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-art-lesson-id]");
+  if (button) selectArtLesson(button.dataset.artLessonId);
+});
+document.querySelector("#artVideoFile").addEventListener("change", (event) =>
+  uploadArtVideo(event.currentTarget));
+document.querySelector("#artImageFiles").addEventListener("change", (event) =>
+  uploadArtImages(event.currentTarget));
+artImageList.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-delete-art-image]");
+  if (button) deleteArtImage(button.dataset.deleteArtImage);
+});
+
+artEditor.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!activeArtLesson) return;
+
+  const title = document.querySelector("#artLessonTitle").value.trim();
+  const storyPrompt = document.querySelector("#artLessonPrompt").value.trim();
+  const videoUrl = document.querySelector("#artVideoUrl").value.trim();
+  const categoryId = artCategorySelect.value;
+  const levelId = artLevelSelect.value || null;
+  const publish = document.querySelector("#artLessonPublished").checked;
+
+  if (publish && !(activeArtLesson.video_path || videoUrl)) {
+    showToast("กรุณาเพิ่มวิดีโอหรือวางลิงก์วิดีโอก่อนเผยแพร่", true);
+    return;
+  }
+
+  const saveButton = artEditor.querySelector(".save-lesson-button");
+  saveButton.disabled = true;
+  artUploadProgress.hidden = false;
+  try {
+    const { error } = await supabaseClient
+      .from("art_lessons")
+      .update({
+        category_id: categoryId,
+        level_id: levelId,
+        title,
+        story_prompt: storyPrompt,
+        video_url: videoUrl || null,
+        video_path: activeArtLesson.video_path || null,
+        is_published: publish
+      })
+      .eq("id", activeArtLesson.id);
+    if (error) throw error;
+
+    showToast("บันทึกบทเรียนศิลปะแล้ว");
+    activeArtLesson = { ...activeArtLesson, category_id: categoryId, level_id: levelId };
+    await loadArtStudio();
+    selectArtLesson(activeArtLesson.id);
+  } catch (error) {
+    showToast(`บันทึกบทเรียนศิลปะไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    saveButton.disabled = false;
+    artUploadProgress.hidden = true;
   }
 });
 

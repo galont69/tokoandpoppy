@@ -248,6 +248,35 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .upload-progress { display: flex; align-items: center; justify-content: center; gap: 8px; color: #718366; font-size: 8px; }
 .upload-progress i { width: 16px; height: 16px; border: 2px solid #dce6d4; border-top-color: #638852; border-radius: 50%; animation: spin .8s linear infinite; }
 
+.art-hero-admin {
+  background:
+    radial-gradient(circle at 82% 18%, rgba(255,255,255,.92), transparent 28%),
+    linear-gradient(120deg, #f8d9d2 0%, #fff0bd 48%, #d9edf0 100%);
+}
+.art-admin-layout { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 18px; margin-top: 20px; }
+.art-catalog-panel { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 22px; background: white; box-shadow: 0 8px 25px rgba(79,61,50,.045); }
+.art-admin-tools { display: grid; gap: 12px; border-bottom: 1px solid var(--line); padding: 14px; background: linear-gradient(180deg, #fffdf8, #fff8ea); }
+.art-admin-tools label, .art-form-grid label { display: grid; gap: 7px; color: #665247; font-size: 9px; font-weight: 700; }
+.art-admin-tools select, .art-form-grid select {
+  width: 100%; outline: none; border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; color: var(--brown); background: white; font: inherit;
+}
+.art-admin-tools select:focus, .art-form-grid select:focus { border-color: #c98c70; box-shadow: 0 0 0 3px rgba(201,140,112,.12); }
+#addArtLessonButton { border: 0; border-radius: 13px; padding: 12px; color: white; background: linear-gradient(135deg, #d17d6c, #e4a23d); font-size: 10px; font-weight: 800; box-shadow: 0 9px 18px rgba(196,116,71,.14); }
+.art-item.active > span, .art-number { background: linear-gradient(135deg, #d17d6c, #e4a23d); }
+.art-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+.art-editor .art-gallery-card { border-color: #ead7c5; background: #fff8ef; }
+.art-editor .art-gallery-card .file-drop { border-color: #dbbfa3; color: #a56d45 !important; }
+.art-gallery-manager { display: grid; gap: 13px; border: 1px solid #eadbcf; border-radius: 17px; padding: 15px; background: #fffdf8; }
+.admin-gallery-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.admin-gallery-item { display: grid; gap: 9px; min-width: 0; overflow: hidden; border: 1px solid #eee2d5; border-radius: 15px; padding: 8px; background: white; }
+.admin-gallery-item img, .image-missing { width: 100%; height: 118px; border-radius: 11px; object-fit: cover; background: #f3eadf; }
+.image-missing { display: grid; place-items: center; color: #927f70; font-size: 8px; }
+.admin-gallery-item div { display: grid; gap: 3px; min-width: 0; }
+.admin-gallery-item strong { overflow: hidden; color: var(--brown); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.admin-gallery-item small { overflow: hidden; color: #9a877a; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+.admin-gallery-item button { border: 0; border-radius: 10px; padding: 8px; color: #9a5149; background: #fae4e0; font-size: 8px; font-weight: 800; }
+.gallery-empty, .art-empty { color: #917d70; font-size: 9px; text-align: center; }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes warningShake {
   0%, 100% { transform: translateX(0); }
@@ -267,9 +296,11 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   .review-grid { grid-template-columns: 1fr; }
   .slip-frame { min-height: 320px; }
   .lesson-admin-layout { grid-template-columns: 1fr; }
+  .art-admin-layout { grid-template-columns: 1fr; }
   .lesson-admin-list { display: grid; grid-template-columns: repeat(4, 1fr); max-height: 260px; }
   .lesson-admin-item { min-width: 0; }
   .lesson-admin-item div { display: none; }
+  .admin-gallery-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 640px) {
@@ -290,6 +321,7 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   .lesson-admin-hero a { margin-left: 0; }
   .lesson-admin-list { grid-template-columns: repeat(3, 1fr); }
   .media-upload-grid { grid-template-columns: 1fr; }
+  .art-form-grid, .admin-gallery-grid { grid-template-columns: 1fr; }
   .editor-heading { flex-wrap: wrap; }
   .publish-toggle { width: 100%; margin-left: 0; }
   .lesson-save-bar { align-items: stretch; flex-direction: column; }
@@ -368,14 +400,21 @@ body { font-size: 16px; }
 .save-lesson-button,
 .publish-toggle strong { font-size: 16px; }
 .lesson-admin-item strong,
-.editor-form > label,
-.media-title strong,
+.lesson-editor > label,
+.art-admin-tools label,
+.art-form-grid label,
+.media-card-title strong,
 .file-drop strong { font-size: 15px; }
 .lesson-admin-item small,
-.media-title small,
+.media-card-title small,
 .file-drop small,
 .current-file,
 .upload-progress { font-size: 13px; }
-.editor-form input,
-.editor-form textarea { font-size: 16px; }
+.lesson-editor input,
+.lesson-editor textarea,
+.lesson-editor select,
+.admin-gallery-item strong { font-size: 16px; }
+.admin-gallery-item small,
+.admin-gallery-item button,
+.gallery-empty { font-size: 13px; }
 .lesson-save-bar span { font-size: 14px; }
