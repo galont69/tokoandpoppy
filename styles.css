@@ -131,7 +131,7 @@ button { cursor: pointer; }
 .section-heading > span, .join-kicker { color: #d7836e; font-size: 13px; font-weight: 700; letter-spacing: .05em; }
 .section-heading h2, .join-section h2 { margin: 8px 0 10px; color: #513e32; font-size: clamp(29px, 4vw, 43px); line-height: 1.35; font-weight: 700; }
 .section-heading p, .join-section p { margin: 0; color: #877264; line-height: 1.7; }
-.course-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 22px; }
 .course-card {
   position: relative; overflow: hidden; min-height: 350px; border: 2px solid rgba(96,72,46,.08); border-radius: 30px; padding: 30px;
   background: white; box-shadow: 0 14px 35px rgba(92,71,49,.08); transition: .25s ease;
@@ -141,6 +141,7 @@ button { cursor: pointer; }
 .robot-card:after { background: #cbe6c2; }
 .art-card:after { background: #f7cac8; }
 .game-card:after { background: #c4e1e5; }
+.homeschool-card:after { background: #ffe2a7; }
 .course-icon { display: grid; width: 68px; height: 68px; place-items: center; border-radius: 23px; background: #f6f1e5; font-size: 34px; transform: rotate(-4deg); }
 .course-chip { display: inline-block; margin-top: 20px; border-radius: 99px; padding: 5px 10px; color: #7a654e; background: #f8f1dc; font-size: 10px; font-weight: 700; }
 .course-card h3 { margin: 10px 0 8px; font-size: 24px; }
@@ -148,6 +149,7 @@ button { cursor: pointer; }
 .course-card ul { display: grid; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; color: #655448; font-size: 12px; }
 .course-entry { position: relative; z-index: 2; display: inline-flex; margin-top: 20px; border-radius: 99px; padding: 8px 12px; color: #517548; background: #e7f1df; font-size: 10px; font-weight: 700; text-decoration: none; }
 .codekids-entry { color: #3f7180; background: #dff0f2; }
+.homeschool-entry { color: #82613a; background: #fff1ce; }
 .robot-card li::first-letter { color: #689154; }
 .join-section { position: relative; overflow: hidden; background: #f5eecf; }
 .join-section:before, .join-section:after { content: "✦"; position: absolute; color: rgba(222,165,55,.5); font-size: 65px; }

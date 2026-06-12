@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#3867b7">
+  <title>ระบบเจ้าหน้าที่เขต | Homeschool</title>
+  <style>
+    :root{--brand:#3867b7;--brand-dark:#29549b;--soft:#eaf1fc;--ink:#181922;--sub:#6d7180;--line:#e2e7ef;--paper:#f4f7fb;--white:#fff;--mint:#0f9f72;--danger:#b83250;--shadow:0 18px 55px rgba(45,64,90,.1)}
+    *{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;color:var(--ink);background:var(--paper);font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,system-ui,sans-serif}button,input,select{font:inherit}.hidden{display:none!important}
+    .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px clamp(18px,4vw,48px);background:rgba(255,255,255,.92);border-bottom:1px solid var(--line);backdrop-filter:blur(16px)}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:900}.brand-mark{display:grid;place-items:center;width:38px;height:38px;color:#fff;background:var(--brand);border-radius:13px}.brand small{display:block;color:var(--sub);font-size:10px;font-weight:500}.logout{padding:9px 13px;color:var(--brand);background:var(--soft);border:0;border-radius:11px;cursor:pointer;font-weight:800}
+    .container{width:min(1080px,calc(100% - 32px));margin:0 auto;padding:30px 0 55px}.card{background:#fff;border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow)}
+    .state-card{width:min(620px,100%);margin:5vh auto 0;padding:clamp(24px,5vw,42px)}.state-icon{display:grid;place-items:center;width:62px;height:62px;margin-bottom:20px;color:#fff;background:var(--brand);border-radius:20px;font-size:25px;font-weight:900}.state-card h1{margin:0;font-size:clamp(27px,4vw,36px)}.state-card>p{margin:8px 0 25px;color:var(--sub);line-height:1.7}
+    .form{display:grid;gap:15px}.field{display:grid;gap:7px}.field label{font-size:13px;font-weight:800}.field input,.field select{width:100%;min-height:49px;padding:0 13px;color:var(--ink);background:#fafbfd;border:1px solid var(--line);border-radius:13px;outline:none}.field input:focus,.field select:focus{border-color:#87a5d8;box-shadow:0 0 0 4px rgba(56,103,183,.1)}.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.hint{margin:0;color:var(--sub);font-size:11px;line-height:1.6}.error{padding:10px 12px;color:var(--danger);background:#fff0f3;border:1px solid #ffd5dd;border-radius:12px;font-size:12px}.primary{min-height:48px;padding:0 17px;color:#fff;background:var(--brand);border:0;border-radius:13px;cursor:pointer;font-weight:800}.primary:hover{background:var(--brand-dark)}.primary:disabled{opacity:.6;cursor:wait}
+    .waiting{text-align:center}.waiting .state-icon{margin-right:auto;margin-left:auto;background:#d7902b}.status-pill{display:inline-block;margin-bottom:14px;padding:7px 12px;color:#9b661b;background:#fff4df;border-radius:999px;font-size:12px;font-weight:800}.waiting-details{display:grid;gap:9px;margin:24px 0;padding:16px;background:#fafbfd;border-radius:16px;text-align:left}.waiting-details div{display:flex;justify-content:space-between;gap:15px;font-size:12px}.waiting-details span{color:var(--sub)}
+    .dashboard-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:24px}.dashboard-head h1{margin:0;font-size:clamp(28px,4vw,38px)}.dashboard-head p{margin:5px 0 0;color:var(--sub)}.readonly{padding:7px 11px;color:var(--brand);background:var(--soft);border-radius:999px;font-size:11px;font-weight:800}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;margin-bottom:20px}.stat{padding:21px}.stat span{color:var(--sub);font-size:12px}.stat strong{display:block;margin-top:7px;font-size:31px}.stat small{color:var(--sub)}
+    .list-card{padding:clamp(18px,3vw,26px);margin-bottom:20px}.list-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:16px}.list-head h2{margin:0}.search{min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:11px;outline:none}.applications{display:grid;gap:10px}.application{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:15px;padding:15px;background:#f8f9fb;border-radius:16px}.application strong,.application span{display:block}.application span{margin-top:3px;color:var(--sub);font-size:12px}.view{padding:9px 13px;color:var(--brand);background:#fff;border:1px solid #cdd9ec;border-radius:11px;cursor:pointer;font-size:12px;font-weight:800}.empty{padding:35px;color:var(--sub);text-align:center}
+    .template-form{display:grid;grid-template-columns:190px minmax(0,1fr) minmax(0,1.4fr) auto;gap:10px;margin-bottom:18px}.template-form input,.template-form select{min-height:44px;padding:0 11px;background:#fafbfd;border:1px solid var(--line);border-radius:11px}.template-form input[type=file]{padding:9px}.template-list{display:grid;gap:9px}.template-item{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:14px;background:#f8f9fb;border-radius:14px}.template-item strong,.template-item span{display:block}.template-item span{margin-top:3px;color:var(--sub);font-size:11px}.template-actions{display:flex;gap:7px}.danger{padding:8px 11px;color:var(--danger);background:#fff0f3;border:1px solid #ffd5dd;border-radius:10px;cursor:pointer;font-size:11px;font-weight:800}
+    .modal{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:18px;background:rgba(20,27,40,.48);backdrop-filter:blur(5px)}.modal-card{width:min(760px,100%);max-height:calc(100vh - 36px);overflow:auto;padding:24px;background:#fff;border-radius:23px;box-shadow:0 28px 80px rgba(20,27,40,.24)}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:17px}.modal-head h2{margin:0}.close{display:grid;place-items:center;width:38px;height:38px;background:var(--paper);border:0;border-radius:11px;cursor:pointer;font-size:20px}.document-list{display:grid;gap:14px}.document-group{overflow:hidden;border:1px solid var(--line);border-radius:17px}.document-group-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;background:var(--soft)}.document-group-head h3{margin:0;color:var(--brand-dark);font-size:15px}.document-group-head span{padding:4px 8px;color:var(--brand);background:#fff;border-radius:999px;font-size:10px;font-weight:800}.document-group-body{display:grid;gap:8px;padding:10px}.document-subgroup{padding:6px 3px 0;color:var(--sub);font-size:11px;font-weight:800}.document-group-empty{padding:16px;color:var(--sub);text-align:center;font-size:12px}.document-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:12px;padding:13px;background:#f8f9fb;border-radius:14px}.document-row strong,.document-row span{display:block}.document-row span{margin-top:3px;color:var(--sub);font-size:11px}.document-row-missing{background:#fbfbfc;border:1px dashed #dfe3ea}.document-row-missing span{color:#989ca8}.document-file-actions{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:6px}.document-file-name{max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--sub);font-size:10px}.document-open{padding:8px 11px;color:#fff;background:var(--brand);border:0;border-radius:10px;cursor:pointer;font-size:11px;font-weight:800}
+    @media(max-width:850px){.template-form{grid-template-columns:1fr 1fr}.template-form .primary{grid-column:1/-1}}@media(max-width:650px){.container{width:min(100% - 24px,1080px);padding-top:20px}.form-row,.stats,.template-form{grid-template-columns:1fr}.dashboard-head{align-items:flex-start;flex-direction:column}.list-head{align-items:stretch;flex-direction:column}.application,.template-item{grid-template-columns:1fr}.view{width:100%}.template-actions{display:grid;grid-template-columns:1fr 1fr}.topbar{padding:12px 14px}.brand small{display:none}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark">ข</span><span>Homeschool<small>ระบบเจ้าหน้าที่เขตการศึกษา</small></span></div>
+    <button class="logout" id="logoutButton" type="button">ออกจากระบบ</button>
+  </header>
+
+  <main class="container">
+    <section class="card state-card hidden" id="profileState">
+      <div class="state-icon">1</div>
+      <h1>ข้อมูลเจ้าหน้าที่เขต</h1>
+      <p>กรอกข้อมูลจริงเพื่อให้ผู้ดูแลระบบตรวจสอบตัวตนและยืนยันเขตพื้นที่ที่รับผิดชอบ</p>
+      <form class="form" id="officerForm">
+        <div class="form-row">
+          <div class="field"><label for="firstName">ชื่อ</label><input id="firstName" name="firstName" required></div>
+          <div class="field"><label for="lastName">นามสกุล</label><input id="lastName" name="lastName" required></div>
+        </div>
+        <div class="field">
+          <label for="districtName">สำนักงานเขตพื้นที่การศึกษาที่รับผิดชอบ</label>
+          <select id="districtName" name="districtName" required disabled>
+            <option value="">กำลังโหลดรายชื่อเขต...</option>
+          </select>
+          <p class="hint">ระบบจะนำเขตที่เลือกไปให้ Admin ตรวจสอบอีกครั้ง ก่อนกำหนดสิทธิ์เข้าถึงข้อมูล</p>
+        </div>
+        <div class="form-row">
+          <div class="field"><label for="phone">เบอร์โทรศัพท์</label><input id="phone" name="phone" type="tel" required placeholder="08x-xxx-xxxx"></div>
+          <div class="field"><label for="lineId">LINE ID</label><input id="lineId" name="lineId" placeholder="ไม่บังคับ"></div>
+        </div>
+        <div class="field"><label for="position">ตำแหน่ง / กลุ่มงาน</label><input id="position" name="position" required placeholder="เช่น นักวิชาการศึกษา"></div>
+        <p class="error hidden" id="profileError"></p>
+        <button class="primary" id="profileSubmit" type="submit">ส่งข้อมูลให้ Admin ตรวจสอบ</button>
+      </form>
+    </section>
+
+    <section class="card state-card waiting hidden" id="waitingState">
+      <div class="state-icon">✓</div>
+      <span class="status-pill">รอ Admin อนุมัติ</span>
+      <h1>ได้รับข้อมูลของคุณแล้ว</h1>
+      <p>ผู้ดูแลระบบจะตรวจสอบตัวตนและยืนยันเขตพื้นที่ เมื่อได้รับอนุมัติแล้ว ให้เข้าสู่ระบบอีกครั้งเพื่อดูข้อมูลของเขต</p>
+      <div class="waiting-details">
+        <div><span>ชื่อเจ้าหน้าที่</span><strong id="waitingName">-</strong></div>
+        <div><span>เขตที่ขอรับผิดชอบ</span><strong id="waitingDistrict">-</strong></div>
+        <div><span>ช่องทางติดต่อ</span><strong id="waitingContact">-</strong></div>
+      </div>
+      <button class="primary" id="checkStatus" type="button">ตรวจสอบสถานะอีกครั้ง</button>
+    </section>
+
+    <section class="hidden" id="dashboardState">
+      <div class="dashboard-head">
+        <div><h1 id="districtTitle">ภาพรวมเขตพื้นที่</h1><p>ข้อมูลผู้เรียนและเอกสารที่ครอบครัวยื่นมายังเขตของคุณ</p></div>
+        <span class="readonly">สิทธิ์ดูและพิมพ์เท่านั้น</span>
+      </div>
+      <div class="stats">
+        <article class="card stat"><span>ผู้เรียนในเขต</span><strong id="studentCount">0</strong><small>คน</small></article>
+        <article class="card stat"><span>คำขอทั้งหมด</span><strong id="applicationCount">0</strong><small>รายการ</small></article>
+        <article class="card stat"><span>เอกสารที่เกี่ยวข้อง</span><strong id="documentCount">0</strong><small>รายการ</small></article>
+      </div>
+      <section class="card list-card">
+        <div class="list-head"><div><h2>เอกสารตัวอย่างของเขต</h2><p class="hint">เอกสารทุกไฟล์จะแสดงให้ผู้ปกครองที่มีนักเรียนสังกัดเขตนี้ดาวน์โหลด</p></div></div>
+        <form class="template-form" id="districtTemplateForm">
+          <select id="templateCategory" required>
+            <option value="request_form">แบบคำขอ</option>
+            <option value="early_childhood_plan">แผนระดับปฐมวัย (อนุบาล)</option>
+            <option value="primary_plan">แผนระดับประถมศึกษา</option>
+            <option value="other">เอกสารตัวอย่างอื่น ๆ</option>
+          </select>
+          <input id="templateTitle" type="text" maxlength="200" required placeholder="ชื่อเอกสารที่ผู้ปกครองเห็น">
+          <input id="templateFile" type="file" required accept=".doc,.docx,.pdf,.odt,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf">
+          <button class="primary" id="uploadTemplateButton" type="submit">อัปโหลดเอกสาร</button>
+        </form>
+        <p class="error hidden" id="templateError"></p>
+        <div class="template-list" id="districtTemplateList"><div class="empty">กำลังโหลดเอกสารตัวอย่าง...</div></div>
+      </section>
+      <section class="card list-card">
+        <div class="list-head"><h2>รายชื่อผู้เรียนและคำขอ</h2><input class="search" id="searchInput" type="search" placeholder="ค้นหาชื่อผู้เรียน"></div>
+        <div class="applications" id="applicationList"><div class="empty">กำลังโหลดข้อมูล...</div></div>
+      </section>
+    </section>
+  </main>
+
+  <div class="modal hidden" id="documentModal" role="dialog" aria-modal="true" aria-labelledby="documentModalTitle">
+    <div class="modal-card">
+      <div class="modal-head"><div><h2 id="documentModalTitle">เอกสารที่เกี่ยวข้อง</h2><p class="hint">ลิงก์มีอายุ 5 นาที สำหรับดูหรือพิมพ์เท่านั้น</p></div><button class="close" id="closeDocumentModal" type="button" aria-label="ปิด">×</button></div>
+      <div class="document-list" id="documentList"></div>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL="https://ewsftltgehfrumfnmugi.supabase.co";
+    const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3c2Z0bHRnZWhmcnVtZm5tdWdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTUwMzQsImV4cCI6MjA5NjIzMTAzNH0.rYefsViZAFttNqiRQvAPv2E8wcq1vph5WPv2n8nrYL0";
+    const SESSION_KEY="homeschool_supabase_session";
+    let session=null,user=null,officer=null,applications=[],officialDocuments=[],districtTemplates=[];
+    const $=s=>document.querySelector(s);
+
+    function headers(extra={}){return{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json",...extra}}
+    async function api(path,options={}){const response=await fetch(SUPABASE_URL+path,{...options,headers:headers(options.headers||{})});const text=await response.text();const body=text?JSON.parse(text):null;if(!response.ok)throw new Error(body?.message||body?.hint||"เกิดข้อผิดพลาดในการเชื่อมต่อ");return body}
+    function show(id){["profileState","waitingState","dashboardState"].forEach(x=>$("#"+x).classList.toggle("hidden",x!==id))}
+    function loadSession(){try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||"null")}catch(_){}if(!session?.access_token){location.href="index.html";return false}user=session.user;return true}
+    async function loadDistricts(){
+      const select=$("#districtName");
+      try{
+        const rows=await api("/rest/v1/education_districts?select=id,code,name&active=eq.true&order=code.asc");
+        select.innerHTML='<option value="">เลือกสำนักงานเขตพื้นที่การศึกษา</option>'+rows.map(x=>`<option value="${escapeHtml(x.id)}" data-name="${escapeHtml(x.name)}">${escapeHtml(x.code)} · ${escapeHtml(x.name)}</option>`).join("");
+        select.disabled=false;
+      }catch(error){
+        select.innerHTML='<option value="">โหลดรายชื่อเขตไม่สำเร็จ</option>';
+        $("#profileError").textContent=error.message;
+        $("#profileError").classList.remove("hidden");
+      }
+    }
+    function escapeHtml(value){return String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;")}
+
+    async function bootstrap(){
+      if(!loadSession())return;
+      try{
+        const profiles=await api("/rest/v1/profiles?select=role,approval_status&id=eq."+user.id+"&limit=1");
+        if(!profiles[0]||profiles[0].role!=="district"){localStorage.removeItem(SESSION_KEY);location.href="index.html";return}
+        const rows=await api("/rest/v1/district_officer_profiles?select=*&user_id=eq."+user.id+"&limit=1");
+        officer=rows[0]||null;
+        if(!officer){show("profileState");await loadDistricts();return}
+        if(profiles[0].approval_status!=="active"||!officer.verified_district_id){renderWaiting();show("waitingState");return}
+        show("dashboardState");await loadDashboard();
+      }catch(error){show("profileState");$("#profileError").textContent=error.message;$("#profileError").classList.remove("hidden")}
+    }
+
+    function renderWaiting(){
+      $("#waitingName").textContent=[officer.first_name,officer.last_name].filter(Boolean).join(" ");
+      $("#waitingDistrict").textContent=officer.requested_district_name||"-";
+      $("#waitingContact").textContent=[officer.phone,officer.line_id?"LINE: "+officer.line_id:""].filter(Boolean).join(" · ");
+    }
+
+    async function submitProfile(event){
+      event.preventDefault();const data=new FormData(event.currentTarget),button=$("#profileSubmit"),error=$("#profileError");button.disabled=true;button.textContent="กำลังส่งข้อมูล...";error.classList.add("hidden");
+      try{
+        const districtSelect=$("#districtName"),districtOption=districtSelect.options[districtSelect.selectedIndex];
+        if(!districtSelect.value)throw new Error("กรุณาเลือกสำนักงานเขตพื้นที่การศึกษา");
+        const body={user_id:user.id,first_name:String(data.get("firstName")).trim(),last_name:String(data.get("lastName")).trim(),requested_district_id:districtSelect.value,requested_district_name:districtOption.dataset.name||districtOption.textContent,phone:String(data.get("phone")).trim(),line_id:String(data.get("lineId")).trim()||null,position:String(data.get("position")).trim()};
+        const rows=await api("/rest/v1/district_officer_profiles",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify(body)});officer=rows[0];renderWaiting();show("waitingState")
+      }catch(e){error.textContent=e.message;error.classList.remove("hidden")}finally{button.disabled=false;button.textContent="ส่งข้อมูลให้ Admin ตรวจสอบ"}
+    }
+
+    async function loadDashboard(){
+      const districtRows=await api("/rest/v1/education_districts?select=id,code,name&id=eq."+officer.verified_district_id+"&limit=1"),district=districtRows[0];
+      $("#districtTitle").textContent=district?district.name:"ภาพรวมเขตพื้นที่";
+      applications=await api("/rest/v1/homeschool_applications?select=id,student_id,status,created_at,request_form_data,student:students(first_name,last_name)&district_id=eq."+officer.verified_district_id+"&order=created_at.desc");
+      const documentRecords=applications.length?await api("/rest/v1/official_documents?select=id,application_id,document_type,original_filename,storage_path,created_at&application_id=in.("+applications.map(x=>x.id).join(",")+")"):[];
+      officialDocuments=uniqueDocuments(documentRecords);
+      const generatedDocuments=applications.reduce((count,item)=>count+(hasRequestForm(item)?1:0)+(hasEarlyPlan(item)?1:0),0);
+      $("#studentCount").textContent=new Set(applications.map(x=>x.student_id||x.id)).size||applications.length;
+      $("#applicationCount").textContent=applications.length;
+      $("#documentCount").textContent=officialDocuments.length+generatedDocuments;
+      renderApplications(applications);
+      await loadDistrictTemplates();
+    }
+
+    const templateCategoryLabels={
+      request_form:"แบบคำขอ",
+      early_childhood_plan:"แผนระดับปฐมวัย (อนุบาล)",
+      primary_plan:"แผนระดับประถมศึกษา",
+      other:"เอกสารตัวอย่างอื่น ๆ"
+    };
+
+    function templateExtension(file){
+      const extension=file.name.includes(".")?file.name.split(".").pop().toLowerCase():"";
+      return["doc","docx","pdf","odt"].includes(extension)?extension:"bin";
+    }
+
+    async function removeDistrictTemplateFile(path){
+      const response=await fetch(SUPABASE_URL+"/storage/v1/object/district-templates",{
+        method:"DELETE",
+        headers:headers(),
+        body:JSON.stringify({prefixes:[path]})
+      });
+      if(!response.ok){
+        const body=await response.json().catch(()=>({}));
+        throw new Error(body.message||body.error||"ลบไฟล์จากพื้นที่จัดเก็บไม่ได้");
+      }
+    }
+
+    async function loadDistrictTemplates(){
+      districtTemplates=await api("/rest/v1/district_document_templates?select=id,district_id,category,title,original_filename,storage_path,mime_type,file_size_bytes,created_at&district_id=eq."+officer.verified_district_id+"&order=created_at.desc");
+      const list=$("#districtTemplateList");
+      if(!districtTemplates.length){list.innerHTML='<div class="empty">ยังไม่มีเอกสารตัวอย่างของเขต</div>';return}
+      list.innerHTML=districtTemplates.map(item=>`<article class="template-item"><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(templateCategoryLabels[item.category]||"เอกสารอื่น ๆ")} · ${escapeHtml(item.original_filename)} · อัปโหลด ${new Date(item.created_at).toLocaleDateString("th-TH")}</span></div><div class="template-actions"><button class="view" type="button" data-district-template-open="${escapeHtml(item.id)}">ดาวน์โหลด</button><button class="danger" type="button" data-district-template-delete="${escapeHtml(item.id)}">ลบ</button></div></article>`).join("");
+    }
+
+    async function uploadDistrictTemplate(event){
+      event.preventDefault();
+      const form=event.currentTarget;
+      const file=$("#templateFile").files[0],button=$("#uploadTemplateButton"),error=$("#templateError");
+      const category=$("#templateCategory").value;
+      const title=$("#templateTitle").value.trim();
+      error.classList.add("hidden");
+      if(!file)return;
+      button.disabled=true;button.textContent="กำลังอัปโหลด...";
+      let path="";
+      let metadataSaved=false;
+      try{
+        if(file.size>20*1024*1024)throw new Error("ไฟล์มีขนาดเกิน 20 MB");
+        const extension=templateExtension(file);
+        if(!["doc","docx","pdf","odt"].includes(extension))throw new Error("รองรับเฉพาะไฟล์ DOC, DOCX, PDF และ ODT");
+        path=[officer.verified_district_id,user.id,crypto.randomUUID()+"."+extension].join("/");
+        const upload=await fetch(SUPABASE_URL+"/storage/v1/object/district-templates/"+path.split("/").map(encodeURIComponent).join("/"),{method:"POST",headers:{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":file.type||"application/octet-stream","x-upsert":"false"},body:file});
+        if(!upload.ok){const body=await upload.json().catch(()=>({}));throw new Error(body.message||body.error||"อัปโหลดไฟล์ไม่สำเร็จ")}
+        await api("/rest/v1/district_document_templates",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify({district_id:officer.verified_district_id,uploaded_by:user.id,category,title,storage_path:path,original_filename:file.name,mime_type:file.type||"application/octet-stream",file_size_bytes:file.size})});
+        metadataSaved=true;
+        form.reset();
+        await loadDistrictTemplates();
+      }catch(e){
+        if(path&&!metadataSaved)await removeDistrictTemplateFile(path).catch(()=>{});
+        error.textContent=e.message;error.classList.remove("hidden");
+      }finally{button.disabled=false;button.textContent="อัปโหลดเอกสาร"}
+    }
+
+    async function downloadDistrictTemplate(id){
+      const item=districtTemplates.find(x=>x.id===id);if(!item)return;
+      const result=await api("/storage/v1/object/sign/district-templates/"+item.storage_path.split("/").map(encodeURIComponent).join("/"),{method:"POST",body:JSON.stringify({expiresIn:300})});
+      const url=absoluteSignedUrl(result.signedURL||result.signedUrl);
+      const response=await fetch(url);if(!response.ok)throw new Error("ดาวน์โหลดเอกสารไม่ได้");
+      const blobUrl=URL.createObjectURL(await response.blob()),link=document.createElement("a");
+      link.href=blobUrl;link.download=item.original_filename;document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(blobUrl),1000);
+    }
+
+    async function deleteDistrictTemplate(id){
+      const item=districtTemplates.find(x=>x.id===id);if(!item)return;
+      if(!confirm("ต้องการลบเอกสาร “"+item.title+"” ใช่หรือไม่"))return;
+      await removeDistrictTemplateFile(item.storage_path);
+      await api("/rest/v1/district_document_templates?id=eq."+id,{method:"DELETE",headers:{Prefer:"return=minimal"}});
+      await loadDistrictTemplates();
+    }
+
+    function hasRequestForm(application){
+      return application?.request_form_data&&typeof application.request_form_data==="object"&&Object.keys(application.request_form_data).length>0;
+    }
+
+    function hasEarlyPlan(application){
+      return application?.early_childhood_plan_data&&typeof application.early_childhood_plan_data==="object"&&Object.keys(application.early_childhood_plan_data).length>0;
+    }
+
+    function renderApplications(rows){
+      const list=$("#applicationList");if(!rows.length){list.innerHTML='<div class="empty">ยังไม่มีครอบครัวยื่นเอกสารมายังเขตนี้</div>';return}
+      list.innerHTML=rows.map(x=>{const name=[x.student?.first_name,x.student?.last_name].filter(Boolean).join(" ")||"ไม่ระบุชื่อ";const count=officialDocuments.filter(d=>d.application_id===x.id).length+(hasRequestForm(x)?1:0)+(hasEarlyPlan(x)?1:0);return`<article class="application"><div><strong>${escapeHtml(name)}</strong><span>สถานะ ${escapeHtml(x.status)} · เอกสาร ${count} รายการ</span></div><button class="view" type="button" data-application="${x.id}">ดูเอกสาร / พิมพ์</button></article>`}).join("")
+    }
+
+    const documentLabels={
+      father_house_registration:"สำเนาทะเบียนบ้านบิดา",
+      father_national_id:"สำเนาบัตรประชาชนของบิดา",
+      mother_house_registration:"สำเนาทะเบียนบ้านมารดา",
+      mother_national_id:"สำเนาบัตรประชาชนของมารดา",
+      education_manager_house_registration:"สำเนาทะเบียนบ้านผู้จัดการศึกษา",
+      education_manager_national_id:"สำเนาบัตรประชาชนผู้จัดการศึกษา",
+      student_house_registration:"สำเนาทะเบียนบ้านผู้เรียน",
+      student_national_id:"สำเนาบัตรประชาชนผู้เรียน",
+      student_birth_certificate:"สำเนาสูติบัตรผู้เรียน",
+      education_manager_qualification:"สำเนาหลักฐานวุฒิการศึกษาของผู้จัดการศึกษา",
+      student_education_record:"สำเนาหลักฐานการศึกษาของผู้เรียน",
+      education_location:"แผนที่ ที่ตั้ง และแผนผังสถานที่จัดการศึกษา",
+      student_photo_2inch:"รูปถ่ายผู้เรียน ขนาด 2 นิ้ว",
+      request_form_document:"แบบคำขอจัดการศึกษาขั้นพื้นฐานโดยครอบครัว",
+      father_identity:"บัตรประชาชนและทะเบียนบ้านของบิดา (ไฟล์เดิม)",
+      mother_identity:"บัตรประชาชนและทะเบียนบ้านของมารดา (ไฟล์เดิม)",
+      education_manager_identity:"บัตรประชาชนและทะเบียนบ้านของผู้จัดการศึกษา (ไฟล์เดิม)",
+      student_identity:"บัตรประชาชนและทะเบียนบ้านของผู้เรียน (ไฟล์เดิม)",
+      education_plan:"แผนการจัดการศึกษา",
+      education_plan_document:"แผนการจัดการศึกษา",
+      annual_assessment:"แบบประเมินผลประจำปี",
+      annual_evaluation:"แบบประเมินผลประจำปี",
+      assessment_report:"เอกสารประเมินผล"
+    };
+
+    const legacyDocumentTypes=new Set(["father_identity","mother_identity","education_manager_identity","student_identity"]);
+
+    function documentPerson(type){
+      if(String(type).startsWith("father_"))return"father";
+      if(String(type).startsWith("mother_"))return"mother";
+      if(String(type).startsWith("education_manager_"))return"manager";
+      if(String(type).startsWith("student_"))return"student";
+      return"";
+    }
+
+    function uniqueDocuments(rows){
+      const preferred=new Map();
+      const peopleWithSplitDocuments=new Set(
+        rows
+          .filter(row=>!legacyDocumentTypes.has(row.document_type)&&[
+            "father_house_registration","father_national_id",
+            "mother_house_registration","mother_national_id",
+            "education_manager_house_registration","education_manager_national_id",
+            "student_house_registration","student_national_id"
+          ].includes(row.document_type))
+          .map(row=>[row.application_id||"",documentPerson(row.document_type)].join("|"))
+      );
+      rows.forEach(row=>{
+        const personKey=[row.application_id||"",documentPerson(row.document_type)].join("|");
+        if(legacyDocumentTypes.has(row.document_type)&&peopleWithSplitDocuments.has(personKey))return;
+        const key=[row.application_id||"",row.document_type].join("|");
+        const existing=preferred.get(key);
+        if(!existing||new Date(row.created_at||0)>new Date(existing.created_at||0)){
+          preferred.set(key,row);
+        }
+      });
+      return Array.from(preferred.values());
+    }
+
+    const documentCategories=[
+      {id:"permission",title:"แบบขออนุญาต"},
+      {id:"plan",title:"แผนการศึกษา"},
+      {id:"assessment",title:"เอกสารประเมินผล"},
+      {id:"supporting",title:"เอกสารประกอบการยื่นขออนุญาต"}
+    ];
+
+    const requiredSupportingDocuments=[
+      {type:"father_national_id",label:"สำเนาบัตรประชาชนของบิดา"},
+      {type:"father_house_registration",label:"สำเนาทะเบียนบ้านบิดา"},
+      {type:"mother_national_id",label:"สำเนาบัตรประชาชนของมารดา"},
+      {type:"mother_house_registration",label:"สำเนาทะเบียนบ้านมารดา"},
+      {type:"education_manager_national_id",label:"สำเนาบัตรประชนผู้จัดการศึกษา"},
+      {type:"education_manager_house_registration",label:"สำเนาทะเบียนบ้านผู้จัดการศึกษา"},
+      {type:"student_national_id",label:"สำเนาบัตรประชนผู้เรียน"},
+      {type:"student_house_registration",label:"สำเนาทะเบียนบ้านผู้เรียน"},
+      {type:"student_birth_certificate",label:"สำเนาสูติบัตรผู้เรียน"},
+      {type:"education_location",label:"แผนที่ ที่ตั้ง และแผนผังสถานที่จัดการศึกษา"},
+      {type:"education_manager_qualification",label:"สำเนาหลักฐานวุฒิการศึกษาของผู้จัดการศึกษา"}
+    ];
+
+    function documentCategory(type){
+      const value=String(type||"").toLowerCase();
+      if(value.includes("assessment")||value.includes("evaluation"))return"assessment";
+      if(value.includes("education_plan")||value==="plan")return"plan";
+      if(value.includes("permission_request")||value.includes("request_form"))return"permission";
+      return"supporting";
+    }
+
+    function supportingSubgroup(type){
+      if(["father_house_registration","father_national_id","mother_house_registration","mother_national_id","education_manager_house_registration","education_manager_national_id","student_house_registration","student_national_id","student_birth_certificate","father_identity","mother_identity","education_manager_identity","student_identity"].includes(type))return"เอกสารส่วนตัว";
+      if(["education_manager_qualification","student_education_record"].includes(type))return"หลักฐานวุฒิและการศึกษา";
+      return"สถานที่และรูปถ่าย";
+    }
+
+    function documentRow(document){
+      return`<article class="document-row"><div><strong>${escapeHtml(documentLabels[document.document_type]||"เอกสารประกอบ")}</strong><span>${escapeHtml(document.original_filename)}</span></div><button class="document-open" type="button" data-storage-path="${escapeHtml(document.storage_path)}" data-filename="${escapeHtml(document.original_filename)}">เปิด / พิมพ์</button></article>`;
+    }
+
+    function requiredDocumentRow(requirement,rows){
+      const latest=rows
+        .filter(row=>row.document_type===requirement.type)
+        .sort((a,b)=>new Date(b.created_at||0)-new Date(a.created_at||0))[0];
+      if(!latest){
+        return`<article class="document-row document-row-missing"><div><strong>${escapeHtml(requirement.label)}</strong><span>ไม่มีไฟล์แนบ</span></div></article>`;
+      }
+      const action=`<div class="document-file-actions"><span class="document-file-name">${escapeHtml(latest.original_filename)}</span><button class="document-open" type="button" data-storage-path="${escapeHtml(latest.storage_path)}" data-filename="${escapeHtml(latest.original_filename)}">เปิด / พิมพ์</button></div>`;
+      return`<article class="document-row"><div><strong>${escapeHtml(requirement.label)}</strong><span>ไฟล์แนบล่าสุด</span></div><div>${action}</div></article>`;
+    }
+
+    function documentGroup(category,items,applicationId,hasGeneratedRequest,hasGeneratedPlan){
+      let content="";
+      if(category.id==="permission"){
+        content=(hasGeneratedRequest?`<article class="document-row"><div><strong>แบบยื่นขออนุญาตจัดการบ้านเรียน</strong><span>แบบคำขอที่ผู้ปกครองกรอกและบันทึกในระบบ</span></div><button class="document-open" type="button" data-request-form="${escapeHtml(applicationId)}">เปิด / พิมพ์</button></article>`:"")+items.map(documentRow).join("");
+      }else if(category.id==="plan"){
+        content=(hasGeneratedPlan?`<article class="document-row"><div><strong>แผนการจัดการศึกษาระดับปฐมวัย</strong><span>แผนที่ผู้ปกครองกรอกและบันทึกในระบบ</span></div><button class="document-open" type="button" data-early-plan="${escapeHtml(applicationId)}">เปิด / พิมพ์</button></article>`:"")+items.map(documentRow).join("");
+      }else if(category.id==="supporting"){
+        content=requiredSupportingDocuments.map(requirement=>requiredDocumentRow(requirement,items)).join("");
+      }else{
+        content=items.map(documentRow).join("");
+      }
+      const count=category.id==="supporting"
+        ?requiredSupportingDocuments.filter(requirement=>items.some(item=>item.document_type===requirement.type)).length
+        :items.length+(category.id==="permission"&&hasGeneratedRequest?1:0)+(category.id==="plan"&&hasGeneratedPlan?1:0);
+      return`<section class="document-group"><div class="document-group-head"><h3>${escapeHtml(category.title)}</h3><span>${count} รายการ</span></div><div class="document-group-body">${content||'<div class="document-group-empty">ยังไม่มีเอกสารในหมวดนี้</div>'}</div></section>`;
+    }
+
+    async function showDocuments(applicationId){
+      $("#documentModal").classList.remove("hidden");$("#documentList").innerHTML='<div class="empty">กำลังโหลดเอกสาร...</div>';
+      try{
+        const application=applications.find(x=>x.id===applicationId);
+        const records=await api("/rest/v1/official_documents?select=id,application_id,document_type,original_filename,storage_path,created_at&application_id=eq."+applicationId+"&order=created_at.desc");
+        const rows=uniqueDocuments(records);
+        const generatedRequest=hasRequestForm(application);
+        const generatedPlan=hasEarlyPlan(application);
+        $("#documentList").innerHTML=documentCategories.map(category=>{
+          const items=rows.filter(row=>documentCategory(row.document_type)===category.id);
+          return documentGroup(category,items,applicationId,generatedRequest,generatedPlan);
+        }).join("");
+      }catch(error){$("#documentList").innerHTML='<div class="error">'+escapeHtml(error.message)+'</div>'}
+    }
+
+    function toThaiDigits(value){
+      const thaiDigits=["๐","๑","๒","๓","๔","๕","๖","๗","๘","๙"];
+      return String(value??"").replace(/[0-9]/g,digit=>thaiDigits[Number(digit)]);
+    }
+
+    function thaiLongDate(dateValue){
+      if(!dateValue)return "........................................";
+      return toThaiDigits(new Intl.DateTimeFormat("th-TH",{day:"numeric",month:"long",year:"numeric"}).format(new Date(dateValue+"T00:00:00")));
+    }
+
+    function printLine(value,fallback="........................................................"){
+      return escapeHtml(toThaiDigits(value||fallback));
+    }
+
+    function ageYears(dateValue){
+      if(!dateValue)return "";
+      const birth=new Date(dateValue+"T00:00:00"),today=new Date();
+      let age=today.getFullYear()-birth.getFullYear();
+      if(today.getMonth()<birth.getMonth()||(today.getMonth()===birth.getMonth()&&today.getDate()<birth.getDate()))age--;
+      return Math.max(0,age);
+    }
+
+    function attachmentMark(values,key,label){
+      return `<div><span class="check">${values.attachments?.includes(key)?"☑":"☐"}</span> ${escapeHtml(label)}</div>`;
+    }
+
+    function printSavedRequest(applicationId){
+      const application=applications.find(x=>x.id===applicationId);
+      const values=application?.request_form_data;
+      if(!values||typeof values!=="object"){
+        alert("ไม่พบข้อมูลแบบคำขอ");
+        return;
+      }
+      const printWindow=window.open("","_blank");
+      if(!printWindow){
+        alert("เบราว์เซอร์บล็อกหน้าต่างเอกสาร กรุณาอนุญาต Pop-up");
+        return;
+      }
+      const districtName=values.districtName||"";
+      const studentAgeText=values.studentBirthDate?String(ageYears(values.studentBirthDate)):"";
+      const regularFontUrl=new URL("assets/fonts/THSarabunNew.ttf",window.location.href).href;
+      const boldFontUrl=new URL("assets/fonts/THSarabunNew-Bold.ttf",window.location.href).href;
+      const html=`<!doctype html><html lang="th"><head><meta charset="utf-8"><title></title><style>
+        @page{size:A4 portrait;margin:0}
+        @font-face{font-family:"TH Sarabun New Embedded";src:url("${regularFontUrl}") format("truetype");font-weight:400;font-style:normal;font-display:block}
+        @font-face{font-family:"TH Sarabun New Embedded";src:url("${boldFontUrl}") format("truetype");font-weight:700;font-style:normal;font-display:block}
+        *{box-sizing:border-box}
+        html,body{margin:0;padding:0}
+        body{color:#000;background:#d7d7d9;font-family:"TH Sarabun New Embedded","TH Sarabun New",sans-serif;font-size:16pt;line-height:1}
+        .sheet{position:relative;width:210mm;min-height:297mm;margin:12px auto;padding:11mm 20mm 10mm 29mm;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.24)}
+        h1{margin:8mm 0 3mm;text-align:center;font-size:16pt;line-height:1;font-weight:700}
+        .place{width:72mm;margin:0 4mm 3mm auto;text-align:center;line-height:1.2}
+        .place-row{display:flex;justify-content:center;gap:4px}
+        .place-date{margin-top:6mm}
+        .paragraph{margin:1.2mm 0;text-indent:12mm;text-align:justify}
+        .no-indent{text-indent:0}
+        .line{display:inline;padding:0 2px}
+        .attachments-title{margin-top:1mm;text-align:center}
+        .attachments{width:134mm;margin:.8mm auto 2mm;line-height:1}
+        .attachments>div{margin:.3mm 0}
+        .check{display:inline-block;width:7mm;text-align:center;font-family:Arial,"Arial Unicode MS",sans-serif;font-size:13pt;line-height:1}
+        .signature{width:92mm;margin:7mm 0 0 auto;text-align:center;line-height:1.15}
+        .printbar{position:sticky;top:0;z-index:2;padding:10px;text-align:center;background:#efefff}
+        .printbar button{padding:9px 18px;border:0;border-radius:8px;color:#fff;background:#3867b7;font:700 15px sans-serif;cursor:pointer}
+        @media print{
+          html,body{width:210mm;height:297mm;background:#fff}
+          .printbar{display:none!important}
+          .sheet{width:210mm;height:297mm;min-height:0;margin:0;padding:11mm 20mm 10mm 29mm;overflow:hidden;box-shadow:none}
+        }
+      </style></head><body><div class="printbar"><button onclick="document.fonts.ready.then(()=>window.print())">บันทึกเป็น PDF / พิมพ์เอกสาร</button></div><main class="sheet">
+      <h1>แบบยื่นความประสงค์ขอจัดทำแผนการจัดการศึกษาขั้นพื้นฐานโดยครอบครัว</h1>
+      <div class="place"><div class="place-row">ที่ ${printLine(values.requestPlace)}</div><div class="place-row place-date">วันที่ ${thaiLongDate(values.requestDate)}</div></div>
+      <div>เรียน&nbsp;&nbsp;ผู้อำนวยการ${printLine(districtName)}</div>
+      <p class="paragraph">ด้วย ${printLine(values.requesterPrefix)} ${printLine(values.requesterName)} เลขประจำตัวประชาชน <span class="line">${printLine(values.requesterCitizenId)}</span></p>
+      <div class="no-indent">ที่อยู่ตามทะเบียนบ้าน บ้านเลขที่ <span class="line">${printLine(values.houseNumber)}</span> หมู่ที่ <span class="line">${printLine(values.villageNumber,"-")}</span> ตรอก/ซอย <span class="line">${printLine(values.lane,"-")}</span> ถนน <span class="line">${printLine(values.road,"-")}</span></div>
+      <div class="no-indent">ตำบล/แขวง <span class="line">${printLine(values.subdistrict)}</span> อำเภอ/เขต <span class="line">${printLine(values.addressDistrict)}</span> จังหวัด <span class="line">${printLine(values.province)}</span> รหัสไปรษณีย์ <span class="line">${printLine(values.postalCode)}</span></div>
+      <div class="no-indent">โทรศัพท์ <span class="line">${printLine(values.requestPhone)}</span> E-mail <span class="line">${escapeHtml(values.requestEmail||"........................................................")}</span></div>
+      <p class="paragraph">อาศัยสิทธิตามข้อ ๒ (๗) ของกฎกระทรวงว่าด้วยสิทธิในการจัดการศึกษาขั้นพื้นฐานโดยครอบครัว พ.ศ. ๒๕๔๗ ซึ่งออกตามความในมาตรา ๑๒ แห่งพระราชบัญญัติการศึกษาแห่งชาติ พ.ศ. ๒๕๔๒ ที่บัญญัติให้ครอบครัวมีสิทธิในการจัดการศึกษาขั้นพื้นฐาน</p>
+      <p class="paragraph">จึงมีความประสงค์ขอจัดทำแผนการจัดการศึกษาขั้นพื้นฐานโดยครอบครัวร่วมกับสำนักงานเขตพื้นที่การศึกษาให้แก่ผู้เรียนชื่อ ${printLine(values.studentPrefix)} ${printLine(values.studentName)} ซึ่งเกี่ยวข้องเป็น ${printLine(values.relationship)} เกิดเมื่อวันที่ ${thaiLongDate(values.studentBirthDate)} อายุ ${printLine(studentAgeText)} ปี เลขประจำตัวประชาชน ${printLine(values.studentCitizenId)}</p>
+      <div>กำลังศึกษาอยู่ชั้น/จบการศึกษาชั้น <span class="line">${printLine(values.previousEducation)}</span> โดยขอเริ่มจัดการศึกษาในชั้น <span class="line">${printLine(values.startingEducationLevel)}</span></div>
+      <p class="paragraph">โดยมี ${printLine(values.managerPrefix)} ${printLine(values.managerName)} เลขประจำตัวประชาชน ${printLine(values.managerCitizenId)} วุฒิการศึกษา ${printLine(values.managerQualification)} สถาบัน ${printLine(values.managerInstitution)} เป็นผู้จัดการศึกษา</p>
+      <div class="attachments-title">พร้อมนี้ได้แนบเอกสารของผู้เรียนมาด้วยแล้ว ดังนี้</div>
+      <div class="attachments">
+        ${attachmentMark(values,"house_registration","สำเนาทะเบียนบ้านของครอบครัว ผู้เรียน และผู้จัดการศึกษา")}
+        ${attachmentMark(values,"national_id","สำเนาบัตรประจำตัวประชาชนของครอบครัว ผู้เรียน และผู้จัดการศึกษา")}
+        ${attachmentMark(values,"birth_certificate","สำเนาสูติบัตรของผู้เรียน")}
+        ${attachmentMark(values,"student_qualification","สำเนาหลักฐานวุฒิการศึกษาสูงสุดของผู้เรียน")}
+        ${attachmentMark(values,"manager_qualification","สำเนาหลักฐานวุฒิการศึกษาของผู้จัดการศึกษา")}
+        ${attachmentMark(values,"location_map","ที่ตั้งและแผนผังสถานที่จัดการศึกษา")}
+        ${attachmentMark(values,"education_plan","แผนการจัดการศึกษาขั้นพื้นฐานโดยครอบครัว")}
+        <div><span class="check">${values.otherAttachment?"☑":"☐"}</span> อื่น ๆ ${printLine(values.otherAttachment,"................................................")}</div>
+      </div>
+      <p class="paragraph">จึงเรียนมาเพื่อโปรดพิจารณา หากท่านมีผลการพิจารณาเป็นประการใด โปรดแจ้งให้ทราบด้วย จักขอบคุณยิ่ง</p>
+      <div class="signature">ขอแสดงความนับถือ<br><br><br>ลงชื่อ........................................................ผู้ยื่นคำขอ (ครอบครัว)<br>(${printLine(values.signatureName)})</div>
+      </main></body></html>`;
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+    }
+
+    function planText(value,fallback="-"){
+      return escapeHtml(String(value||fallback)).replace(/\n/g,"<br>");
+    }
+
+    function printEarlyPlan(applicationId){
+      const application=applications.find(item=>item.id===applicationId);
+      const values=application?.early_childhood_plan_data;
+      if(!values||typeof values!=="object"){alert("ไม่พบข้อมูลแผนการศึกษา");return}
+      const printWindow=window.open("","_blank");
+      if(!printWindow){alert("เบราว์เซอร์บล็อกหน้าต่างเอกสาร กรุณาอนุญาต Pop-up");return}
+      const regularFontUrl=new URL("assets/fonts/THSarabunNew.ttf",window.location.href).href;
+      const boldFontUrl=new URL("assets/fonts/THSarabunNew-Bold.ttf",window.location.href).href;
+      const domainRows=[
+        ["ด้านร่างกาย",values.experiencePhysicalGoals,values.experiencePhysicalActivities],
+        ["ด้านอารมณ์และจิตใจ",values.experienceEmotionalGoals,values.experienceEmotionalActivities],
+        ["ด้านสังคม",values.experienceSocialGoals,values.experienceSocialActivities],
+        ["ด้านสติปัญญา",values.experienceIntellectualGoals,values.experienceIntellectualActivities]
+      ].map(row=>`<tr><td>${row[0]}</td><td>${planText(row[1])}</td><td>${planText(row[2])}</td></tr>`).join("");
+      printWindow.document.open();
+      printWindow.document.write(`<!doctype html><html lang="th"><head><meta charset="utf-8"><title>แผนการจัดการศึกษาระดับปฐมวัย</title><style>
+        @page{size:A4 portrait;margin:18mm 18mm 17mm}@font-face{font-family:"TH Sarabun New Embedded";src:url("${regularFontUrl}") format("truetype");font-weight:400}@font-face{font-family:"TH Sarabun New Embedded";src:url("${boldFontUrl}") format("truetype");font-weight:700}
+        *{box-sizing:border-box}body{margin:0;color:#000;background:#ddd;font-family:"TH Sarabun New Embedded","TH Sarabun New",sans-serif;font-size:16pt;line-height:1.15}.toolbar{position:sticky;top:0;z-index:3;padding:10px;text-align:center;background:#eaf1fc}.toolbar button{padding:9px 18px;color:#fff;background:#3867b7;border:0;border-radius:8px;font-weight:700;cursor:pointer}
+        .sheet{width:210mm;min-height:297mm;margin:12px auto;padding:18mm;background:#fff;box-shadow:0 2px 12px #888}h1,h2,h3{margin:0 0 7mm;text-align:center}h1{font-size:24pt}h2{font-size:20pt}h3{margin-top:7mm;font-size:18pt;text-align:left}.cover{display:grid;place-items:center;min-height:240mm;text-align:center}.cover p{margin:4mm 0}.meta{width:100%;margin-top:20mm;text-align:left}p{margin:2.5mm 0;text-align:justify;text-indent:12mm}.no-indent{text-indent:0}.notice{padding:4mm;border:1px solid #999;background:#fafafa;font-size:14pt}table{width:100%;border-collapse:collapse;margin:4mm 0;font-size:14pt}th,td{padding:2.5mm;border:1px solid #333;vertical-align:top}th{text-align:center}.signature{margin-top:18mm;text-align:center}.page-break{break-before:page;page-break-before:always}
+        @media print{body{background:#fff}.toolbar{display:none}.sheet{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}.page-break{break-before:page;page-break-before:always}}
+      </style></head><body><div class="toolbar"><button onclick="document.fonts.ready.then(()=>window.print())">พิมพ์ / บันทึกเป็น PDF</button></div><main class="sheet">
+      <section class="cover"><div><h1>แผนการจัดการศึกษาโดยครอบครัว</h1><h2>${planText(values.homeName,"บ้านเรียน")}</h2><p class="no-indent">ผู้เรียน ${planText(values.studentName)}</p><p class="no-indent">ระดับปฐมวัย ${planText(values.educationLevel)}</p><div class="meta"><p class="no-indent">ผู้จัดการศึกษา: ${planText(values.managerName)}</p><p class="no-indent">สำนักงานเขตพื้นที่การศึกษา: ${planText(values.districtName)}</p><p class="no-indent">ปีการศึกษา: ${planText(values.academicYear)}</p></div></div></section>
+      <section class="page-break"><h2>แผนการจัดการศึกษาระดับปฐมวัยโดยครอบครัว</h2><div class="notice"><strong>หมายเหตุ:</strong> แผนนี้เป็นตัวอย่างที่ครอบครัวจัดทำ ควรตรวจสอบร่วมกับเจ้าหน้าที่ก่อนนำไปใช้</div><h3>1. ข้อมูลพื้นฐานของครอบครัวและผู้เรียน</h3><p>${planText(values.familyBackground)}</p><p>${planText(values.educationHistory)}</p><table><tr><th>พัฒนาการ</th><th>ข้อมูลผู้เรียน</th></tr><tr><td>ร่างกาย</td><td>${planText(values.developmentPhysical)}</td></tr><tr><td>อารมณ์และจิตใจ</td><td>${planText(values.developmentEmotional)}</td></tr><tr><td>สังคม</td><td>${planText(values.developmentSocial)}</td></tr><tr><td>สติปัญญา</td><td>${planText(values.developmentIntellectual)}</td></tr></table><h3>2. ระดับ เหตุผล และจุดมุ่งหมาย</h3><p class="no-indent"><strong>ระดับ:</strong> ${planText(values.educationLevel)}</p><p>${planText(values.reason)}</p><p>${planText(values.goals)}</p><h3>3. รูปแบบและแหล่งเรียนรู้</h3><p>${planText(values.educationFormat)}</p></section>
+      <section class="page-break"><h3>4. กลุ่มประสบการณ์และกิจกรรมการเรียนรู้</h3><table><tr><th>กลุ่มประสบการณ์</th><th>คุณลักษณะและประสบการณ์สำคัญ</th><th>กิจกรรมและกระบวนการเรียนรู้</th></tr>${domainRows}</table><h3>5. กระบวนการจัดการเรียนรู้</h3><p>${planText(values.learningProcess)}</p><h3>6. ตารางกิจกรรมโดยสังเขป</h3><p>${planText(values.schedule)}</p><h3>7. การวัดและประเมินผล</h3><p>${planText(values.evaluation)}</p><p>${planText(values.promotion)}</p><h3>8. ภาคผนวก</h3><p>${planText(values.appendix)}</p><div class="signature">ลงชื่อ........................................................ผู้จัดการศึกษา<br>(${planText(values.managerName)})</div></section>
+      </main></body></html>`);
+      printWindow.document.close();
+      printWindow.focus();
+    }
+
+    function absoluteSignedUrl(value){
+      if(/^https?:\/\//i.test(value))return value;
+      if(value.startsWith("/storage/v1/"))return SUPABASE_URL+value;
+      if(value.startsWith("/object/"))return SUPABASE_URL+"/storage/v1"+value;
+      return SUPABASE_URL+"/storage/v1/"+value.replace(/^\/+/,"");
+    }
+
+    function previewDocument(previewWindow,blobUrl,mimeType,filename){
+      const isImage=mimeType.startsWith("image/");
+      const isWord=mimeType==="application/msword"||mimeType==="application/vnd.openxmlformats-officedocument.wordprocessingml.document"||/\.docx?$/i.test(filename);
+      const content=isImage
+        ?`<img class="image-preview" src="${blobUrl}" alt="${escapeHtml(filename)}">`
+        :isWord
+          ?`<section class="word-preview"><h2>ไฟล์ Microsoft Word</h2><p>เบราว์เซอร์ไม่สามารถแสดงเอกสาร Word ได้โดยตรง กรุณาดาวน์โหลดเพื่อเปิดด้วย Microsoft Word, Pages หรือโปรแกรมที่รองรับ</p><a href="${blobUrl}" download="${escapeHtml(filename)}">ดาวน์โหลดไฟล์ Word</a></section>`
+          :`<iframe class="file-preview" src="${blobUrl}" title="${escapeHtml(filename)}"></iframe>`;
+      previewWindow.document.open();
+      previewWindow.document.write(`<!doctype html><html lang="th"><head><meta charset="utf-8"><title>${escapeHtml(filename)}</title><style>
+        *{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:"Noto Sans Thai",Tahoma,sans-serif;background:#eef2f7;color:#171923}
+        .toolbar{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 18px;background:#fff;border-bottom:1px solid #dfe5ee}
+        .toolbar strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.actions{display:flex;gap:8px;flex-shrink:0}
+        button,a{padding:9px 13px;border:0;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;text-decoration:none;cursor:pointer}
+        button{color:#fff;background:#3867b7}a{color:#3867b7;background:#eaf1fc}
+        main{display:grid;place-items:center;min-height:calc(100vh - 62px);padding:18px}.image-preview{display:block;max-width:100%;max-height:calc(100vh - 98px);object-fit:contain;background:#fff;box-shadow:0 8px 30px rgba(30,45,65,.15)}
+        .file-preview{width:min(1100px,100%);height:calc(100vh - 98px);border:0;background:#fff}
+        .word-preview{width:min(560px,100%);padding:34px;text-align:center;background:#fff;border-radius:18px;box-shadow:0 8px 30px rgba(30,45,65,.15)}.word-preview h2{margin-top:0}.word-preview p{color:#687080;line-height:1.7}.word-preview a{display:inline-block;margin-top:12px;color:#fff;background:#3867b7}
+        @media print{.toolbar{display:none}main{padding:0;min-height:0;background:#fff}.image-preview{width:100%;max-width:none;max-height:none;box-shadow:none}.file-preview{width:100%;height:100vh}}
+      </style></head><body><header class="toolbar"><strong>${escapeHtml(filename)}</strong><div class="actions"><a href="${blobUrl}" download="${escapeHtml(filename)}">ดาวน์โหลด</a><button onclick="window.print()">พิมพ์เอกสาร</button></div></header><main>${content}</main></body></html>`);
+      previewWindow.document.close();
+      previewWindow.addEventListener("beforeunload",()=>URL.revokeObjectURL(blobUrl),{once:true});
+    }
+
+    async function openDocument(path,filename,button){
+      const previewWindow=window.open("","_blank");
+      if(!previewWindow){alert("เบราว์เซอร์บล็อกหน้าต่างเอกสาร กรุณาอนุญาต Pop-up");return}
+      previewWindow.document.write('<!doctype html><html lang="th"><meta charset="utf-8"><title>กำลังเปิดเอกสาร</title><body style="font-family:Tahoma,sans-serif;padding:30px">กำลังโหลดเอกสาร...</body></html>');
+      button.disabled=true;button.textContent="กำลังเปิด...";
+      try{
+        const result=await api("/storage/v1/object/sign/official-documents/"+path.split("/").map(encodeURIComponent).join("/"),{method:"POST",body:JSON.stringify({expiresIn:300})});
+        const signedUrl=result.signedURL||result.signedUrl;
+        if(!signedUrl)throw new Error("สร้างลิงก์เอกสารไม่ได้");
+        const response=await fetch(absoluteSignedUrl(signedUrl));
+        if(!response.ok)throw new Error("เปิดไฟล์เอกสารไม่ได้");
+        const blob=await response.blob();
+        previewDocument(previewWindow,URL.createObjectURL(blob),blob.type||"application/octet-stream",filename||"เอกสาร");
+      }catch(error){previewWindow.close();alert(error.message)}finally{button.disabled=false;button.textContent="เปิด / พิมพ์"}
+    }
+
+    $("#officerForm").addEventListener("submit",submitProfile);
+    $("#districtTemplateForm").addEventListener("submit",uploadDistrictTemplate);
+    $("#checkStatus").addEventListener("click",()=>location.reload());
+    $("#logoutButton").addEventListener("click",()=>{localStorage.removeItem(SESSION_KEY);location.href="index.html"});
+    $("#searchInput").addEventListener("input",event=>{const q=event.target.value.trim().toLowerCase();renderApplications(applications.filter(x=>[x.student?.first_name,x.student?.last_name].join(" ").toLowerCase().includes(q)))});
+    $("#closeDocumentModal").addEventListener("click",()=>$("#documentModal").classList.add("hidden"));
+    $("#documentModal").addEventListener("click",event=>{if(event.target===event.currentTarget)event.currentTarget.classList.add("hidden")});
+    document.addEventListener("click",event=>{const appButton=event.target.closest("[data-application]");if(appButton)showDocuments(appButton.dataset.application);const requestButton=event.target.closest("[data-request-form]");if(requestButton)printSavedRequest(requestButton.dataset.requestForm);const planButton=event.target.closest("[data-early-plan]");if(planButton)printEarlyPlan(planButton.dataset.earlyPlan);const templateOpen=event.target.closest("[data-district-template-open]");if(templateOpen)downloadDistrictTemplate(templateOpen.dataset.districtTemplateOpen).catch(e=>alert(e.message));const templateDelete=event.target.closest("[data-district-template-delete]");if(templateDelete)deleteDistrictTemplate(templateDelete.dataset.districtTemplateDelete).catch(e=>alert(e.message));const documentButton=event.target.closest("[data-storage-path]");if(documentButton)openDocument(documentButton.dataset.storagePath,documentButton.dataset.filename,documentButton)});
+    bootstrap();
+  </script>
+</body>
+</html>

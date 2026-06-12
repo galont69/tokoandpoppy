@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#242754">
+  <title>Admin | Homeschool</title>
+  <style>
+    :root{--brand:#5652df;--navy:#242754;--ink:#171821;--sub:#707483;--line:#e3e6ee;--paper:#f4f6fa;--green:#11865f;--red:#b83250;--amber:#a86b16;--shadow:0 18px 55px rgba(40,45,80,.1)}
+    *{box-sizing:border-box}body{margin:0;min-width:320px;min-height:100vh;color:var(--ink);background:var(--paper);font-family:"Noto Sans Thai","Leelawadee UI",Tahoma,system-ui,sans-serif}button,select{font:inherit}.hidden{display:none!important}
+    .topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:15px clamp(16px,4vw,45px);background:rgba(255,255,255,.94);border-bottom:1px solid var(--line);backdrop-filter:blur(15px)}
+    .brand{display:flex;align-items:center;gap:11px;font-weight:900}.mark{display:grid;place-items:center;width:40px;height:40px;color:#fff;background:var(--navy);border-radius:13px}.brand small{display:block;color:var(--sub);font-size:10px;font-weight:600}.logout{padding:9px 13px;color:var(--brand);background:#efefff;border:0;border-radius:11px;cursor:pointer;font-weight:800}
+    .top-actions{display:flex;align-items:center;gap:10px}.toko-link{display:inline-flex;align-items:center;gap:7px;min-height:38px;padding:8px 12px;color:#4f7449;background:#eff6ea;border:1px solid #dbe9d3;border-radius:999px;font-size:13px;font-weight:900;text-decoration:none}
+    .container{width:min(1080px,calc(100% - 30px));margin:auto;padding:32px 0 60px}.head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:22px}.head h1{margin:0;font-size:clamp(29px,4vw,40px)}.head p{margin:6px 0 0;color:var(--sub)}.count{padding:8px 13px;color:var(--amber);background:#fff3dc;border-radius:999px;font-size:12px;font-weight:900}.review-section{margin-bottom:35px}.review-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.review-head h2{margin:0;font-size:23px}
+    .requests{display:grid;gap:14px}.request{padding:clamp(18px,3vw,25px);background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:var(--shadow)}.request-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.request h2{margin:0;font-size:20px}.district{display:inline-block;margin-top:7px;color:var(--brand);font-size:14px;font-weight:900}.pending{padding:6px 10px;color:var(--amber);background:#fff3dc;border-radius:999px;font-size:11px;font-weight:800}
+    .details{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}.detail{display:block;padding:13px;background:#f7f8fb;border-radius:13px}.detail span,.detail strong{display:block}.detail span{margin-bottom:4px;color:var(--sub);font-size:10px}.detail strong{font-size:13px}.detail select{width:100%;min-height:43px;padding:0 10px;background:#fff;border:1px solid var(--line);border-radius:10px}
+    .actions{display:flex;justify-content:flex-end;gap:9px;margin-top:14px}.approve,.reject,.document{min-height:42px;padding:0 16px;border-radius:11px;cursor:pointer;font-weight:900}.approve{color:#fff;background:var(--green);border:0}.reject{color:var(--red);background:#fff;border:1px solid #efbcc8}.document{color:var(--brand);background:#f2f1ff;border:1px solid #d3d1fb}.approve:disabled,.reject:disabled{opacity:.55;cursor:wait}.empty,.error{padding:45px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:22px}.empty{color:var(--sub)}.error{color:var(--red)}.teacher-docs{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}.review-note{width:100%;min-height:70px;margin-top:13px;padding:11px;border:1px solid var(--line);border-radius:11px;resize:vertical}
+    @media(max-width:680px){.container{width:calc(100% - 22px);padding-top:22px}.head,.request-top{align-items:flex-start;flex-direction:column}.details{grid-template-columns:1fr}.actions{display:grid;grid-template-columns:1fr 1fr}.approve,.reject{width:100%}.brand small{display:none}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="mark">A</span><span>Homeschool Admin<small>ระบบตรวจสอบบัญชีและผู้ให้บริการ</small></span></div>
+    <div class="top-actions">
+      <a class="toko-link" href="../admin.html">← Admin Toko & Poppy</a>
+      <button class="logout" id="logoutButton" type="button">ออกจากระบบ</button>
+    </div>
+  </header>
+  <main class="container">
+    <div class="head"><div><h1>ตรวจสอบบัญชีผู้ใช้งาน</h1><p>ตรวจเอกสารและข้อมูลจริงก่อนเปิดสิทธิ์เข้าถึงระบบ</p></div></div>
+    <section class="review-section"><div class="review-head"><h2>คำขอครูผู้สร้างสื่อ</h2><span class="count" id="teacherCount">กำลังโหลด...</span></div><div class="requests" id="teacherList"><div class="empty">กำลังโหลดคำขอครู...</div></div></section>
+    <section class="review-section"><div class="review-head"><h2>คำขอเจ้าหน้าที่เขต</h2><span class="count" id="requestCount">กำลังโหลด...</span></div><div class="requests" id="requestList"><div class="empty">กำลังโหลดคำขอ...</div></div></section>
+  </main>
+  <script>
+    const SUPABASE_URL="https://ewsftltgehfrumfnmugi.supabase.co";
+    const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3c2Z0bHRnZWhmcnVtZm5tdWdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTUwMzQsImV4cCI6MjA5NjIzMTAzNH0.rYefsViZAFttNqiRQvAPv2E8wcq1vph5WPv2n8nrYL0";
+    const SESSION_KEY="homeschool_supabase_session";
+    let session=null,districts=[],teachers=[];
+    const $=selector=>document.querySelector(selector);
+    const escapeHtml=value=>String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+    function headers(extra={}){return{apikey:SUPABASE_ANON_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json",...extra}}
+    async function api(path,options={}){const response=await fetch(SUPABASE_URL+path,{...options,headers:headers(options.headers||{})});const text=await response.text();const body=text?JSON.parse(text):null;if(!response.ok)throw new Error(body?.message||body?.hint||"เชื่อมต่อระบบไม่สำเร็จ");return body}
+    function loadSession(){try{session=JSON.parse(localStorage.getItem(SESSION_KEY)||"null")}catch(_){}if(!session?.access_token){location.href="index.html";return false}return true}
+    async function bootstrap(){
+      if(!loadSession())return;
+      try{
+        const profile=await api("/rest/v1/profiles?select=role,approval_status&id=eq."+session.user.id+"&limit=1");
+        if(profile[0]?.role!=="admin"||profile[0]?.approval_status!=="active"){location.href="index.html";return}
+        await loadRequests();
+      }catch(error){$("#requestCount").textContent="เกิดข้อผิดพลาด";$("#teacherCount").textContent="เกิดข้อผิดพลาด";$("#requestList").innerHTML='<div class="error">'+escapeHtml(error.message)+'</div>';$("#teacherList").innerHTML='<div class="error">'+escapeHtml(error.message)+'</div>'}
+    }
+    async function loadRequests(){
+      const [officers,profileRows,districtRows,teacherRows,teacherProfileRows]=await Promise.all([
+        api("/rest/v1/district_officer_profiles?select=*&order=created_at.asc"),
+        api("/rest/v1/profiles?select=id,approval_status&role=eq.district&approval_status=eq.pending"),
+        api("/rest/v1/education_districts?select=id,code,name&active=eq.true&order=code.asc"),
+        api("/rest/v1/profiles?select=id,approval_status&role=eq.teacher&approval_status=eq.pending"),
+        api("/rest/v1/teacher_profiles?select=*&order=created_at.asc")
+      ]);
+      districts=districtRows;
+      const pendingIds=new Set(profileRows.map(row=>row.id));
+      renderRequests(officers.filter(row=>pendingIds.has(row.user_id)));
+      const pendingTeacherIds=new Set(teacherRows.map(row=>row.id));
+      teachers=teacherProfileRows.filter(row=>pendingTeacherIds.has(row.user_id));
+      renderTeachers(teachers);
+    }
+    function renderRequests(rows){
+      $("#requestCount").textContent=rows.length+" คำขอรอตรวจสอบ";
+      if(!rows.length){$("#requestList").innerHTML='<div class="empty">ไม่มีคำขอที่รอตรวจสอบ</div>';return}
+      $("#requestList").innerHTML=rows.map(row=>{
+        const options=districts.map(district=>`<option value="${escapeHtml(district.id)}"${district.id===row.requested_district_id?" selected":""}>${escapeHtml(district.code+" · "+district.name)}</option>`).join("");
+        return `<article class="request" data-user-id="${escapeHtml(row.user_id)}"><div class="request-top"><div><h2>${escapeHtml(row.first_name+" "+row.last_name)}</h2><span class="district">${escapeHtml(row.requested_district_name)}</span></div><span class="pending">รอตรวจสอบ</span></div><div class="details"><div class="detail"><span>เบอร์โทรศัพท์</span><strong>${escapeHtml(row.phone)}</strong></div><div class="detail"><span>LINE ID</span><strong>${escapeHtml(row.line_id||"-")}</strong></div><div class="detail"><span>ตำแหน่ง / กลุ่มงาน</span><strong>${escapeHtml(row.position)}</strong></div></div><label class="detail"><span>เขตที่จะอนุมัติ</span><select class="district-select">${options}</select></label><div class="actions"><button class="reject" type="button">ไม่อนุมัติ</button><button class="approve" type="button">ยืนยันและอนุมัติ</button></div></article>`;
+      }).join("");
+    }
+    function renderTeachers(rows){
+      $("#teacherCount").textContent=rows.length+" คำขอรอตรวจสอบ";
+      if(!rows.length){$("#teacherList").innerHTML='<div class="empty">ไม่มีคำขอครูที่รอตรวจสอบ</div>';return}
+      $("#teacherList").innerHTML=rows.map(row=>`<article class="request teacher-request" data-teacher-id="${escapeHtml(row.user_id)}"><div class="request-top"><div><h2>${escapeHtml(row.display_name)}</h2><span class="district">${row.provider_type==="institute"?"สถาบัน / ทีมผู้สอน":"ครูบุคคล"} · ${escapeHtml(row.province)}</span></div><span class="pending">รอตรวจสอบ</span></div><div class="details"><div class="detail"><span>เบอร์โทรศัพท์</span><strong>${escapeHtml(row.phone)}</strong></div><div class="detail"><span>LINE ID</span><strong>${escapeHtml(row.line_id||"-")}</strong></div><div class="detail"><span>บัญชีรับเงิน</span><strong>${escapeHtml(row.bank_name+" · "+row.bank_account_name+" · ****"+row.bank_account_last4)}</strong></div></div><div class="detail"><span>วิชาที่สอน</span><strong>${escapeHtml((row.subjects||[]).join(", "))}</strong></div><div class="detail"><span>วุฒิ / ประสบการณ์</span><strong>${escapeHtml(row.education_summary)}<br>${escapeHtml(row.experience_summary||"")}</strong></div><div class="teacher-docs"><button class="document" data-teacher-document="identity_document_path">บัตรประชาชน</button><button class="document" data-teacher-document="bank_document_path">หน้าบัญชี</button><button class="document" data-teacher-document="portrait_path">รูปถ่าย</button></div><textarea class="review-note" placeholder="หมายเหตุจาก Admin (ไม่บังคับ)"></textarea><div class="actions"><button class="reject teacher-reject" type="button">ไม่อนุมัติ</button><button class="approve teacher-approve" type="button">ยืนยันและอนุมัติครู</button></div></article>`).join("");
+    }
+    function absoluteStorageUrl(value){if(/^https?:\/\//i.test(value))return value;if(value.startsWith("/storage/v1/"))return SUPABASE_URL+value;if(value.startsWith("/object/"))return SUPABASE_URL+"/storage/v1"+value;return SUPABASE_URL+"/storage/v1/"+value.replace(/^\/+/,"")}
+    async function openTeacherDocument(card,field){
+      const row=teachers.find(x=>x.user_id===card.dataset.teacherId);if(!row?.[field])return;
+      const result=await api("/storage/v1/object/sign/teacher-verification/"+row[field].split("/").map(encodeURIComponent).join("/"),{method:"POST",body:JSON.stringify({expiresIn:300})});
+      window.open(absoluteStorageUrl(result.signedURL||result.signedUrl),"_blank","noopener");
+    }
+    async function decideTeacher(card,approved){
+      if(!confirm(approved?"ตรวจสอบเอกสารครบแล้ว และยืนยันอนุมัติครูคนนี้?":"ยืนยันว่าไม่อนุมัติคำขอครูนี้?"))return;
+      const buttons=card.querySelectorAll("button");buttons.forEach(button=>button.disabled=true);
+      try{await api("/rest/v1/rpc/"+(approved?"approve_teacher":"reject_teacher"),{method:"POST",body:JSON.stringify({target_user_id:card.dataset.teacherId,review_note:card.querySelector(".review-note").value.trim()||null})});await loadRequests()}catch(error){alert(error.message);buttons.forEach(button=>button.disabled=false)}
+    }
+    async function decide(card,approved){
+      const buttons=card.querySelectorAll("button"),userId=card.dataset.userId;
+      if(!approved&&!confirm("ยืนยันว่าไม่อนุมัติคำขอนี้?"))return;
+      if(approved&&!confirm("ตรวจสอบตัวตนแล้ว และยืนยันอนุมัติเจ้าหน้าที่คนนี้?"))return;
+      buttons.forEach(button=>button.disabled=true);
+      try{
+        const path=approved?"/rest/v1/rpc/approve_district_officer":"/rest/v1/rpc/reject_district_officer";
+        const body=approved?{target_user_id:userId,target_district_id:card.querySelector(".district-select").value}:{target_user_id:userId};
+        await api(path,{method:"POST",body:JSON.stringify(body)});
+        await loadRequests();
+      }catch(error){alert(error.message);buttons.forEach(button=>button.disabled=false)}
+    }
+    document.addEventListener("click",event=>{const teacherCard=event.target.closest(".teacher-request");if(teacherCard){const doc=event.target.closest("[data-teacher-document]");if(doc)openTeacherDocument(teacherCard,doc.dataset.teacherDocument).catch(e=>alert(e.message));if(event.target.closest(".teacher-approve"))decideTeacher(teacherCard,true);if(event.target.closest(".teacher-reject"))decideTeacher(teacherCard,false);return}const card=event.target.closest(".request");if(!card)return;if(event.target.closest(".approve"))decide(card,true);if(event.target.closest(".reject"))decide(card,false)});
+    $("#logoutButton").addEventListener("click",()=>{localStorage.removeItem(SESSION_KEY);location.href="index.html"});
+    bootstrap();
+  </script>
+</body>
+</html>

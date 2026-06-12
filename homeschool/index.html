@@ -1,0 +1,822 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#5b57e8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Homeschool | เรียนรู้ เติบโต ไปด้วยกัน</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --brand: #5b57e8;
+      --brand-dark: #4641ce;
+      --brand-soft: #eeedff;
+      --ink: #181922;
+      --sub: #6d7180;
+      --line: #e5e6ed;
+      --paper: #f7f7fa;
+      --white: #fff;
+      --mint: #0fa477;
+      --danger: #bc3553;
+      --shadow: 0 28px 80px rgba(44, 42, 96, .13);
+    }
+
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow-x: hidden;
+      color: var(--ink);
+      background: #f7f7fb;
+      font-family: "Noto Sans Thai", "Leelawadee UI", Tahoma, system-ui, sans-serif;
+    }
+    button, input { font: inherit; }
+    button { color: inherit; }
+    svg { display: block; }
+    .hidden { display: none !important; }
+    .toko-universe-link {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 30;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 9px 14px;
+      color: #4f7449;
+      background: rgba(255,255,255,.9);
+      border: 1px solid rgba(91,70,48,.12);
+      border-radius: 999px;
+      box-shadow: 0 12px 30px rgba(44,42,96,.1);
+      font-size: 14px;
+      font-weight: 900;
+      text-decoration: none;
+      backdrop-filter: blur(12px);
+    }
+
+    .page {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100dvh;
+      overflow: hidden;
+    }
+    .page::before, .page::after {
+      position: fixed;
+      z-index: 0;
+      width: 38rem;
+      height: 38rem;
+      filter: blur(1px);
+      border-radius: 50%;
+      content: "";
+      pointer-events: none;
+    }
+    .page::before {
+      top: -21rem;
+      left: -17rem;
+      background: radial-gradient(circle, rgba(91, 87, 232, .2), rgba(91, 87, 232, 0) 68%);
+    }
+    .page::after {
+      right: -19rem;
+      bottom: -22rem;
+      background: radial-gradient(circle, rgba(15, 164, 119, .13), rgba(15, 164, 119, 0) 68%);
+    }
+    .shell {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(390px, .75fr);
+      width: min(1180px, calc(100% - 48px));
+      min-height: 100vh;
+      min-height: 100dvh;
+      margin: 0 auto;
+      gap: clamp(40px, 7vw, 90px);
+      align-items: center;
+      padding: 38px 0;
+    }
+
+    .welcome {
+      max-width: 650px;
+      padding: 20px 0;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: clamp(42px, 7vh, 74px);
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: -.4px;
+    }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 45px;
+      height: 45px;
+      color: #fff;
+      background: linear-gradient(145deg, #706cf0, #4d48d7);
+      border-radius: 15px;
+      box-shadow: 0 12px 28px rgba(91, 87, 232, .28);
+    }
+    .brand-mark svg { width: 26px; height: 26px; }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+      padding: 7px 12px;
+      color: var(--brand);
+      background: var(--brand-soft);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .eyebrow svg { width: 16px; height: 16px; }
+    h1 {
+      max-width: 650px;
+      margin: 0;
+      font-size: clamp(42px, 5.4vw, 70px);
+      line-height: 1.08;
+      letter-spacing: -2.1px;
+    }
+    .accent { color: var(--brand); }
+    .lead {
+      max-width: 590px;
+      margin: 22px 0 0;
+      color: var(--sub);
+      font-size: clamp(16px, 1.7vw, 19px);
+      line-height: 1.8;
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 38px;
+    }
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 66px;
+      padding: 12px;
+      background: rgba(255, 255, 255, .7);
+      border: 1px solid rgba(229, 230, 237, .85);
+      border-radius: 18px;
+      backdrop-filter: blur(12px);
+    }
+    .feature-icon {
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+      width: 38px;
+      height: 38px;
+      color: var(--brand);
+      background: var(--brand-soft);
+      border-radius: 12px;
+    }
+    .feature:nth-child(2) .feature-icon { color: var(--mint); background: #e5f8f1; }
+    .feature:nth-child(3) .feature-icon { color: #db7a2b; background: #fff0df; }
+    .feature-icon svg { width: 19px; height: 19px; }
+    .feature strong { font-size: 12px; line-height: 1.45; }
+
+    .auth-card {
+      width: 100%;
+      padding: clamp(26px, 4vw, 38px);
+      background: rgba(255, 255, 255, .95);
+      border: 1px solid rgba(229, 230, 237, .9);
+      border-radius: 30px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+    .mobile-brand { display: none; }
+    .auth-head { margin-bottom: 23px; }
+    .auth-head h2 { margin: 0; font-size: 27px; letter-spacing: -.5px; }
+    .auth-head p { margin: 6px 0 0; color: var(--sub); font-size: 13px; line-height: 1.6; }
+    .tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+      margin-bottom: 22px;
+      padding: 6px;
+      background: #f1f1f5;
+      border-radius: 15px;
+    }
+    .tab {
+      min-height: 42px;
+      color: var(--sub);
+      background: transparent;
+      border: 0;
+      border-radius: 11px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+      transition: .18s ease;
+    }
+    .tab.active {
+      color: var(--brand);
+      background: #fff;
+      box-shadow: 0 5px 14px rgba(41, 40, 79, .08);
+    }
+    .form { display: grid; gap: 15px; }
+    .field { display: grid; gap: 7px; }
+    .field-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .field label { font-size: 13px; font-weight: 800; }
+    .role-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .role-option {
+      position: relative;
+      display: grid;
+      grid-template-columns: 36px minmax(0, 1fr);
+      align-items: center;
+      gap: 9px;
+      min-height: 58px;
+      padding: 9px 10px;
+      color: var(--sub);
+      background: #fafafd;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      cursor: pointer;
+      text-align: left;
+      transition: .16s ease;
+    }
+    .role-option:hover { border-color: #bbb9ee; }
+    .role-option.active { color: var(--brand); background: var(--brand-soft); border-color: #aaa7ee; }
+    .role-icon {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      color: inherit;
+      background: #fff;
+      border-radius: 11px;
+    }
+    .role-icon svg { width: 19px; height: 19px; }
+    .role-option strong, .role-option small { display: block; }
+    .role-option strong { color: var(--ink); font-size: 12px; }
+    .role-option.active strong { color: var(--brand); }
+    .role-option small { margin-top: 1px; font-size: 9px; line-height: 1.35; }
+    .role-hint { margin: 0; color: var(--sub); font-size: 10px; line-height: 1.55; }
+    .forgot {
+      padding: 0;
+      color: var(--brand);
+      background: transparent;
+      border: 0;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute;
+      top: 50%;
+      left: 14px;
+      width: 19px;
+      height: 19px;
+      color: #9295a2;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+    .input-wrap input {
+      width: 100%;
+      min-height: 50px;
+      padding: 0 43px;
+      color: var(--ink);
+      background: #fafafd;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      outline: 0;
+      transition: .16s ease;
+    }
+    .input-wrap input:focus {
+      background: #fff;
+      border-color: #9996ee;
+      box-shadow: 0 0 0 4px rgba(91, 87, 232, .1);
+    }
+    .password-toggle {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      color: #8b8e9a;
+      background: transparent;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      transform: translateY(-50%);
+    }
+    .password-toggle svg { width: 19px; height: 19px; }
+    .terms {
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      color: var(--sub);
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .terms input { width: 16px; height: 16px; margin: 1px 0 0; accent-color: var(--brand); }
+    .terms a { color: var(--brand); text-decoration: none; font-weight: 700; }
+    .submit {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 51px;
+      margin-top: 2px;
+      color: #fff;
+      background: linear-gradient(135deg, #615dea, #504bd8);
+      border: 0;
+      border-radius: 15px;
+      box-shadow: 0 12px 24px rgba(91, 87, 232, .24);
+      cursor: pointer;
+      font-weight: 800;
+    }
+    .submit:hover { background: linear-gradient(135deg, #5753df, #4540c9); }
+    .submit:disabled { opacity: .65; cursor: wait; }
+    .submit svg { width: 18px; height: 18px; }
+    .form-error, .form-success {
+      margin: 0;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .form-error { color: #a52e49; background: #fff0f3; border: 1px solid #ffd4dd; }
+    .form-success { color: #087d58; background: #ebfaf4; border: 1px solid #c8efdf; }
+    .security {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin: 20px 0 0;
+      color: #8a8d99;
+      font-size: 10px;
+    }
+    .security svg { width: 14px; height: 14px; }
+    .footer {
+      position: absolute;
+      z-index: 2;
+      right: 0;
+      bottom: 14px;
+      left: 0;
+      color: #999ca7;
+      font-size: 10px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    @media (max-width: 860px) {
+      .shell { grid-template-columns: 1fr; width: min(620px, calc(100% - 34px)); gap: 28px; padding: 24px 0 50px; }
+      .welcome { display: none; }
+      .mobile-brand { display: flex; justify-content: center; margin-bottom: 28px; }
+      .auth-card { align-self: center; }
+      .footer { position: static; margin-top: -18px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+    }
+
+    @media (max-width: 480px) {
+      body { background: #f8f8fb; }
+      .shell {
+        width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding: max(20px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom));
+      }
+      .auth-card { padding: 24px 20px; border-radius: 26px; box-shadow: 0 14px 45px rgba(44, 42, 96, .11); }
+      .mobile-brand { margin-bottom: 22px; }
+      .brand { margin: 0; font-size: 20px; }
+      .brand-mark { width: 42px; height: 42px; }
+      .auth-head h2 { font-size: 25px; }
+      .role-grid { grid-template-columns: 1fr 1fr; }
+      .footer { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="toko-universe-link" href="../index.html">← Toko & Poppy</a>
+  <div class="page">
+    <main class="shell">
+      <section class="welcome" aria-labelledby="welcome-title">
+        <div class="brand">
+          <span class="brand-mark" data-icon="home"></span>
+          <span>Homeschool</span>
+        </div>
+        <div class="eyebrow"><span data-icon="sparkles"></span>พื้นที่เรียนรู้ของทุกครอบครัว</div>
+        <h1 id="welcome-title">เรียนรู้ เติบโต<br><span class="accent">ไปด้วยกัน</span></h1>
+        <p class="lead">วางแผนการเรียน เก็บร่องรอยพัฒนาการ และจัดการเอกสารบ้านเรียนอย่างเป็นระบบ ในพื้นที่เดียวที่ออกแบบเพื่อครอบครัวของคุณ</p>
+        <div class="features">
+          <div class="feature"><span class="feature-icon" data-icon="calendar"></span><strong>วางแผนการเรียน<br>ได้อย่างยืดหยุ่น</strong></div>
+          <div class="feature"><span class="feature-icon" data-icon="folder"></span><strong>เก็บผลงานและ<br>พัฒนาการผู้เรียน</strong></div>
+          <div class="feature"><span class="feature-icon" data-icon="file"></span><strong>จัดทำเอกสาร<br>ราชการได้ง่ายขึ้น</strong></div>
+        </div>
+      </section>
+
+      <section class="auth-card" aria-labelledby="auth-title">
+        <div class="brand mobile-brand">
+          <span class="brand-mark" data-icon="home"></span>
+          <span>Homeschool</span>
+        </div>
+
+        <div class="auth-head">
+          <h2 id="auth-title">ยินดีต้อนรับกลับมา</h2>
+          <p id="auth-description">เข้าสู่ระบบเพื่อดูแผนการเรียนและข้อมูลครอบครัวของคุณ</p>
+        </div>
+
+        <div class="tabs" role="tablist" aria-label="บัญชีผู้ใช้งาน">
+          <button class="tab active" type="button" role="tab" data-mode="signin">เข้าสู่ระบบ</button>
+          <button class="tab" type="button" role="tab" data-mode="signup">สมัครสมาชิก</button>
+        </div>
+
+        <form class="form" id="authForm">
+          <div class="field">
+            <label>คุณเข้าใช้งานในฐานะ</label>
+            <div class="role-grid" role="radiogroup" aria-label="เลือกประเภทผู้ใช้งาน">
+              <button class="role-option active" type="button" role="radio" aria-checked="true" data-role="parent">
+                <span class="role-icon" data-icon="family"></span>
+                <span><strong>ผู้ปกครอง</strong><small>จัดการบ้านเรียน</small></span>
+              </button>
+              <button class="role-option" type="button" role="radio" aria-checked="false" data-role="student">
+                <span class="role-icon" data-icon="student"></span>
+                <span><strong>นักเรียน</strong><small>ใช้ ID จากผู้ปกครอง</small></span>
+              </button>
+              <button class="role-option" type="button" role="radio" aria-checked="false" data-role="district">
+                <span class="role-icon" data-icon="building"></span>
+                <span><strong>เจ้าหน้าที่เขต</strong><small>ตรวจแผนและประเมิน</small></span>
+              </button>
+              <button class="role-option" type="button" role="radio" aria-checked="false" data-role="teacher">
+                <span class="role-icon" data-icon="teacher"></span>
+                <span><strong>ครูผู้สร้างสื่อ</strong><small>สร้างและขายสื่อ</small></span>
+              </button>
+            </div>
+            <p class="role-hint" id="roleHint">ผู้ปกครองสามารถสมัครสมาชิกและสร้างข้อมูลผู้เรียนได้</p>
+          </div>
+
+          <div class="field hidden" id="nameField">
+            <label for="fullName" id="fullNameLabel">ชื่อ-นามสกุลผู้ปกครอง</label>
+            <div class="input-wrap">
+              <span class="input-icon" data-icon="user"></span>
+              <input id="fullName" name="fullName" type="text" autocomplete="name" placeholder="คุณกานต์ ใจดี">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="email">อีเมล</label>
+            <div class="input-wrap">
+              <span class="input-icon" data-icon="mail"></span>
+              <input id="email" name="email" type="email" autocomplete="email" placeholder="parent@example.com" required>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-head">
+              <label for="password">รหัสผ่าน</label>
+              <button class="forgot" id="forgotPassword" type="button">ลืมรหัสผ่าน?</button>
+            </div>
+            <div class="input-wrap">
+              <span class="input-icon" data-icon="lock"></span>
+              <input id="password" name="password" type="password" autocomplete="current-password" minlength="6" placeholder="อย่างน้อย 6 ตัวอักษร" required>
+              <button class="password-toggle" id="togglePassword" type="button" aria-label="แสดงรหัสผ่าน" data-icon="eye"></button>
+            </div>
+          </div>
+
+          <label class="terms hidden" id="termsField">
+            <input id="acceptTerms" type="checkbox">
+            <span>ฉันยอมรับ <a href="#" data-placeholder="ข้อกำหนดการใช้งาน">ข้อกำหนดการใช้งาน</a> และ <a href="#" data-placeholder="นโยบายความเป็นส่วนตัว">นโยบายความเป็นส่วนตัว</a></span>
+          </label>
+
+          <p class="form-error hidden" id="formError"></p>
+          <p class="form-success hidden" id="formSuccess"></p>
+
+          <button class="submit" id="submitButton" type="submit">เข้าสู่ระบบ <span data-icon="arrow"></span></button>
+        </form>
+
+        <p class="security"><span data-icon="shield"></span>ข้อมูลของคุณได้รับการปกป้องด้วยระบบ Supabase Auth</p>
+      </section>
+    </main>
+
+    <footer class="footer">© 2026 Homeschool · ระบบสนับสนุนการจัดการศึกษาโดยครอบครัว</footer>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://ewsftltgehfrumfnmugi.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3c2Z0bHRnZWhmcnVtZm5tdWdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTUwMzQsImV4cCI6MjA5NjIzMTAzNH0.rYefsViZAFttNqiRQvAPv2E8wcq1vph5WPv2n8nrYL0";
+    const SESSION_KEY = "homeschool_supabase_session";
+    const NEXT_PAGE = "parent.html";
+
+    const icons = {
+      home: '<path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/>',
+      sparkles: '<path d="m12 3 1.2 3.3L16.5 7.5l-3.3 1.2L12 12l-1.2-3.3-3.3-1.2 3.3-1.2zM5 14l.8 2.2L8 17l-2.2.8L5 20l-.8-2.2L2 17l2.2-.8zM19 13l.7 1.8 1.8.7-1.8.7L19 18l-.7-1.8-1.8-.7 1.8-.7z"/>',
+      calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+      folder: '<path d="M3 6h7l2 2h9v11H3z"/>',
+      file: '<path d="M14 2H6a2 2 0 0 0-2 2v16h16V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
+      user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+      mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>',
+      lock: '<rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+      eye: '<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+      eyeOff: '<path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.8 5.2A10.8 10.8 0 0 1 12 5c6 0 10 7 10 7a18 18 0 0 1-2.1 2.8M6.6 6.6C3.7 8.5 2 12 2 12s4 7 10 7c1 0 2-.2 2.9-.5"/>',
+      arrow: '<path d="M5 12h14M14 7l5 5-5 5"/>',
+      shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>'
+      ,family: '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20a6 6 0 0 1 12 0M14 15a5 5 0 0 1 7 5"/>'
+      ,student: '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>'
+      ,building: '<path d="M4 21V5l8-3 8 3v16M8 8h.01M12 8h.01M16 8h.01M8 12h.01M12 12h.01M16 12h.01M9 21v-5h6v5"/>'
+      ,teacher: '<circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3M16 4h5v10h-5M18 8h3"/>'
+    };
+
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+    let mode = "signin";
+    let selectedRole = "parent";
+    const ROLE_ROUTES = {
+      parent: "parent.html",
+      student: "student.html",
+      district: "district.html",
+      teacher: "teacher.html",
+      admin: "admin.html"
+    };
+    const ROLE_LABELS = {
+      parent: "ผู้ปกครอง",
+      student: "นักเรียน",
+      district: "เจ้าหน้าที่เขตการศึกษา",
+      teacher: "ครูผู้สร้างสื่อ",
+      admin: "ผู้ดูแลระบบ"
+    };
+
+    function icon(name) {
+      return '<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + icons[name] + '</svg>';
+    }
+
+    function mountIcons() {
+      $$("[data-icon]").forEach((element) => {
+        element.innerHTML = icon(element.dataset.icon);
+      });
+    }
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      const signingUp = mode === "signup";
+      $$("[data-mode]").forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+      $("#nameField").classList.toggle("hidden", !signingUp);
+      $("#termsField").classList.toggle("hidden", !signingUp);
+      $("#fullName").required = signingUp;
+      $("#acceptTerms").required = signingUp;
+      $("#forgotPassword").classList.toggle("hidden", signingUp);
+      $("#password").autocomplete = signingUp ? "new-password" : "current-password";
+      $("#submitButton").innerHTML = (signingUp ? "สมัครสมาชิก" : "เข้าสู่ระบบ") + " " + icon("arrow");
+      updateAuthCopy();
+      clearMessage();
+      if (signingUp && selectedRole === "student") {
+        showError("บัญชีนักเรียนต้องให้ผู้ปกครองสร้างจากหน้าจัดการผู้เรียน");
+        $("#submitButton").disabled = true;
+      } else {
+        $("#submitButton").disabled = false;
+      }
+    }
+
+    function setRole(role) {
+      selectedRole = role;
+      $$("[data-role]").forEach((button) => {
+        const active = button.dataset.role === role;
+        button.classList.toggle("active", active);
+        button.setAttribute("aria-checked", String(active));
+      });
+      const hints = {
+        parent: "ผู้ปกครองสามารถสมัครสมาชิกและสร้างข้อมูลผู้เรียนได้",
+        student: "นักเรียนเข้าสู่ระบบด้วยบัญชีที่ผู้ปกครองสร้างให้",
+        district: "บัญชีเจ้าหน้าที่เขตต้องผ่านการตรวจสอบและอนุมัติ",
+        teacher: "บัญชีครูใช้สำหรับสร้าง อัปโหลด และจำหน่ายสื่อการเรียน"
+      };
+      $("#roleHint").textContent = hints[role];
+      $("#email").placeholder = role === "student" ? "อีเมลบัญชีนักเรียนที่ผู้ปกครองสร้าง" : "name@example.com";
+      updateAuthCopy();
+      if (mode === "signup" && role === "student") {
+        showError("บัญชีนักเรียนต้องให้ผู้ปกครองสร้างจากหน้าจัดการผู้เรียน");
+        $("#submitButton").disabled = true;
+      } else {
+        $("#submitButton").disabled = false;
+        clearMessage();
+      }
+    }
+
+    function updateAuthCopy() {
+      if (mode === "signin") {
+        $("#auth-title").textContent = "ยินดีต้อนรับกลับมา";
+        $("#auth-description").textContent = "เข้าสู่ระบบในฐานะ" + ROLE_LABELS[selectedRole] + " เพื่อไปยังพื้นที่ของคุณ";
+        return;
+      }
+      const titles = {
+        parent: "สร้างบัญชีครอบครัว",
+        student: "บัญชีนักเรียน",
+        district: "สมัครบัญชีเจ้าหน้าที่เขต",
+        teacher: "สมัครบัญชีครูผู้สร้างสื่อ"
+      };
+      const descriptions = {
+        parent: "เริ่มวางแผนการเรียนและเก็บพัฒนาการของลูกในพื้นที่ของคุณ",
+        student: "บัญชีนักเรียนต้องสร้างและดูแลโดยผู้ปกครอง",
+        district: "กรอกข้อมูลเพื่อขอสิทธิ์ตรวจแผนและประเมินบ้านเรียน",
+        teacher: "สร้างบัญชีเพื่ออัปโหลดและจัดการสื่อการเรียนของคุณ"
+      };
+      const labels = {
+        parent: "ชื่อ-นามสกุลผู้ปกครอง",
+        student: "ชื่อ-นามสกุลนักเรียน",
+        district: "ชื่อ-นามสกุลเจ้าหน้าที่",
+        teacher: "ชื่อ-นามสกุลครู"
+      };
+      $("#auth-title").textContent = titles[selectedRole];
+      $("#auth-description").textContent = descriptions[selectedRole];
+      $("#fullNameLabel").textContent = labels[selectedRole];
+    }
+
+    function clearMessage() {
+      $("#formError").classList.add("hidden");
+      $("#formSuccess").classList.add("hidden");
+    }
+
+    function showError(message) {
+      $("#formError").textContent = message;
+      $("#formError").classList.remove("hidden");
+      $("#formSuccess").classList.add("hidden");
+    }
+
+    function showSuccess(message) {
+      $("#formSuccess").textContent = message;
+      $("#formSuccess").classList.remove("hidden");
+      $("#formError").classList.add("hidden");
+    }
+
+    async function authRequest(path, payload) {
+      const response = await fetch(SUPABASE_URL + "/auth/v1/" + path, {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: "Bearer " + SUPABASE_ANON_KEY,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = result.msg || result.message || result.error_description || "ไม่สามารถดำเนินการได้";
+        throw new Error(translateError(message));
+      }
+      return result;
+    }
+
+    function translateError(message) {
+      const text = String(message);
+      if (text.includes("Invalid login credentials")) return "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+      if (text.includes("Email not confirmed")) return "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ";
+      if (text.includes("User already registered")) return "อีเมลนี้มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบ";
+      if (text.includes("Password should be")) return "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร";
+      if (text.toLowerCase().includes("rate limit")) {
+        return "ระบบส่งอีเมลถึงขีดจำกัดแล้ว กรุณารอประมาณ 60 นาที หรือลองเข้าสู่ระบบหากบัญชีถูกสร้างไว้แล้ว";
+      }
+      return text;
+    }
+
+    function saveSession(result) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(result));
+    }
+
+    async function getUserProfile(session) {
+      const response = await fetch(
+        SUPABASE_URL + "/rest/v1/profiles?select=role,approval_status&id=eq." + encodeURIComponent(session.user.id) + "&limit=1",
+        {
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: "Bearer " + session.access_token
+          }
+        }
+      );
+      if (!response.ok) throw new Error("ไม่สามารถตรวจสอบสิทธิ์ผู้ใช้งานได้");
+      const profiles = await response.json();
+      return profiles[0] || { role: "parent", approval_status: "active" };
+    }
+
+    async function goToApp(session, expectedRole = null) {
+      const profile = await getUserProfile(session);
+      const role = profile.role || "parent";
+      if (role === "admin") {
+        window.location.href = ROLE_ROUTES.admin;
+        return;
+      }
+      if (expectedRole && role !== expectedRole) {
+        localStorage.removeItem(SESSION_KEY);
+        throw new Error("บัญชีนี้ลงทะเบียนเป็น " + ROLE_LABELS[role] + " กรุณาเลือกประเภทผู้ใช้งานให้ถูกต้อง");
+      }
+      if (profile.approval_status === "pending") {
+        if (role === "district" || role === "teacher") {
+          window.location.href = ROLE_ROUTES[role];
+          return;
+        }
+        throw new Error("บัญชี" + ROLE_LABELS[role] + "กำลังรอผู้ดูแลระบบตรวจสอบและอนุมัติ");
+      }
+      if (profile.approval_status === "suspended") {
+        localStorage.removeItem(SESSION_KEY);
+        throw new Error("บัญชีนี้ถูกระงับ กรุณาติดต่อผู้ดูแลระบบ");
+      }
+      window.location.href = ROLE_ROUTES[role] || NEXT_PAGE;
+    }
+
+    async function submitAuth(event) {
+      event.preventDefault();
+      clearMessage();
+      const data = new FormData(event.currentTarget);
+      const email = String(data.get("email") || "").trim();
+      const password = String(data.get("password") || "");
+      const fullName = String(data.get("fullName") || "").trim();
+      const button = $("#submitButton");
+
+      button.disabled = true;
+      button.textContent = "กำลังดำเนินการ...";
+      try {
+        if (mode === "signup") {
+          const result = await authRequest("signup", {
+            email,
+            password,
+            data: { full_name: fullName, requested_role: selectedRole }
+          });
+          if (result.access_token) {
+            saveSession(result);
+            await goToApp(result, selectedRole);
+          } else {
+            const approvalNote = ["district", "teacher"].includes(selectedRole)
+              ? " หลังยืนยันอีเมล บัญชีจะรอผู้ดูแลระบบอนุมัติ"
+              : "";
+            showSuccess("สมัครสมาชิกสำเร็จ กรุณาเปิดอีเมลเพื่อยืนยันบัญชี" + approvalNote);
+            setMode("signin");
+            $("#email").value = email;
+          }
+        } else {
+          const result = await authRequest("token?grant_type=password", { email, password });
+          saveSession(result);
+          await goToApp(result, selectedRole);
+        }
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        button.disabled = mode === "signup" && selectedRole === "student";
+        button.innerHTML = (mode === "signup" ? "สมัครสมาชิก" : "เข้าสู่ระบบ") + " " + icon("arrow");
+      }
+    }
+
+    async function resetPassword() {
+      clearMessage();
+      const email = $("#email").value.trim();
+      if (!email) {
+        showError("กรุณากรอกอีเมลก่อนขอเปลี่ยนรหัสผ่าน");
+        $("#email").focus();
+        return;
+      }
+      try {
+        await authRequest("recover", {
+          email,
+          redirect_to: new URL("index.html", window.location.href).href
+        });
+        showSuccess("ส่งลิงก์ตั้งรหัสผ่านใหม่ไปยังอีเมลแล้ว");
+      } catch (error) {
+        showError(error.message);
+      }
+    }
+
+    function togglePassword() {
+      const input = $("#password");
+      const showing = input.type === "text";
+      input.type = showing ? "password" : "text";
+      $("#togglePassword").dataset.icon = showing ? "eye" : "eyeOff";
+      $("#togglePassword").innerHTML = icon(showing ? "eye" : "eyeOff");
+      $("#togglePassword").setAttribute("aria-label", showing ? "แสดงรหัสผ่าน" : "ซ่อนรหัสผ่าน");
+    }
+
+    async function redirectExistingSession() {
+      try {
+        const session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+        if (session?.access_token && Number(session.expires_at || 0) * 1000 > Date.now()) await goToApp(session);
+      } catch (_) {
+        localStorage.removeItem(SESSION_KEY);
+      }
+    }
+
+    $$("[data-mode]").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
+    $$("[data-role]").forEach((button) => button.addEventListener("click", () => setRole(button.dataset.role)));
+    $$("[data-placeholder]").forEach((link) => link.addEventListener("click", (event) => {
+      event.preventDefault();
+      showSuccess(link.dataset.placeholder + " กำลังจัดทำ");
+    }));
+    $("#authForm").addEventListener("submit", submitAuth);
+    $("#forgotPassword").addEventListener("click", resetPassword);
+    $("#togglePassword").addEventListener("click", togglePassword);
+
+    mountIcons();
+    redirectExistingSession();
+  </script>
+</body>
+</html>
