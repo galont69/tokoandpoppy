@@ -553,3 +553,178 @@ body { font-size: 16px; }
 .admin-gallery-item button,
 .gallery-empty { font-size: 13px; }
 .lesson-save-bar span { font-size: 14px; }
+
+.learning-toolbar {
+  align-items: center;
+}
+
+.learning-progress-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.learning-progress-card {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+  border: 1px solid #eadccd;
+  border-radius: 28px;
+  background: #fffdf8;
+  box-shadow: 0 18px 35px rgba(89, 65, 42, 0.08);
+}
+
+.learning-progress-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.learning-avatar {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 20px;
+  background: #edf7e8;
+  font-size: 26px;
+}
+
+.learning-progress-top strong {
+  display: block;
+  color: #4b3a31;
+  font-size: 21px;
+}
+
+.learning-progress-top small {
+  color: #8b7a6b;
+  font-size: 14px;
+}
+
+.learning-meter {
+  height: 13px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #ece5da;
+}
+
+.learning-meter i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #689957, #efbd38);
+}
+
+.learning-numbers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+
+.learning-numbers span {
+  padding: 10px;
+  border-radius: 16px;
+  background: #f7f2e9;
+  color: #7a695d;
+  font-size: 13px;
+}
+
+.learning-numbers strong {
+  display: block;
+  color: #4f7d48;
+  font-size: 22px;
+}
+
+.learning-progress-card p {
+  min-height: 34px;
+  margin: 0;
+  color: #6d5b50;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.learning-record-button {
+  width: 100%;
+}
+
+.learning-record-card {
+  max-width: 760px;
+}
+
+.learning-record-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.learning-record-form .full {
+  grid-column: 1 / -1;
+}
+
+.learning-record-form label {
+  display: grid;
+  gap: 8px;
+  color: #5c493d;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.learning-record-form input,
+.learning-record-form textarea {
+  width: 100%;
+  border: 1px solid #e4d6c7;
+  border-radius: 18px;
+  padding: 13px 15px;
+  background: #fffdf9;
+  color: #4e3d33;
+  font: inherit;
+}
+
+.learning-photo-drop {
+  display: grid;
+  min-height: 150px;
+  place-items: center;
+  border: 2px dashed #d9c7b7;
+  border-radius: 24px;
+  background: #fffaf2;
+  color: #907b6c;
+  text-align: center;
+  cursor: pointer;
+  padding: 18px;
+}
+
+.learning-photo-drop input {
+  display: none;
+}
+
+#recordSessionPhotoPreview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  color: #6a5a4f;
+  font-size: 14px;
+}
+
+#recordSessionPhotoPreview img {
+  width: 76px;
+  height: 76px;
+  object-fit: cover;
+  border-radius: 18px;
+  box-shadow: 0 10px 20px rgba(71, 54, 38, 0.12);
+}
+
+@media (max-width: 760px) {
+  .learning-progress-grid,
+  .learning-record-form {
+    grid-template-columns: 1fr;
+  }
+
+  .learning-record-form .full {
+    grid-column: auto;
+  }
+
+  .learning-numbers {
+    grid-template-columns: 1fr;
+  }
+}

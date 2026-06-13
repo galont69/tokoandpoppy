@@ -54,6 +54,23 @@ const branchForm = document.querySelector("#branchForm");
 const branchAdminRows = document.querySelector("#branchAdminRows");
 const branchAdminPendingBadge = document.querySelector("#branchAdminPendingBadge");
 const refreshBranchAdminsButton = document.querySelector("#refreshBranchAdminsButton");
+const learningProgressRows = document.querySelector("#learningProgressRows");
+const learningLoadingState = document.querySelector("#learningLoadingState");
+const learningEmptyState = document.querySelector("#learningEmptyState");
+const learningSearchInput = document.querySelector("#learningSearchInput");
+const learningCourseFilter = document.querySelector("#learningCourseFilter");
+const learningScopeText = document.querySelector("#learningScopeText");
+const refreshLearningButton = document.querySelector("#refreshLearningButton");
+const recordSessionModal = document.querySelector("#recordSessionModal");
+const recordSessionForm = document.querySelector("#recordSessionForm");
+const recordSessionTitle = document.querySelector("#recordSessionTitle");
+const recordSessionSummary = document.querySelector("#recordSessionSummary");
+const recordSessionDate = document.querySelector("#recordSessionDate");
+const recordLessonTitle = document.querySelector("#recordLessonTitle");
+const recordTeacherComment = document.querySelector("#recordTeacherComment");
+const recordSessionPhoto = document.querySelector("#recordSessionPhoto");
+const recordSessionPhotoPreview = document.querySelector("#recordSessionPhotoPreview");
+const saveSessionButton = document.querySelector("#saveSessionButton");
 
 let applications = [];
 let activeStatus = "all";
@@ -69,6 +86,8 @@ let artCategories = [];
 let artLevels = [];
 let artLessons = [];
 let activeArtLesson = null;
+let learningEnrollments = [];
+let activeLearningEnrollment = null;
 
 const courseLabels = {
   robot: ["โรบอท + โค้ดดิ้ง", "SPIKE Essential"],
@@ -355,7 +374,8 @@ function updateStats() {
 }
 
 function showAdminView(viewName) {
-  if (!isMainAdmin() && viewName !== "applications") {
+  const branchAllowedViews = ["applications", "progress"];
+  if (!isMainAdmin() && !branchAllowedViews.includes(viewName)) {
     viewName = "applications";
     showToast("ผู้ดูแลสาขาดูได้เฉพาะข้อมูลนักเรียนในสาขาของตัวเอง", true);
   }
@@ -369,6 +389,7 @@ function showAdminView(viewName) {
     applications: ["ใบสมัครเรียน", "ศูนย์จัดการสมาชิก"],
     branchAdmins: ["ผู้ดูแลสาขา", "BRANCH ADMIN ACCESS"],
     branches: ["สาขาเฟรนไชน์", "FRANCHISE CENTER"],
+    progress: ["สมุดพัฒนาการนักเรียน", "LEARNING JOURNAL"],
     lessons: ["จัดการบทเรียนโรบอท", "ROBOT COURSE STUDIO"],
     art: ["จัดการบทเรียนศิลปะ", "ART COURSE STUDIO"]
   };
@@ -378,8 +399,190 @@ function showAdminView(viewName) {
   document.querySelector(".sidebar").classList.remove("open");
   if (viewName === "branchAdmins") loadBranchAdminApplications();
   if (viewName === "branches") loadBranchesAdmin();
+  if (viewName === "progress") loadLearningProgress();
   if (viewName === "lessons") loadRobotLessons();
   if (viewName === "art") loadArtStudio();
+}
+
+function getCourseEnrollmentLabel(enrollment) {
+  if (enrollment.course_type === "robot") return "โรบอท + โค้ดดิ้ง";
+  if (enrollment.course_type === "art") return enrollment.level_label || "ศิลปะ";
+  return enrollment.course_type || "คอร์ส";
+}
+
+function getLearningFilteredRows() {
+  const keyword = (learningSearchInput?.value || "").trim().toLowerCase();
+  const course = learningCourseFilter?.value || "all";
+  return learningEnrollments.filter((enrollment) => {
+    const haystack = [
+      enrollment.student_name,
+      enrollment.student_nickname,
+      enrollment.course_type,
+      enrollment.level_label
+    ].filter(Boolean).join(" ").toLowerCase();
+    const matchesKeyword = !keyword || haystack.includes(keyword);
+    const matchesCourse = course === "all" || enrollment.course_type === course;
+    return matchesKeyword && matchesCourse;
+  });
+}
+
+async function loadLearningProgress() {
+  if (!learningProgressRows) return;
+  learningLoadingState.hidden = false;
+  learningEmptyState.hidden = true;
+  learningProgressRows.innerHTML = "";
+  learningScopeText.textContent = isBranchAdmin()
+    ? `กำลังดูเฉพาะนักเรียนใน${getCurrentBranchName()}`
+    : "แอดมินหลักเห็นทุกสาขา ผู้ดูแลสาขาเห็นเฉพาะสาขาของตัวเอง";
+
+  let query = supabaseClient
+    .from("course_enrollments")
+    .select("*")
+    .order("updated_at", { ascending: false });
+
+  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+    query = query.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const { data, error } = await query;
+  learningLoadingState.hidden = true;
+
+  if (error) {
+    showToast(`โหลดสมุดพัฒนาการไม่สำเร็จ: ${error.message}`, true);
+    learningProgressRows.innerHTML = "";
+    learningEmptyState.hidden = false;
+    return;
+  }
+
+  learningEnrollments = data || [];
+  renderLearningProgress();
+}
+
+function renderLearningProgress() {
+  if (!learningProgressRows) return;
+  const rows = getLearningFilteredRows();
+  learningEmptyState.hidden = rows.length > 0;
+
+  learningProgressRows.innerHTML = rows.map((enrollment) => {
+    const completed = Number(enrollment.completed_sessions || 0);
+    const total = Number(enrollment.total_sessions || 0);
+    const remaining = Math.max(total - completed, 0);
+    const percent = total ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+    const certificateText = enrollment.course_type === "robot"
+      ? completed >= 15
+        ? completed >= total ? "รับเกียรติบัตรครบคอร์สแล้ว" : "ถึงเกณฑ์รับเกียรติบัตร 15 ครั้งแล้ว"
+        : `อีก ${Math.max(15 - completed, 0)} ครั้งถึงเกียรติบัตรแรก`
+      : completed >= total
+        ? "รับเกียรติบัตร Level นี้แล้ว"
+        : `อีก ${remaining} ครั้งจบ Level`;
+
+    return `
+      <article class="learning-progress-card">
+        <div class="learning-progress-top">
+          <span class="learning-avatar">${enrollment.course_type === "robot" ? "🤖" : "🎨"}</span>
+          <div>
+            <strong>${escapeHtml(enrollment.student_name)}</strong>
+            <small>${escapeHtml(enrollment.student_nickname || "ไม่มีชื่อเล่น")} · ${escapeHtml(getCourseEnrollmentLabel(enrollment))}</small>
+          </div>
+        </div>
+        <div class="learning-meter">
+          <i style="width: ${percent}%"></i>
+        </div>
+        <div class="learning-numbers">
+          <span><strong>${completed}</strong> เรียนแล้ว</span>
+          <span><strong>${remaining}</strong> เหลือ</span>
+          <span><strong>${total}</strong> รวม</span>
+        </div>
+        <p>${escapeHtml(certificateText)}</p>
+        <button class="review-button learning-record-button" type="button" data-record-enrollment="${enrollment.id}">
+          + บันทึกครั้งเรียน
+        </button>
+      </article>
+    `;
+  }).join("");
+}
+
+function openRecordSession(enrollmentId) {
+  activeLearningEnrollment = learningEnrollments.find((item) => item.id === enrollmentId);
+  if (!activeLearningEnrollment) return;
+
+  const nextSession = Number(activeLearningEnrollment.completed_sessions || 0) + 1;
+  recordSessionTitle.textContent = `ครั้งที่ ${nextSession}: ${activeLearningEnrollment.student_nickname || activeLearningEnrollment.student_name}`;
+  recordSessionSummary.textContent =
+    `${getCourseEnrollmentLabel(activeLearningEnrollment)} · เรียนแล้ว ${activeLearningEnrollment.completed_sessions || 0}/${activeLearningEnrollment.total_sessions || 0} ครั้ง`;
+  recordSessionDate.value = toLocalDateInputValue(new Date());
+  recordLessonTitle.value = "";
+  recordTeacherComment.value = "";
+  recordSessionPhoto.value = "";
+  recordSessionPhotoPreview.innerHTML = "";
+  recordSessionModal.classList.add("open");
+  recordSessionModal.setAttribute("aria-hidden", "false");
+}
+
+function closeRecordSession() {
+  recordSessionModal.classList.remove("open");
+  recordSessionModal.setAttribute("aria-hidden", "true");
+  activeLearningEnrollment = null;
+}
+
+function renderLearningPhotoPreview() {
+  const file = recordSessionPhoto.files?.[0];
+  recordSessionPhotoPreview.innerHTML = "";
+  if (!file) return;
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+    recordSessionPhoto.value = "";
+    showToast("กรุณาเลือกไฟล์ภาพ PNG, JPG หรือ WEBP", true);
+    return;
+  }
+  if (file.size > 8 * 1024 * 1024) {
+    recordSessionPhoto.value = "";
+    showToast("รูปผลงานมีขนาดเกิน 8 MB", true);
+    return;
+  }
+  const imageUrl = URL.createObjectURL(file);
+  recordSessionPhotoPreview.innerHTML =
+    `<img src="${imageUrl}" alt="ตัวอย่างรูปผลงาน"><span>${escapeHtml(file.name)}</span>`;
+}
+
+async function uploadLearningPhoto(enrollmentId) {
+  const file = recordSessionPhoto.files?.[0];
+  if (!file) return null;
+  const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+  const safeName = `${crypto.randomUUID()}.${extension}`;
+  const path = `${enrollmentId}/${safeName}`;
+  const { error } = await supabaseClient.storage
+    .from("learning-session-photos")
+    .upload(path, file, { upsert: false, contentType: file.type });
+  if (error) throw error;
+  return path;
+}
+
+async function saveLearningSession(event) {
+  event.preventDefault();
+  if (!activeLearningEnrollment) return;
+  saveSessionButton.disabled = true;
+  saveSessionButton.textContent = "กำลังบันทึก...";
+
+  try {
+    const photoPath = await uploadLearningPhoto(activeLearningEnrollment.id);
+    const { error } = await supabaseClient.rpc("record_learning_session", {
+      p_course_enrollment_id: activeLearningEnrollment.id,
+      p_session_date: recordSessionDate.value || null,
+      p_lesson_title: recordLessonTitle.value || null,
+      p_teacher_comment: recordTeacherComment.value || null,
+      p_photo_path: photoPath
+    });
+    if (error) throw error;
+
+    showToast("บันทึกครั้งเรียนเรียบร้อยแล้ว");
+    closeRecordSession();
+    await loadLearningProgress();
+  } catch (error) {
+    showToast(`บันทึกครั้งเรียนไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    saveSessionButton.disabled = false;
+    saveSessionButton.textContent = "บันทึกครั้งเรียน";
+  }
 }
 
 async function loadBranchesAdmin() {
@@ -2000,6 +2203,19 @@ branchAdminRows.addEventListener("click", (event) => {
   if (!button) return;
   reviewBranchAdminApplication(button.dataset.branchAdminReview, button.dataset.decision);
 });
+refreshLearningButton?.addEventListener("click", loadLearningProgress);
+learningSearchInput?.addEventListener("input", renderLearningProgress);
+learningCourseFilter?.addEventListener("change", renderLearningProgress);
+learningProgressRows?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-record-enrollment]");
+  if (button) openRecordSession(button.dataset.recordEnrollment);
+});
+recordSessionForm?.addEventListener("submit", saveLearningSession);
+recordSessionPhoto?.addEventListener("change", renderLearningPhotoPreview);
+document.querySelector("#closeRecordSession")?.addEventListener("click", closeRecordSession);
+recordSessionModal?.addEventListener("click", (event) => {
+  if (event.target === recordSessionModal) closeRecordSession();
+});
 document.querySelector("#closeReview").addEventListener("click", closeReview);
 reviewModal.addEventListener("click", (event) => {
   if (event.target === reviewModal) closeReview();
@@ -2024,7 +2240,12 @@ document.querySelector("#refreshLessonsButton").addEventListener(
 );
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && reviewModal.classList.contains("open")) {
+  if (event.key !== "Escape") return;
+  if (recordSessionModal?.classList.contains("open")) {
+    closeRecordSession();
+    return;
+  }
+  if (reviewModal.classList.contains("open")) {
     closeReview();
   }
 });

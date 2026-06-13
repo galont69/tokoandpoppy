@@ -17,6 +17,12 @@ const paidAtBadge = document.querySelector("#paidAtBadge");
 const slipBadge = document.querySelector("#slipBadge");
 const toast = document.querySelector("#toast");
 const authContent = document.querySelector(".auth-content");
+const parentDashboardModal = document.querySelector("#parentDashboardModal");
+const closeParentDashboardButton = document.querySelector("#closeParentDashboard");
+const parentDashboardTitle = document.querySelector("#parentDashboardTitle");
+const parentDashboardStats = document.querySelector("#parentDashboardStats");
+const parentCourseProgress = document.querySelector("#parentCourseProgress");
+const parentSessionTimeline = document.querySelector("#parentSessionTimeline");
 const fallbackSupabaseConfig = {
   url: "https://kpdikwbutsfxwsanetvm.supabase.co",
   anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZGlrd2J1dHNmeHdzYW5ldHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NTg2MzIsImV4cCI6MjA5NjMzNDYzMn0.6D-FQjRAv0SLZJfnEHPGsM4yt4s5sf7zvH90bVRtGLM"
@@ -77,6 +83,204 @@ function closeAuth() {
   authModal.classList.remove("open");
   authModal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+}
+
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function getPublicLearningPhotoUrl(path) {
+  if (!path || !enrollmentSupabase) return "";
+  const { data } = enrollmentSupabase.storage
+    .from("learning-session-photos")
+    .getPublicUrl(path);
+  return data?.publicUrl || "";
+}
+
+function getParentCourseLabel(enrollment) {
+  const courseMap = {
+    robot: "โรบอท + โค้ดดิ้ง",
+    art: "ศิลปะ"
+  };
+  const course = courseMap[enrollment.course_type] || enrollment.course_type || "คอร์สเรียน";
+  return enrollment.level_label ? `${course} · ${enrollment.level_label}` : course;
+}
+
+function getCertificateCopy(enrollment) {
+  const completed = Number(enrollment.completed_sessions || 0);
+  const total = Number(enrollment.total_sessions || 0);
+  const remaining = Math.max(total - completed, 0);
+
+  if (enrollment.course_type === "robot") {
+    if (completed >= 30) return "ครบ 30 ครั้ง พร้อมรับเกียรติบัตรจบคอร์ส";
+    if (completed >= 15) return "ถึงเกณฑ์รับเกียรติบัตร 15 ครั้งแล้ว";
+    return `อีก ${Math.max(15 - completed, 0)} ครั้ง ถึงเกณฑ์เกียรติบัตรแรก`;
+  }
+
+  if (enrollment.course_type === "art") {
+    if (remaining === 0) return "ครบ Level แล้ว พร้อมรับเกียรติบัตร";
+    return `อีก ${remaining} ครั้ง จะครบ Level นี้`;
+  }
+
+  return remaining === 0 ? "เรียนครบตามรอบแล้ว" : `เหลือ ${remaining} ครั้ง`;
+}
+
+function closeParentDashboard() {
+  parentDashboardModal?.classList.remove("open");
+  parentDashboardModal?.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function renderParentDashboard({ applications = [], enrollments = [], sessions = [] }) {
+  const latestApplication = applications[0];
+  const displayName =
+    latestApplication?.student_nickname ||
+    latestApplication?.student_name ||
+    "นักเรียนของเรา";
+  parentDashboardTitle.textContent = `สมุดพัฒนาการของ ${displayName}`;
+
+  const totalCompleted = enrollments.reduce(
+    (sum, enrollment) => sum + Number(enrollment.completed_sessions || 0),
+    0
+  );
+  const totalRemaining = enrollments.reduce((sum, enrollment) => {
+    const total = Number(enrollment.total_sessions || 0);
+    const completed = Number(enrollment.completed_sessions || 0);
+    return sum + Math.max(total - completed, 0);
+  }, 0);
+
+  parentDashboardStats.innerHTML = [
+    ["สมัครเรียน", `${applications.length}`, "ครั้ง"],
+    ["เรียนแล้ว", `${totalCompleted}`, "ครั้ง"],
+    ["ยังเหลือ", `${totalRemaining}`, "ครั้ง"]
+  ].map(([label, value, unit]) => `
+    <div class="parent-stat-card">
+      <span>${label}</span>
+      <strong>${value}</strong>
+      <small>${unit}</small>
+    </div>
+  `).join("");
+
+  if (!enrollments.length) {
+    parentCourseProgress.innerHTML = `
+      <div class="parent-empty-panel">ยังไม่มีคอร์สที่เปิดสิทธิ์ในสมุดพัฒนาการ</div>
+    `;
+  } else {
+    parentCourseProgress.innerHTML = enrollments.map((enrollment) => {
+      const total = Number(enrollment.total_sessions || 0);
+      const completed = Number(enrollment.completed_sessions || 0);
+      const percent = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+      const icon = enrollment.course_type === "robot" ? "🤖" : "🎨";
+      return `
+        <article class="parent-course-card">
+          <div class="parent-course-top">
+            <span class="parent-course-icon">${icon}</span>
+            <div>
+              <strong>${escapeHtml(getParentCourseLabel(enrollment))}</strong>
+              <small>${escapeHtml(getCertificateCopy(enrollment))}</small>
+            </div>
+          </div>
+          <div class="parent-progress"><i style="width:${percent}%"></i></div>
+          <div class="parent-course-meta">
+            <span>${completed}/${total} ครั้ง</span>
+            <span>${percent}%</span>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  const enrollmentMap = new Map(enrollments.map((enrollment) => [enrollment.id, enrollment]));
+  if (!sessions.length) {
+    parentSessionTimeline.innerHTML = `
+      <div class="parent-empty-panel">ยังไม่มีรูปผลงานหรือคอมเมนต์จากคุณครู</div>
+    `;
+    return;
+  }
+
+  parentSessionTimeline.innerHTML = sessions.map((session) => {
+    const enrollment = enrollmentMap.get(session.course_enrollment_id) || {};
+    const photoUrl = getPublicLearningPhotoUrl(session.photo_path);
+    const sessionDate = session.session_date
+      ? new Date(session.session_date).toLocaleDateString("th-TH", {
+          year: "numeric",
+          month: "short",
+          day: "numeric"
+        })
+      : "ยังไม่ระบุวันที่";
+    return `
+      <article class="parent-session-item">
+        ${photoUrl
+          ? `<img class="parent-session-image" src="${photoUrl}" alt="ผลงานการเรียนครั้งที่ ${session.session_number || ""}">`
+          : `<div class="parent-session-placeholder">📸</div>`}
+        <div>
+          <span>${escapeHtml(sessionDate)} · ครั้งที่ ${session.session_number || "-"}</span>
+          <strong>${escapeHtml(session.lesson_title || getParentCourseLabel(enrollment))}</strong>
+          <p>${escapeHtml(session.teacher_comment || "คุณครูยังไม่ได้เขียนคอมเมนต์สำหรับครั้งนี้")}</p>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function openParentDashboard(userId) {
+  if (!parentDashboardModal || !enrollmentSupabase) return;
+
+  parentDashboardModal.classList.add("open");
+  parentDashboardModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  parentDashboardTitle.textContent = "กำลังโหลดสมุดพัฒนาการ...";
+  parentDashboardStats.innerHTML = "";
+  parentCourseProgress.innerHTML = '<div class="parent-empty-panel">กำลังอ่านข้อมูลคอร์สเรียน...</div>';
+  parentSessionTimeline.innerHTML = '<div class="parent-empty-panel">กำลังอ่านรูปผลงานล่าสุด...</div>';
+
+  try {
+    const [applicationResult, enrollmentResult, sessionResult] = await Promise.all([
+      enrollmentSupabase
+        .from("enrollment_applications")
+        .select("id, student_name, student_nickname, course, status, robot_access, art_access, created_at")
+        .eq("parent_user_id", userId)
+        .order("created_at", { ascending: false }),
+      enrollmentSupabase
+        .from("course_enrollments")
+        .select("*")
+        .eq("parent_user_id", userId)
+        .order("created_at", { ascending: false }),
+      enrollmentSupabase
+        .from("learning_sessions")
+        .select("*")
+        .eq("parent_user_id", userId)
+        .order("session_date", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(40)
+    ]);
+
+    const error = applicationResult.error || enrollmentResult.error || sessionResult.error;
+    if (error) throw error;
+
+    renderParentDashboard({
+      applications: applicationResult.data || [],
+      enrollments: enrollmentResult.data || [],
+      sessions: sessionResult.data || []
+    });
+  } catch (error) {
+    parentDashboardTitle.textContent = "ยังโหลดสมุดพัฒนาการไม่ได้";
+    parentDashboardStats.innerHTML = "";
+    parentCourseProgress.innerHTML = `
+      <div class="parent-empty-panel">
+        กรุณารันไฟล์ SQL <strong>outputs/supabase-learning-history-schema.sql</strong> ก่อนใช้งานส่วนนี้
+      </div>
+    `;
+    parentSessionTimeline.innerHTML = `
+      <div class="parent-empty-panel">${escapeHtml(error.message || "ไม่ทราบสาเหตุ")}</div>
+    `;
+    showToast(`โหลดสมุดพัฒนาการไม่สำเร็จ: ${error.message}`);
+  }
 }
 
 async function loadBranches() {
@@ -264,6 +468,12 @@ authModal.addEventListener("click", (event) => {
   if (event.target === authModal) closeAuth();
 });
 
+parentDashboardModal?.addEventListener("click", (event) => {
+  if (event.target === parentDashboardModal) closeParentDashboard();
+});
+
+closeParentDashboardButton?.addEventListener("click", closeParentDashboard);
+
 authModal.addEventListener("wheel", (event) => {
   if (window.innerWidth <= 720 || authContent.contains(event.target)) return;
   authContent.scrollBy({ top: event.deltaY });
@@ -272,7 +482,9 @@ authModal.addEventListener("wheel", (event) => {
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
-    if (statusModal.classList.contains("open")) {
+    if (parentDashboardModal?.classList.contains("open")) {
+      closeParentDashboard();
+    } else if (statusModal.classList.contains("open")) {
       statusModal.classList.remove("open");
       document.body.style.overflow = "";
     } else {
@@ -488,6 +700,7 @@ loginForm.addEventListener("submit", async (event) => {
       application.art_access ? "ศิลปะ" : ""
     ].filter(Boolean).join(" และ ");
     showToast(`เข้าสู่ระบบสำเร็จ เปิดสิทธิ์คอร์ส${courses}แล้ว`);
+    await openParentDashboard(data.user.id);
   } else {
     showToast("บัญชียังอยู่ระหว่างรอการอนุมัติจากแอดมิน");
   }

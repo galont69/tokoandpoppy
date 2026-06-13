@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="admin.css?v=20260613-learning">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -81,7 +81,7 @@
           <i id="branchAdminPendingBadge">0</i>
         </button>
         <button class="nav-item" type="button" data-admin-view="branches" data-main-admin-only><span>🏫</span> สาขาเฟรนไชน์</button>
-        <button class="nav-item" type="button" disabled><span>👨‍👩‍👧</span> นักเรียนทั้งหมด</button>
+        <button class="nav-item" type="button" data-admin-view="progress"><span>📸</span> สมุดพัฒนาการ</button>
         <button class="nav-item" type="button" data-admin-view="lessons" data-main-admin-only><span>📚</span> จัดการบทเรียน</button>
         <button class="nav-item" type="button" data-admin-view="art" data-main-admin-only><span>🎨</span> บทเรียนศิลปะ</button>
         <a class="nav-item nav-link-item" href="homeschool/admin.html" data-main-admin-only><span>🏡</span> Homeschool</a>
@@ -206,6 +206,49 @@
           </div>
           <div class="loading-state" id="loadingState">
             <i></i><span>กำลังโหลดใบสมัคร...</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="content admin-view" id="progressView" hidden>
+        <div class="lesson-admin-hero progress-hero">
+          <div>
+            <span>LEARNING JOURNAL</span>
+            <h2>สมุดพัฒนาการนักเรียน</h2>
+            <p>บันทึกครั้งเรียน รูปผลงาน และคอมเมนต์คุณครู เพื่อให้ผู้ปกครองติดตามพัฒนาการของเด็กได้ชัดเจน</p>
+          </div>
+          <button class="refresh-button" id="refreshLearningButton" type="button">↻ รีเฟรช</button>
+        </div>
+
+        <section class="applications-panel learning-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>คอร์สที่กำลังเรียน</h2>
+              <p id="learningScopeText">แอดมินหลักเห็นทุกสาขา ผู้ดูแลสาขาเห็นเฉพาะสาขาของตัวเอง</p>
+            </div>
+          </div>
+
+          <div class="toolbar learning-toolbar">
+            <label class="search-box">
+              <span>⌕</span>
+              <input id="learningSearchInput" type="search" placeholder="ค้นหาชื่อนักเรียน ชื่อเล่น หรือคอร์ส">
+            </label>
+            <select id="learningCourseFilter" class="soft-select">
+              <option value="all">ทุกคอร์ส</option>
+              <option value="robot">โรบอท</option>
+              <option value="art">ศิลปะ</option>
+            </select>
+          </div>
+
+          <div class="learning-progress-grid" id="learningProgressRows"></div>
+
+          <div class="empty-state" id="learningEmptyState" hidden>
+            <div>📒</div>
+            <h3>ยังไม่มีคอร์สที่บันทึกได้</h3>
+            <p>เมื่ออนุมัติใบสมัครแล้ว ระบบจะสร้างรายการคอร์สให้อัตโนมัติ</p>
+          </div>
+          <div class="loading-state" id="learningLoadingState" hidden>
+            <i></i><span>กำลังโหลดสมุดพัฒนาการ...</span>
           </div>
         </section>
       </section>
@@ -491,6 +534,35 @@
     </main>
   </div>
 
+  <div class="review-backdrop" id="recordSessionModal" aria-hidden="true">
+    <div class="review-card learning-record-card" role="dialog" aria-modal="true">
+      <button class="modal-close" id="closeRecordSession" type="button" aria-label="ปิด">×</button>
+      <div class="modal-heading">
+        <span>บันทึกการเรียน</span>
+        <h2 id="recordSessionTitle">เพิ่มครั้งเรียน</h2>
+        <p id="recordSessionSummary">เลือกรูปผลงาน 1 รูป และเขียนคอมเมนต์สั้นๆ ให้ผู้ปกครองเห็น</p>
+      </div>
+      <form class="learning-record-form" id="recordSessionForm">
+        <label>วันที่เรียน
+          <input id="recordSessionDate" type="date" required>
+        </label>
+        <label>หัวข้อที่เรียนวันนี้
+          <input id="recordLessonTitle" type="text" placeholder="เช่น ต่อหุ่นยนต์ Two Wheel / ระบายสีนิทานทะเล">
+        </label>
+        <label class="full">คอมเมนต์คุณครู
+          <textarea id="recordTeacherComment" rows="4" placeholder="วันนี้เด็กตั้งใจมากขึ้น จับจังหวะคำสั่งได้ดี..."></textarea>
+        </label>
+        <label class="learning-photo-drop full">
+          <input id="recordSessionPhoto" type="file" accept="image/png,image/jpeg,image/webp">
+          <strong>+ เลือกรูปผลงานครั้งนี้</strong>
+          <small>อัปโหลดได้ 1 รูปต่อครั้งเรียน PNG, JPG หรือ WEBP ไม่เกิน 8 MB</small>
+          <div id="recordSessionPhotoPreview"></div>
+        </label>
+        <button class="save-lesson-button full" id="saveSessionButton" type="submit">บันทึกครั้งเรียน</button>
+      </form>
+    </div>
+  </div>
+
   <div class="review-backdrop" id="reviewModal" aria-hidden="true">
     <section class="review-modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
       <button class="modal-close" id="closeReview" type="button" aria-label="ปิด">×</button>
@@ -541,6 +613,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js"></script>
+  <script src="admin.js?v=20260613-learning"></script>
 </body>
 </html>
