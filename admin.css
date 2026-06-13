@@ -38,9 +38,38 @@ button { cursor: pointer; }
 .login-badge { display: inline-block; border-radius: 99px; padding: 6px 11px; color: #5e8250; background: #e6f0df; font: 900 10px Nunito, sans-serif; letter-spacing: .12em; }
 .login-card h2 { margin: 13px 0 6px; font-size: 29px; }
 .login-card > p { margin: 0 0 28px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.admin-auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 18px 0 4px;
+  padding: 5px;
+  border-radius: 16px;
+  background: #f2ece4;
+}
+.admin-auth-tabs button {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 8px;
+  color: #8f7b70;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 900;
+}
+.admin-auth-tabs button.active {
+  color: #4f7749;
+  background: white;
+  box-shadow: 0 6px 16px rgba(79, 61, 50, .08);
+}
+.admin-auth-form { display: grid; }
 .login-card label { display: grid; gap: 8px; margin-top: 15px; font-size: 12px; font-weight: 700; }
-.login-card input { width: 100%; outline: none; border: 1.5px solid var(--line); border-radius: 14px; padding: 13px 15px; color: var(--brown); background: #fffefa; }
-.login-card input:focus { border-color: #79a067; box-shadow: 0 0 0 4px rgba(98,140,81,.1); }
+.login-card input,
+.login-card select {
+  width: 100%; outline: none; border: 1.5px solid var(--line); border-radius: 14px;
+  padding: 13px 15px; color: var(--brown); background: #fffefa;
+}
+.login-card input:focus,
+.login-card select:focus { border-color: #79a067; box-shadow: 0 0 0 4px rgba(98,140,81,.1); }
 .primary-button { display: flex; width: 100%; align-items: center; justify-content: center; gap: 11px; margin-top: 24px; border: 0; border-radius: 14px; padding: 14px; color: white; background: linear-gradient(135deg, #709b5d, #4d7749); font-weight: 700; box-shadow: 0 10px 24px rgba(69,112,62,.2); }
 .login-card > a { display: block; margin-top: 20px; color: #8d786a; text-align: center; font-size: 11px; text-decoration: none; }
 .config-warning { margin-top: 14px; border: 1px solid #efd39b; border-radius: 12px; padding: 11px; color: #8a5a2e; background: #fff2d8; font-size: 10px; line-height: 1.6; }
@@ -113,6 +142,47 @@ button { cursor: pointer; }
 .branch-card small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
 .branch-card button { border: 0; border-radius: 11px; padding: 9px 12px; color: white; background: #668b55; font-size: 13px; font-weight: 800; }
 .branch-card.inactive button { background: #c5875d; }
+.branch-admin-requests {
+  display: grid;
+  gap: 12px;
+  padding: 0 22px 22px;
+}
+.branch-admin-request-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid #efe7de;
+  border-radius: 18px;
+  padding: 16px;
+  background: #fffefa;
+  box-shadow: 0 8px 20px rgba(79, 61, 50, .035);
+}
+.branch-admin-request-card.pending { border-color: #efdca8; background: #fffaf0; }
+.branch-admin-request-card.approved { border-color: #d7e7cd; background: #f7fbf4; }
+.branch-admin-request-card.rejected { border-color: #f0d6d0; background: #fff6f4; }
+.branch-admin-request-card h3 { margin: 9px 0 3px; font-size: 22px; }
+.branch-admin-request-card p { margin: 0; color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
+.branch-admin-request-card small { display: block; margin-top: 8px; color: #9c776c; font-size: 14px; }
+.request-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.request-meta span {
+  border-radius: 99px;
+  padding: 6px 10px;
+  color: #6a7f5f;
+  background: #edf4e8;
+  font-size: 12px;
+  font-weight: 800;
+}
+.branch-admin-request-actions { display: flex; gap: 8px; align-items: center; }
+.branch-admin-request-actions button {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 13px;
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.branch-admin-request-actions strong { color: #668b55; font-size: 15px; white-space: nowrap; }
 .panel-heading { display: flex; align-items: center; gap: 14px; padding: 20px 22px 14px; }
 .panel-heading h2 { margin: 0; font-size: 17px; }
 .panel-heading p { margin: 3px 0 0; color: var(--muted); font-size: 8px; }
@@ -345,6 +415,8 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   .menu-button { display: block; }
   .review-grid { grid-template-columns: 1fr; }
   .branch-admin-grid { grid-template-columns: 1fr; }
+  .branch-admin-request-card { grid-template-columns: 1fr; align-items: stretch; }
+  .branch-admin-request-actions { justify-content: flex-start; flex-wrap: wrap; }
   .slip-frame { min-height: 320px; }
   .lesson-admin-layout { grid-template-columns: 1fr; }
   .art-admin-layout { grid-template-columns: 1fr; }
@@ -369,6 +441,8 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   .filter-tabs button { flex: 1; white-space: nowrap; }
   .student-details { grid-template-columns: 1fr; }
   .decision-actions { grid-template-columns: 1fr; }
+  .branch-admin-requests { padding-inline: 16px; }
+  .branch-admin-request-actions button { flex: 1; min-width: 130px; }
   .login-card { width: calc(100% - 26px); padding: 29px 22px; }
   .lesson-admin-hero { align-items: flex-start; flex-direction: column; }
   .lesson-admin-hero a { margin-left: 0; }

@@ -20,23 +20,49 @@
       <h1>ช่วยกันเปิดประตู<br>สู่การเรียนรู้</h1>
       <p>ตรวจสอบใบสมัครและมอบสิทธิ์คอร์สให้เด็กๆ อย่างปลอดภัย</p>
     </div>
-    <form class="login-card" id="adminLoginForm">
+    <div class="login-card">
       <div class="login-badge">ADMIN ONLY</div>
-      <h2>เข้าสู่ระบบผู้ดูแล</h2>
-      <p>ใช้บัญชีที่ถูกกำหนด role เป็น admin ใน Supabase</p>
-      <label>อีเมล
-        <input name="email" type="email" autocomplete="email" placeholder="admin@tokoandpoppy.com" required>
-      </label>
-      <label>รหัสผ่าน
-        <input name="password" type="password" autocomplete="current-password" placeholder="กรอกรหัสผ่าน" required>
-      </label>
-      <button class="primary-button" type="submit">เข้าสู่ระบบ <span>→</span></button>
+      <h2 id="adminAuthTitle">เข้าสู่ระบบผู้ดูแล</h2>
+      <p id="adminAuthCopy">ใช้บัญชีแอดมินหลัก หรือบัญชีผู้ดูแลสาขาที่ได้รับอนุมัติแล้ว</p>
+      <div class="admin-auth-tabs">
+        <button class="active" id="adminLoginTab" type="button">เข้าสู่ระบบ</button>
+        <button id="branchAdminSignupTab" type="button">สมัครผู้ดูแลสาขา</button>
+      </div>
+      <form class="admin-auth-form" id="adminLoginForm">
+        <label>อีเมล
+          <input name="email" type="email" autocomplete="email" placeholder="admin@tokoandpoppy.com" required>
+        </label>
+        <label>รหัสผ่าน
+          <input name="password" type="password" autocomplete="current-password" placeholder="กรอกรหัสผ่าน" required>
+        </label>
+        <button class="primary-button" type="submit">เข้าสู่ระบบ <span>→</span></button>
+      </form>
+      <form class="admin-auth-form" id="branchAdminSignupForm" hidden>
+        <label>ชื่อ - นามสกุลผู้ดูแลสาขา
+          <input name="full_name" type="text" autocomplete="name" placeholder="เช่น คุณเมตตา พารา" required>
+        </label>
+        <label>เบอร์โทรติดต่อ
+          <input name="phone" type="tel" autocomplete="tel" placeholder="08x-xxx-xxxx" required>
+        </label>
+        <label>สาขาที่รับผิดชอบ
+          <select name="branch_id" id="branchAdminBranch" required>
+            <option value="">กำลังโหลดสาขา...</option>
+          </select>
+        </label>
+        <label>อีเมลสำหรับเข้าระบบ
+          <input name="email" type="email" autocomplete="email" placeholder="branch@tokoandpoppy.com" required>
+        </label>
+        <label>รหัสผ่าน
+          <input name="password" type="password" autocomplete="new-password" minlength="6" placeholder="อย่างน้อย 6 ตัวอักษร" required>
+        </label>
+        <button class="primary-button" type="submit">ส่งคำขอผู้ดูแลสาขา <span>→</span></button>
+      </form>
       <div class="config-warning" id="configWarning" hidden>
         <strong>ยังไม่ได้เชื่อม Supabase</strong>
         <span>กรุณาใส่ Project URL และ anon/public key ในไฟล์ <code>supabase-config.js</code></span>
       </div>
       <a href="index.html">← กลับหน้าเว็บไซต์</a>
-    </form>
+    </div>
   </section>
 
   <div class="admin-shell" id="adminShell" hidden>
@@ -50,11 +76,15 @@
           <span>📋</span> ใบสมัครเรียน
           <i id="pendingBadge">0</i>
         </button>
-        <button class="nav-item" type="button" data-admin-view="branches"><span>🏫</span> สาขาเฟรนไชน์</button>
+        <button class="nav-item" type="button" data-admin-view="branchAdmins" data-main-admin-only>
+          <span>🧑‍🏫</span> ผู้ดูแลสาขา
+          <i id="branchAdminPendingBadge">0</i>
+        </button>
+        <button class="nav-item" type="button" data-admin-view="branches" data-main-admin-only><span>🏫</span> สาขาเฟรนไชน์</button>
         <button class="nav-item" type="button" disabled><span>👨‍👩‍👧</span> นักเรียนทั้งหมด</button>
-        <button class="nav-item" type="button" data-admin-view="lessons"><span>📚</span> จัดการบทเรียน</button>
-        <button class="nav-item" type="button" data-admin-view="art"><span>🎨</span> บทเรียนศิลปะ</button>
-        <a class="nav-item nav-link-item" href="homeschool/admin.html"><span>🏡</span> Homeschool</a>
+        <button class="nav-item" type="button" data-admin-view="lessons" data-main-admin-only><span>📚</span> จัดการบทเรียน</button>
+        <button class="nav-item" type="button" data-admin-view="art" data-main-admin-only><span>🎨</span> บทเรียนศิลปะ</button>
+        <a class="nav-item nav-link-item" href="homeschool/admin.html" data-main-admin-only><span>🏡</span> Homeschool</a>
       </nav>
       <div class="sidebar-character">
         <img src="logo.png" alt="Toko และ Poppy">
@@ -176,6 +206,29 @@
           </div>
           <div class="loading-state" id="loadingState">
             <i></i><span>กำลังโหลดใบสมัคร...</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="content admin-view" id="branchAdminsView" hidden>
+        <div class="lesson-admin-hero branch-hero-admin">
+          <div>
+            <span>BRANCH ADMIN ACCESS</span>
+            <h2>อนุมัติผู้ดูแลสาขา</h2>
+            <p>ผู้ดูแลสาขาที่ผ่านอนุมัติจะเห็นเฉพาะใบสมัครและนักเรียนในสาขาของตัวเอง</p>
+          </div>
+        </div>
+
+        <section class="applications-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>คำขอผู้ดูแลสาขา</h2>
+              <p>เลือกอนุมัติหลังตรวจสอบตัวตนและสาขาที่รับผิดชอบ</p>
+            </div>
+            <button class="refresh-button" id="refreshBranchAdminsButton" type="button">↻ รีเฟรช</button>
+          </div>
+          <div class="branch-admin-requests" id="branchAdminRows">
+            <div class="loading-state"><i></i><span>กำลังโหลดคำขอ...</span></div>
           </div>
         </section>
       </section>

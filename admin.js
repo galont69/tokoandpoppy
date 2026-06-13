@@ -10,7 +10,13 @@ const supabaseClient = configured
 
 const loginView = document.querySelector("#adminLogin");
 const shell = document.querySelector("#adminShell");
+const adminAuthTitle = document.querySelector("#adminAuthTitle");
+const adminAuthCopy = document.querySelector("#adminAuthCopy");
+const adminLoginTab = document.querySelector("#adminLoginTab");
+const branchAdminSignupTab = document.querySelector("#branchAdminSignupTab");
 const loginForm = document.querySelector("#adminLoginForm");
+const branchAdminSignupForm = document.querySelector("#branchAdminSignupForm");
+const branchAdminBranch = document.querySelector("#branchAdminBranch");
 const configWarning = document.querySelector("#configWarning");
 const rows = document.querySelector("#applicationRows");
 const emptyState = document.querySelector("#emptyState");
@@ -45,10 +51,17 @@ const artImageList = document.querySelector("#artImageList");
 const deleteArtLessonButton = document.querySelector("#deleteArtLessonButton");
 const branchRows = document.querySelector("#branchRows");
 const branchForm = document.querySelector("#branchForm");
+const branchAdminRows = document.querySelector("#branchAdminRows");
+const branchAdminPendingBadge = document.querySelector("#branchAdminPendingBadge");
+const refreshBranchAdminsButton = document.querySelector("#refreshBranchAdminsButton");
 
 let applications = [];
 let activeStatus = "all";
 let activeApplication = null;
+let currentAdminProfile = null;
+let currentBranchAssignment = null;
+let branchAdminApplications = [];
+let signupBranchesLoaded = false;
 let branches = [];
 let robotLessons = [];
 let activeLesson = null;
@@ -123,6 +136,20 @@ function getBranchName(application) {
   return application.branches?.name || "ไม่ระบุสาขา";
 }
 
+function isMainAdmin() {
+  return currentAdminProfile?.role === "admin";
+}
+
+function isBranchAdmin() {
+  return currentAdminProfile?.role === "branch_admin";
+}
+
+function getCurrentBranchName() {
+  return currentBranchAssignment?.branches?.name ||
+    currentBranchAssignment?.branch_name ||
+    "สาขาของฉัน";
+}
+
 function toLocalDateInputValue(value) {
   if (!value) return "";
   const date = new Date(value);
@@ -138,6 +165,19 @@ function toLocalDateTimeValue(value) {
 }
 
 function renderBranchFilterOptions() {
+  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+    const branchName = getCurrentBranchName();
+    branchFilter.innerHTML =
+      `<option value="${currentBranchAssignment.branch_id}">${escapeHtml(branchName)}</option>`;
+    branchFilter.value = currentBranchAssignment.branch_id;
+    sourceFilter.value = "branch";
+    sourceFilter.disabled = true;
+    branchFilter.disabled = true;
+    return;
+  }
+
+  sourceFilter.disabled = false;
+  branchFilter.disabled = false;
   const currentValue = branchFilter.value || "all";
   const seen = new Set();
   const branchOptions = applications
@@ -163,6 +203,47 @@ function renderBranchFilterOptions() {
     : "all";
 }
 
+async function loadBranchChoicesForSignup() {
+  if (!configured || !branchAdminBranch || signupBranchesLoaded) return;
+  branchAdminBranch.innerHTML = '<option value="">กำลังโหลดสาขา...</option>';
+  const { data, error } = await supabaseClient
+    .from("branches")
+    .select("id, name, code")
+    .eq("is_active", true)
+    .order("name", { ascending: true });
+
+  if (error) {
+    branchAdminBranch.innerHTML = '<option value="">โหลดสาขาไม่สำเร็จ</option>';
+    showToast(`โหลดสาขาไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  signupBranchesLoaded = true;
+  branchAdminBranch.innerHTML = [
+    '<option value="">เลือกสาขาที่รับผิดชอบ</option>',
+    ...(data || []).map((branch) => `
+      <option value="${branch.id}">
+        ${escapeHtml(branch.name)}${branch.code ? ` (${escapeHtml(branch.code)})` : ""}
+      </option>
+    `)
+  ].join("");
+}
+
+function setAdminAuthMode(mode) {
+  const isSignup = mode === "signup";
+  loginForm.hidden = isSignup;
+  branchAdminSignupForm.hidden = !isSignup;
+  adminLoginTab.classList.toggle("active", !isSignup);
+  branchAdminSignupTab.classList.toggle("active", isSignup);
+  adminAuthTitle.textContent = isSignup
+    ? "สมัครผู้ดูแลสาขา"
+    : "เข้าสู่ระบบผู้ดูแล";
+  adminAuthCopy.textContent = isSignup
+    ? "เลือกสาขาที่รับผิดชอบ แล้วรอแอดมินหลักอนุมัติก่อนใช้งาน"
+    : "ใช้บัญชีแอดมินหลัก หรือบัญชีผู้ดูแลสาขาที่ได้รับอนุมัติแล้ว";
+  if (isSignup) loadBranchChoicesForSignup();
+}
+
 async function verifyAdmin(user) {
   const { data, error } = await supabaseClient
     .from("profiles")
@@ -170,9 +251,54 @@ async function verifyAdmin(user) {
     .eq("id", user.id)
     .single();
 
-  if (error || data?.role !== "admin") {
+  currentAdminProfile = null;
+  currentBranchAssignment = null;
+
+  if (error) {
     await supabaseClient.auth.signOut();
     throw new Error("บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ");
+  }
+
+  if (data?.role === "admin") {
+    currentAdminProfile = { role: "admin" };
+    return;
+  }
+
+  if (data?.role === "branch_admin") {
+    const { data: assignment, error: assignmentError } = await supabaseClient
+      .from("branch_admin_assignments")
+      .select("branch_id, is_active, branches(name, code)")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (assignmentError || !assignment?.branch_id) {
+      await supabaseClient.auth.signOut();
+      throw new Error("บัญชีผู้ดูแลสาขานี้ยังไม่ได้รับการอนุมัติจากแอดมินหลัก");
+    }
+
+    currentAdminProfile = { role: "branch_admin" };
+    currentBranchAssignment = assignment;
+    return;
+  }
+
+  await supabaseClient.auth.signOut();
+  throw new Error("บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ");
+}
+
+function applyAdminPermissions() {
+  const mainAdmin = isMainAdmin();
+  document.querySelectorAll("[data-main-admin-only]").forEach((element) => {
+    element.hidden = !mainAdmin;
+  });
+  document.querySelector(".admin-profile strong").textContent = mainAdmin
+    ? "ผู้ดูแลระบบ"
+    : "ผู้ดูแลสาขา";
+  if (exportCsvButton) {
+    exportCsvButton.textContent = mainAdmin ? "⬇ Export CSV" : "⬇ Export CSV สาขา";
+  }
+  if (!mainAdmin) {
+    showAdminView("applications");
   }
 }
 
@@ -181,9 +307,13 @@ async function showDashboard(user) {
   document.querySelector("#adminEmail").textContent = user.email;
   document.querySelector(".profile-avatar").textContent =
     (user.email?.[0] || "A").toUpperCase();
+  applyAdminPermissions();
   loginView.hidden = true;
   shell.hidden = false;
   await loadApplications();
+  if (isMainAdmin()) {
+    await loadBranchAdminApplications();
+  }
 }
 
 async function loadApplications() {
@@ -191,10 +321,16 @@ async function loadApplications() {
   emptyState.hidden = true;
   rows.innerHTML = "";
 
-  const { data, error } = await supabaseClient
+  let query = supabaseClient
     .from("enrollment_applications")
     .select("*, branches(name, code)")
     .order("created_at", { ascending: false });
+
+  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+    query = query.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const { data, error } = await query;
 
   loadingState.hidden = true;
   if (error) {
@@ -219,6 +355,10 @@ function updateStats() {
 }
 
 function showAdminView(viewName) {
+  if (!isMainAdmin() && viewName !== "applications") {
+    viewName = "applications";
+    showToast("ผู้ดูแลสาขาดูได้เฉพาะข้อมูลนักเรียนในสาขาของตัวเอง", true);
+  }
   document.querySelectorAll(".admin-view").forEach((view) => {
     view.hidden = view.id !== `${viewName}View`;
   });
@@ -227,6 +367,7 @@ function showAdminView(viewName) {
   });
   const viewCopy = {
     applications: ["ใบสมัครเรียน", "ศูนย์จัดการสมาชิก"],
+    branchAdmins: ["ผู้ดูแลสาขา", "BRANCH ADMIN ACCESS"],
     branches: ["สาขาเฟรนไชน์", "FRANCHISE CENTER"],
     lessons: ["จัดการบทเรียนโรบอท", "ROBOT COURSE STUDIO"],
     art: ["จัดการบทเรียนศิลปะ", "ART COURSE STUDIO"]
@@ -235,12 +376,14 @@ function showAdminView(viewName) {
   document.querySelector(".topbar h1").textContent = title;
   document.querySelector(".page-kicker").textContent = kicker;
   document.querySelector(".sidebar").classList.remove("open");
+  if (viewName === "branchAdmins") loadBranchAdminApplications();
   if (viewName === "branches") loadBranchesAdmin();
   if (viewName === "lessons") loadRobotLessons();
   if (viewName === "art") loadArtStudio();
 }
 
 async function loadBranchesAdmin() {
+  if (!isMainAdmin()) return;
   if (!branchRows) return;
   branchRows.innerHTML = '<div class="loading-state"><i></i><span>กำลังโหลดสาขา...</span></div>';
   const { data, error } = await supabaseClient
@@ -292,6 +435,10 @@ function renderBranchesAdmin() {
 
 async function createBranch(event) {
   event.preventDefault();
+  if (!isMainAdmin()) {
+    showToast("เฉพาะแอดมินหลักเท่านั้นที่จัดการสาขาได้", true);
+    return;
+  }
   const payload = {
     name: document.querySelector("#branchName").value.trim(),
     code: document.querySelector("#branchCode").value.trim() || null,
@@ -320,6 +467,10 @@ async function createBranch(event) {
 }
 
 async function toggleBranch(branchId) {
+  if (!isMainAdmin()) {
+    showToast("เฉพาะแอดมินหลักเท่านั้นที่จัดการสาขาได้", true);
+    return;
+  }
   const branch = branches.find(({ id }) => id === branchId);
   if (!branch) return;
   const { error } = await supabaseClient
@@ -435,7 +586,7 @@ function renderApplications() {
         </td>
         <td><span class="status-pill ${application.status}">${statusLabels[application.status]}</span></td>
         <td><button class="review-button" type="button" data-review-id="${application.id}">
-          ${application.status === "pending" ? "ตรวจสอบ" : "ดูรายละเอียด"}
+          ${application.status === "pending" && isMainAdmin() ? "ตรวจสอบ" : "ดูรายละเอียด"}
         </button></td>
       </tr>
     `;
@@ -580,6 +731,12 @@ async function openReview(applicationId) {
   approveButton.textContent = activeApplication.status === "approved"
     ? "✓ บันทึกสิทธิ์คอร์ส"
     : "✓ อนุมัติและเปิดสิทธิ์";
+  const canReview = isMainAdmin();
+  robotAccess.disabled = !canReview;
+  artAccess.disabled = !canReview;
+  rejectionReason.disabled = !canReview;
+  approveButton.hidden = !canReview;
+  rejectButton.hidden = !canReview;
 
   reviewModal.classList.add("open");
   reviewModal.setAttribute("aria-hidden", "false");
@@ -621,6 +778,10 @@ function closeReview() {
 
 async function reviewApplication(decision) {
   if (!activeApplication) return;
+  if (!isMainAdmin()) {
+    showToast("ผู้ดูแลสาขาดูรายละเอียดได้ แต่การอนุมัติทำได้เฉพาะแอดมินหลัก", true);
+    return;
+  }
   if (decision === "approved" && !robotAccess.checked && !artAccess.checked) {
     showToast("กรุณาเลือกอย่างน้อยหนึ่งคอร์ส", true);
     return;
@@ -651,6 +812,179 @@ async function reviewApplication(decision) {
     ? "อนุมัติและเปิดสิทธิ์คอร์สเรียบร้อย"
     : "บันทึกการไม่อนุมัติเรียบร้อย");
   await loadApplications();
+}
+
+async function submitBranchAdminSignup(event) {
+  event.preventDefault();
+  if (!configured) {
+    configWarning.hidden = false;
+    showToast(
+      "ยังไม่ได้ตั้งค่า Supabase: ใส่ Project URL และ anon key ใน supabase-config.js",
+      true
+    );
+    return;
+  }
+
+  const formData = new FormData(branchAdminSignupForm);
+  const fullName = String(formData.get("full_name") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  const branchId = String(formData.get("branch_id") || "").trim();
+  const email = String(formData.get("email") || "").trim();
+  const password = String(formData.get("password") || "");
+  const submitButton = branchAdminSignupForm.querySelector("button[type=submit]");
+
+  if (!fullName || !phone || !branchId || !email || password.length < 6) {
+    showToast("กรุณากรอกข้อมูลผู้ดูแลสาขาให้ครบ และรหัสผ่านอย่างน้อย 6 ตัว", true);
+    return;
+  }
+
+  submitButton.disabled = true;
+  submitButton.textContent = "กำลังส่งคำขอ...";
+
+  try {
+    let { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password
+    });
+
+    if (error && /already registered|already exists|user already/i.test(error.message)) {
+      ({ data, error } = await supabaseClient.auth.signInWithPassword({ email, password }));
+    }
+
+    if (error) throw error;
+
+    if (!data.user) {
+      throw new Error("สร้างบัญชีไม่สำเร็จ กรุณาลองใหม่อีกครั้ง");
+    }
+
+    const { error: applicationError } = await supabaseClient.rpc(
+      "submit_branch_admin_application",
+      {
+        p_full_name: fullName,
+        p_phone: phone,
+        p_branch_id: branchId
+      }
+    );
+
+    if (applicationError) throw applicationError;
+
+    await supabaseClient.auth.signOut();
+    branchAdminSignupForm.reset();
+    setAdminAuthMode("login");
+    showToast("ส่งคำขอผู้ดูแลสาขาเรียบร้อย รอแอดมินหลักอนุมัติ");
+  } catch (error) {
+    showToast(`ส่งคำขอไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.innerHTML = 'ส่งคำขอผู้ดูแลสาขา <span>→</span>';
+  }
+}
+
+async function loadBranchAdminApplications() {
+  if (!isMainAdmin() || !branchAdminRows) return;
+  branchAdminRows.innerHTML =
+    '<div class="loading-state"><i></i><span>กำลังโหลดคำขอผู้ดูแลสาขา...</span></div>';
+
+  const { data, error } = await supabaseClient
+    .from("branch_admin_applications")
+    .select("*, branches(name, code)")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    branchAdminApplications = [];
+    updateBranchAdminBadge();
+    branchAdminRows.innerHTML = `
+      <div class="empty-state">
+        <div>🧑‍🏫</div>
+        <h3>ยังโหลดคำขอไม่ได้</h3>
+        <p>กรุณารันไฟล์ SQL ระบบผู้ดูแลสาขาก่อน: ${escapeHtml(error.message)}</p>
+      </div>
+    `;
+    return;
+  }
+
+  branchAdminApplications = data || [];
+  updateBranchAdminBadge();
+  renderBranchAdminApplications();
+}
+
+function updateBranchAdminBadge() {
+  if (!branchAdminPendingBadge) return;
+  const pending = branchAdminApplications
+    .filter((application) => application.status === "pending").length;
+  branchAdminPendingBadge.textContent = pending;
+}
+
+function renderBranchAdminApplications() {
+  if (!branchAdminRows) return;
+  if (!branchAdminApplications.length) {
+    branchAdminRows.innerHTML = `
+      <div class="empty-state">
+        <div>🧑‍🏫</div>
+        <h3>ยังไม่มีคำขอผู้ดูแลสาขา</h3>
+        <p>เมื่อเฟรนไชน์ซีสมัครเข้ามา รายการจะมาอยู่ตรงนี้</p>
+      </div>
+    `;
+    return;
+  }
+
+  branchAdminRows.innerHTML = branchAdminApplications.map((application) => {
+    const branchText = application.branches?.name
+      ? `${application.branches.name}${application.branches.code ? ` (${application.branches.code})` : ""}`
+      : "ไม่พบสาขา";
+    const isPending = application.status === "pending";
+    return `
+      <article class="branch-admin-request-card ${application.status}">
+        <div>
+          <span class="status-pill ${application.status}">${statusLabels[application.status] || application.status}</span>
+          <h3>${escapeHtml(application.full_name)}</h3>
+          <p>${escapeHtml(application.email)} · ${escapeHtml(application.phone)}</p>
+          <div class="request-meta">
+            <span>🏫 ${escapeHtml(branchText)}</span>
+            <span>สมัครเมื่อ ${formatDate(application.created_at)}</span>
+          </div>
+          ${application.rejection_reason ? `<small>เหตุผลไม่อนุมัติ: ${escapeHtml(application.rejection_reason)}</small>` : ""}
+        </div>
+        <div class="branch-admin-request-actions">
+          ${isPending ? `
+            <button class="reject-button" type="button"
+              data-branch-admin-review="${application.id}" data-decision="rejected">
+              ไม่อนุมัติ
+            </button>
+            <button class="approve-button" type="button"
+              data-branch-admin-review="${application.id}" data-decision="approved">
+              อนุมัติสาขานี้
+            </button>
+          ` : `<strong>${application.status === "approved" ? "เปิดสิทธิ์แล้ว" : "ปิดคำขอแล้ว"}</strong>`}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function reviewBranchAdminApplication(applicationId, decision) {
+  if (!isMainAdmin()) return;
+  let rejectionReasonText = null;
+  if (decision === "rejected") {
+    rejectionReasonText = window.prompt("ระบุเหตุผลที่ไม่อนุมัติผู้ดูแลสาขา") || "";
+    if (!rejectionReasonText.trim()) return;
+  }
+
+  const { error } = await supabaseClient.rpc("review_branch_admin_application", {
+    p_application_id: applicationId,
+    p_decision: decision,
+    p_rejection_reason: rejectionReasonText?.trim() || null
+  });
+
+  if (error) {
+    showToast(`บันทึกคำขอผู้ดูแลสาขาไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  showToast(decision === "approved"
+    ? "อนุมัติผู้ดูแลสาขาเรียบร้อย"
+    : "บันทึกการไม่อนุมัติผู้ดูแลสาขาแล้ว");
+  await loadBranchAdminApplications();
 }
 
 function renderRobotLessons() {
@@ -1607,12 +1941,19 @@ loginForm.addEventListener("submit", async (event) => {
     showToast(adminError.message, true);
   }
 });
+adminLoginTab.addEventListener("click", () => setAdminAuthMode("login"));
+branchAdminSignupTab.addEventListener("click", () => setAdminAuthMode("signup"));
+branchAdminSignupForm.addEventListener("submit", submitBranchAdminSignup);
 
 document.querySelector("#logoutButton").addEventListener("click", async () => {
   await supabaseClient.auth.signOut();
+  currentAdminProfile = null;
+  currentBranchAssignment = null;
   shell.hidden = true;
   loginView.hidden = false;
   loginForm.reset();
+  branchAdminSignupForm.reset();
+  setAdminAuthMode("login");
 });
 
 document.querySelector("#refreshButton").addEventListener("click", loadApplications);
@@ -1624,8 +1965,10 @@ dateFromFilter.addEventListener("change", renderApplications);
 dateToFilter.addEventListener("change", renderApplications);
 clearFiltersButton.addEventListener("click", () => {
   searchInput.value = "";
-  sourceFilter.value = "all";
-  branchFilter.value = "all";
+  sourceFilter.value = isBranchAdmin() ? "branch" : "all";
+  branchFilter.value = isBranchAdmin() && currentBranchAssignment?.branch_id
+    ? currentBranchAssignment.branch_id
+    : "all";
   dateFromFilter.value = "";
   dateToFilter.value = "";
   activeStatus = "all";
@@ -1650,6 +1993,12 @@ document.querySelector("#refreshBranchesButton").addEventListener("click", loadB
 branchRows.addEventListener("click", (event) => {
   const button = event.target.closest("[data-branch-toggle]");
   if (button) toggleBranch(button.dataset.branchToggle);
+});
+refreshBranchAdminsButton.addEventListener("click", loadBranchAdminApplications);
+branchAdminRows.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-branch-admin-review]");
+  if (!button) return;
+  reviewBranchAdminApplication(button.dataset.branchAdminReview, button.dataset.decision);
 });
 document.querySelector("#closeReview").addEventListener("click", closeReview);
 reviewModal.addEventListener("click", (event) => {
