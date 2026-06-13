@@ -31,9 +31,11 @@
     <section class="review-section"><div class="review-head"><h2>คำขอครูผู้สร้างสื่อ</h2><span class="count" id="teacherCount">กำลังโหลด...</span></div><div class="requests" id="teacherList"><div class="empty">กำลังโหลดคำขอครู...</div></div></section>
     <section class="review-section"><div class="review-head"><h2>คำขอเจ้าหน้าที่เขต</h2><span class="count" id="requestCount">กำลังโหลด...</span></div><div class="requests" id="requestList"><div class="empty">กำลังโหลดคำขอ...</div></div></section>
   </main>
+  <script src="../supabase-config.js"></script>
   <script>
-    const SUPABASE_URL="https://ewsftltgehfrumfnmugi.supabase.co";
-    const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3c2Z0bHRnZWhmcnVtZm5tdWdpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NTUwMzQsImV4cCI6MjA5NjIzMTAzNH0.rYefsViZAFttNqiRQvAPv2E8wcq1vph5WPv2n8nrYL0";
+    const SUPABASE_URL=window.SUPABASE_CONFIG?.url;
+    const SUPABASE_ANON_KEY=window.SUPABASE_CONFIG?.anonKey;
+    if(!SUPABASE_URL||!SUPABASE_ANON_KEY){throw new Error("Missing Supabase config. Please check ../supabase-config.js")}
     const SESSION_KEY="homeschool_supabase_session";
     let session=null,districts=[],teachers=[];
     const $=selector=>document.querySelector(selector);
