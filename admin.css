@@ -113,10 +113,23 @@ button { cursor: pointer; }
 .branch-card small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
 .branch-card button { border: 0; border-radius: 11px; padding: 9px 12px; color: white; background: #668b55; font-size: 13px; font-weight: 800; }
 .branch-card.inactive button { background: #c5875d; }
-.panel-heading { display: flex; align-items: center; padding: 20px 22px 14px; }
+.panel-heading { display: flex; align-items: center; gap: 14px; padding: 20px 22px 14px; }
 .panel-heading h2 { margin: 0; font-size: 17px; }
 .panel-heading p { margin: 3px 0 0; color: var(--muted); font-size: 8px; }
+.panel-actions { display: flex; gap: 9px; align-items: center; margin-left: auto; }
 .refresh-button { margin-left: auto; border: 1px solid var(--line); border-radius: 10px; padding: 8px 11px; color: #668159; background: #fffefa; font-size: 9px; font-weight: 700; }
+.panel-actions .refresh-button { margin-left: 0; }
+.export-button {
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 12px;
+  color: white;
+  background: linear-gradient(135deg, #668b55, #e4a842);
+  box-shadow: 0 9px 18px rgba(102, 139, 85, .16);
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
 .toolbar { display: flex; align-items: center; gap: 13px; padding: 0 22px 17px; }
 .search-box { display: flex; flex: 1; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 11px; padding: 0 12px; background: #fcfaf6; }
 .search-box span { color: #9d897b; font-size: 20px; }
@@ -409,6 +422,7 @@ body { font-size: 16px; }
 .lesson-admin-hero p,
 .editor-note { font-size: 14px; line-height: 1.6; }
 .refresh-button,
+.export-button,
 .search-box input,
 .filter-tabs button,
 .advanced-filters label,

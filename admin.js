@@ -21,6 +21,7 @@ const branchFilter = document.querySelector("#branchFilter");
 const dateFromFilter = document.querySelector("#dateFromFilter");
 const dateToFilter = document.querySelector("#dateToFilter");
 const clearFiltersButton = document.querySelector("#clearFiltersButton");
+const exportCsvButton = document.querySelector("#exportCsvButton");
 const reviewModal = document.querySelector("#reviewModal");
 const slipFrame = document.querySelector("#slipFrame");
 const openSlipLink = document.querySelector("#openSlipLink");
@@ -127,6 +128,13 @@ function toLocalDateInputValue(value) {
   const date = new Date(value);
   const localTime = date.getTime() - date.getTimezoneOffset() * 60000;
   return new Date(localTime).toISOString().slice(0, 10);
+}
+
+function toLocalDateTimeValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  const localTime = date.getTime() - date.getTimezoneOffset() * 60000;
+  return new Date(localTime).toISOString().slice(0, 16).replace("T", " ");
 }
 
 function renderBranchFilterOptions() {
@@ -328,13 +336,13 @@ async function toggleBranch(branchId) {
   await loadBranchesAdmin();
 }
 
-function renderApplications() {
+function getFilteredApplications() {
   const query = searchInput.value.trim().toLowerCase();
   const selectedSource = sourceFilter.value;
   const selectedBranch = branchFilter.value;
   const dateFrom = dateFromFilter.value;
   const dateTo = dateToFilter.value;
-  const filtered = applications.filter((application) => {
+  return applications.filter((application) => {
     const matchesStatus =
       activeStatus === "all" || application.status === activeStatus;
     const matchesSource =
@@ -365,6 +373,10 @@ function renderApplications() {
       matchesDateTo &&
       haystack.includes(query);
   });
+}
+
+function renderApplications() {
+  const filtered = getFilteredApplications();
 
   rows.innerHTML = filtered.map((application) => {
     const [courseName, courseDescription] =
@@ -430,6 +442,99 @@ function renderApplications() {
   }).join("");
 
   emptyState.hidden = filtered.length > 0;
+}
+
+function csvCell(value) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function exportApplicationsCsv() {
+  const filtered = getFilteredApplications();
+  if (!filtered.length) {
+    showToast("ไม่มีใบสมัครในตัวกรองนี้ให้ Export", true);
+    return;
+  }
+
+  const headers = [
+    "วันที่สมัคร",
+    "สถานะใบสมัคร",
+    "ชื่อนักเรียน",
+    "ชื่อเล่น",
+    "วันเกิด",
+    "อายุ",
+    "ชื่อผู้ปกครอง",
+    "อีเมลผู้ปกครอง",
+    "เบอร์โทรผู้ปกครอง",
+    "คอร์สที่สมัคร",
+    "สิทธิ์โรบอท",
+    "สิทธิ์ศิลปะ",
+    "ช่องทางสมัคร",
+    "สาขา",
+    "วิธีชำระเงิน",
+    "สถานะชำระเงิน",
+    "ยอดชำระ",
+    "วันที่ชำระ",
+    "หมายเหตุชำระเงิน",
+    "มีหลักฐานชำระเงิน",
+    "ที่อยู่ไฟล์หลักฐาน",
+    "แพ้อาหาร",
+    "แพ้เกสร / ภูมิแพ้",
+    "ข้อมูลเพิ่มเติม",
+    "เหตุผลไม่อนุมัติ"
+  ];
+
+  const lines = [
+    headers.map(csvCell).join(","),
+    ...filtered.map((application) => {
+      const [courseName] = courseLabels[application.course] || [application.course || ""];
+      const sourceText = application.enrollment_source === "branch"
+        ? sourceLabels.branch
+        : sourceLabels.online;
+
+      return [
+        toLocalDateTimeValue(application.created_at),
+        statusLabels[application.status] || application.status,
+        application.student_name,
+        application.student_nickname,
+        application.birth_date,
+        application.age_years,
+        application.parent_name,
+        application.parent_email,
+        application.parent_phone,
+        courseName,
+        application.robot_access ? "ใช่" : "ไม่ใช่",
+        application.art_access ? "ใช่" : "ไม่ใช่",
+        sourceText,
+        application.enrollment_source === "branch" ? getBranchName(application) : "ออนไลน์",
+        paymentMethodLabels[application.payment_method] || application.payment_method,
+        application.payment_status,
+        application.paid_amount || 0,
+        application.paid_at,
+        application.payment_note,
+        application.slip_path ? "มี" : "ไม่มี",
+        application.slip_path,
+        application.allergy_food,
+        application.allergy_pollen,
+        application.student_notes,
+        application.rejection_reason
+      ].map(csvCell).join(",");
+    })
+  ];
+
+  const filenameDate = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([`\ufeff${lines.join("\n")}`], {
+    type: "text/csv;charset=utf-8"
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `toko-poppy-enrollments-${filenameDate}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast(`Export CSV สำเร็จ ${filtered.length} รายการ`);
 }
 
 async function openReview(applicationId) {
@@ -1511,6 +1616,7 @@ document.querySelector("#logoutButton").addEventListener("click", async () => {
 });
 
 document.querySelector("#refreshButton").addEventListener("click", loadApplications);
+exportCsvButton.addEventListener("click", exportApplicationsCsv);
 searchInput.addEventListener("input", renderApplications);
 sourceFilter.addEventListener("change", renderApplications);
 branchFilter.addEventListener("change", renderApplications);
