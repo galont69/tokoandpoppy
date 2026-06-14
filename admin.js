@@ -34,6 +34,10 @@ const openSlipLink = document.querySelector("#openSlipLink");
 const toast = document.querySelector("#adminToast");
 const robotAccess = document.querySelector("#robotAccess");
 const artAccess = document.querySelector("#artAccess");
+const robotSessionCount = document.querySelector("#robotSessionCount");
+const artSessionCount = document.querySelector("#artSessionCount");
+const robotSessionsField = document.querySelector("#robotSessionsField");
+const artSessionsField = document.querySelector("#artSessionsField");
 const rejectionReason = document.querySelector("#rejectionReason");
 const approveButton = document.querySelector("#approveButton");
 const rejectButton = document.querySelector("#rejectButton");
@@ -65,6 +69,7 @@ const recordSessionModal = document.querySelector("#recordSessionModal");
 const recordSessionForm = document.querySelector("#recordSessionForm");
 const recordSessionTitle = document.querySelector("#recordSessionTitle");
 const recordSessionSummary = document.querySelector("#recordSessionSummary");
+const recordSessionNumber = document.querySelector("#recordSessionNumber");
 const recordSessionDate = document.querySelector("#recordSessionDate");
 const recordLessonTitle = document.querySelector("#recordLessonTitle");
 const recordTeacherComment = document.querySelector("#recordTeacherComment");
@@ -161,6 +166,37 @@ function isMainAdmin() {
 
 function isBranchAdmin() {
   return currentAdminProfile?.role === "branch_admin";
+}
+
+function canManageApplication(application) {
+  if (!application) return false;
+  if (isMainAdmin()) return true;
+  return isBranchAdmin() &&
+    application.enrollment_source === "branch" &&
+    currentBranchAssignment?.branch_id &&
+    application.branch_id === currentBranchAssignment.branch_id;
+}
+
+function updateSessionPackageFields() {
+  const canReview = canManageApplication(activeApplication);
+  const robotEnabled = Boolean(robotAccess?.checked);
+  const artEnabled = Boolean(artAccess?.checked);
+
+  if (robotSessionCount) robotSessionCount.disabled = !canReview || !robotEnabled;
+  if (artSessionCount) artSessionCount.disabled = !canReview || !artEnabled;
+  robotSessionsField?.classList.toggle("muted", !robotEnabled);
+  artSessionsField?.classList.toggle("muted", !artEnabled);
+}
+
+function getSessionPackageValue(input, label) {
+  const value = Number.parseInt(input?.value || "", 10);
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`กรุณาระบุจำนวนครั้ง${label}อย่างน้อย 1 ครั้ง`);
+  }
+  if (value > 120) {
+    throw new Error(`จำนวนครั้ง${label}สูงเกินไป กรุณาตรวจสอบแพ็กเกจอีกครั้ง`);
+  }
+  return value;
 }
 
 function getCurrentBranchName() {
@@ -458,6 +494,25 @@ async function loadLearningProgress() {
   renderLearningProgress();
 }
 
+async function loadApplicationCoursePackages(applicationId) {
+  const packages = { robot: 30, art: 12 };
+  const { data, error } = await supabaseClient
+    .from("course_enrollments")
+    .select("course_type,total_sessions")
+    .eq("application_id", applicationId);
+
+  if (error) return packages;
+  (data || []).forEach((enrollment) => {
+    if (enrollment.course_type === "robot") {
+      packages.robot = Number(enrollment.total_sessions || 30);
+    }
+    if (enrollment.course_type === "art") {
+      packages.art = Number(enrollment.total_sessions || 12);
+    }
+  });
+  return packages;
+}
+
 function renderLearningProgress() {
   if (!learningProgressRows) return;
   const rows = getLearningFilteredRows();
@@ -506,10 +561,21 @@ function openRecordSession(enrollmentId) {
   activeLearningEnrollment = learningEnrollments.find((item) => item.id === enrollmentId);
   if (!activeLearningEnrollment) return;
 
-  const nextSession = Number(activeLearningEnrollment.completed_sessions || 0) + 1;
-  recordSessionTitle.textContent = `ครั้งที่ ${nextSession}: ${activeLearningEnrollment.student_nickname || activeLearningEnrollment.student_name}`;
+  const completedSessions = Number(activeLearningEnrollment.completed_sessions || 0);
+  const totalSessions = Number(activeLearningEnrollment.total_sessions || 0);
+  const nextSession = completedSessions + 1;
+  const defaultSession = totalSessions
+    ? Math.min(nextSession, totalSessions)
+    : nextSession;
+  recordSessionTitle.textContent =
+    `บันทึกครั้งเรียน: ${activeLearningEnrollment.student_nickname || activeLearningEnrollment.student_name}`;
   recordSessionSummary.textContent =
-    `${getCourseEnrollmentLabel(activeLearningEnrollment)} · เรียนแล้ว ${activeLearningEnrollment.completed_sessions || 0}/${activeLearningEnrollment.total_sessions || 0} ครั้ง`;
+    `${getCourseEnrollmentLabel(activeLearningEnrollment)} · เรียนแล้ว ${completedSessions}/${totalSessions} ครั้ง · เลือกเลขครั้งเรียนย้อนหลังได้`;
+  if (recordSessionNumber) {
+    recordSessionNumber.value = String(defaultSession);
+    recordSessionNumber.max = totalSessions ? String(totalSessions) : "";
+    recordSessionNumber.placeholder = totalSessions ? `1-${totalSessions}` : "เช่น 4";
+  }
   recordSessionDate.value = toLocalDateInputValue(new Date());
   recordLessonTitle.value = "";
   recordTeacherComment.value = "";
@@ -560,6 +626,20 @@ async function uploadLearningPhoto(enrollmentId) {
 async function saveLearningSession(event) {
   event.preventDefault();
   if (!activeLearningEnrollment) return;
+
+  const totalSessions = Number(activeLearningEnrollment.total_sessions || 0);
+  const sessionNumber = Number.parseInt(recordSessionNumber?.value || "", 10);
+  if (!Number.isInteger(sessionNumber) || sessionNumber < 1) {
+    showToast("กรุณาระบุครั้งที่เรียนเป็นตัวเลขอย่างน้อย 1", true);
+    recordSessionNumber?.focus();
+    return;
+  }
+  if (totalSessions && sessionNumber > totalSessions) {
+    showToast(`ครั้งที่เรียนต้องไม่เกินแพ็กเกจ ${totalSessions} ครั้ง`, true);
+    recordSessionNumber?.focus();
+    return;
+  }
+
   saveSessionButton.disabled = true;
   saveSessionButton.textContent = "กำลังบันทึก...";
 
@@ -567,6 +647,7 @@ async function saveLearningSession(event) {
     const photoPath = await uploadLearningPhoto(activeLearningEnrollment.id);
     const { error } = await supabaseClient.rpc("record_learning_session", {
       p_course_enrollment_id: activeLearningEnrollment.id,
+      p_session_number: sessionNumber,
       p_session_date: recordSessionDate.value || null,
       p_lesson_title: recordLessonTitle.value || null,
       p_teacher_comment: recordTeacherComment.value || null,
@@ -930,16 +1011,20 @@ async function openReview(applicationId) {
   artAccess.checked = activeApplication.status === "pending"
     ? ["art", "both"].includes(activeApplication.course)
     : activeApplication.art_access;
+  const packages = await loadApplicationCoursePackages(activeApplication.id);
+  if (robotSessionCount) robotSessionCount.value = packages.robot || 30;
+  if (artSessionCount) artSessionCount.value = packages.art || 12;
   rejectionReason.value = activeApplication.rejection_reason || "";
   approveButton.textContent = activeApplication.status === "approved"
     ? "✓ บันทึกสิทธิ์คอร์ส"
     : "✓ อนุมัติและเปิดสิทธิ์";
-  const canReview = isMainAdmin();
+  const canReview = canManageApplication(activeApplication);
   robotAccess.disabled = !canReview;
   artAccess.disabled = !canReview;
   rejectionReason.disabled = !canReview;
   approveButton.hidden = !canReview;
   rejectButton.hidden = !canReview;
+  updateSessionPackageFields();
 
   reviewModal.classList.add("open");
   reviewModal.setAttribute("aria-hidden", "false");
@@ -981,8 +1066,8 @@ function closeReview() {
 
 async function reviewApplication(decision) {
   if (!activeApplication) return;
-  if (!isMainAdmin()) {
-    showToast("ผู้ดูแลสาขาดูรายละเอียดได้ แต่การอนุมัติทำได้เฉพาะแอดมินหลัก", true);
+  if (!canManageApplication(activeApplication)) {
+    showToast("คุณอนุมัติได้เฉพาะใบสมัครของสาขาที่รับผิดชอบ", true);
     return;
   }
   if (decision === "approved" && !robotAccess.checked && !artAccess.checked) {
@@ -995,20 +1080,48 @@ async function reviewApplication(decision) {
     return;
   }
 
-  setBusy(true);
-  const { error } = await supabaseClient.rpc("review_enrollment", {
-    p_application_id: activeApplication.id,
-    p_decision: decision,
-    p_robot_access: robotAccess.checked,
-    p_art_access: artAccess.checked,
-    p_rejection_reason: rejectionReason.value.trim() || null
-  });
-  setBusy(false);
+  let robotSessions = null;
+  let artSessions = null;
+  if (decision === "approved") {
+    try {
+      robotSessions = robotAccess.checked
+        ? getSessionPackageValue(robotSessionCount, "โรบอท")
+        : null;
+      artSessions = artAccess.checked
+        ? getSessionPackageValue(artSessionCount, "ศิลปะ")
+        : null;
+    } catch (error) {
+      showToast(error.message, true);
+      return;
+    }
+  }
 
-  if (error) {
+  setBusy(true);
+  try {
+    const { error } = await supabaseClient.rpc("review_enrollment", {
+      p_application_id: activeApplication.id,
+      p_decision: decision,
+      p_robot_access: robotAccess.checked,
+      p_art_access: artAccess.checked,
+      p_rejection_reason: rejectionReason.value.trim() || null
+    });
+    if (error) throw error;
+
+    if (decision === "approved") {
+      const { error: packageError } = await supabaseClient.rpc("set_course_enrollment_package", {
+        p_application_id: activeApplication.id,
+        p_robot_sessions: robotSessions,
+        p_art_sessions: artSessions,
+        p_note: null
+      });
+      if (packageError) throw packageError;
+    }
+  } catch (error) {
+    setBusy(false);
     showToast(`บันทึกไม่สำเร็จ: ${error.message}`, true);
     return;
   }
+  setBusy(false);
 
   closeReview();
   showToast(decision === "approved"
@@ -2224,6 +2337,8 @@ document.querySelector("#approveButton").addEventListener("click", () =>
   reviewApplication("approved"));
 document.querySelector("#rejectButton").addEventListener("click", () =>
   reviewApplication("rejected"));
+robotAccess?.addEventListener("change", updateSessionPackageFields);
+artAccess?.addEventListener("change", updateSessionPackageFields);
 document.querySelector("#menuButton").addEventListener("click", () =>
   document.querySelector(".sidebar").classList.toggle("open"));
 document.querySelectorAll("[data-admin-view]").forEach((button) => {
