@@ -36,6 +36,12 @@ const robotAccess = document.querySelector("#robotAccess");
 const artAccess = document.querySelector("#artAccess");
 const robotSessionCount = document.querySelector("#robotSessionCount");
 const artSessionCount = document.querySelector("#artSessionCount");
+const creativeArtProgram = document.querySelector("#creativeArtProgram");
+const waterColorProgram = document.querySelector("#waterColorProgram");
+const clayProgram = document.querySelector("#clayProgram");
+const creativeArtSessionCount = document.querySelector("#creativeArtSessionCount");
+const waterColorSessionCount = document.querySelector("#waterColorSessionCount");
+const claySessionCount = document.querySelector("#claySessionCount");
 const robotSessionsField = document.querySelector("#robotSessionsField");
 const artSessionsField = document.querySelector("#artSessionsField");
 const rejectionReason = document.querySelector("#rejectionReason");
@@ -97,8 +103,37 @@ let activeLearningEnrollment = null;
 const courseLabels = {
   robot: ["โรบอท + โค้ดดิ้ง", "SPIKE Essential"],
   art: ["คอร์สศิลปะ", "Creative Art"],
+  creative_art: ["Creative Art", "ศิลปะสร้างสรรค์"],
+  water_color: ["Water Color", "สีน้ำ"],
+  clay: ["ปั้นดินเบา (CLAY)", "Clay Art"],
   both: ["ทั้งสองคอร์ส", "Robot + Creative Art"]
 };
+
+const artCourseTypes = ["art", "creative_art", "water_color", "clay"];
+
+const artProgramControls = [
+  {
+    type: "creative_art",
+    checkbox: creativeArtProgram,
+    input: creativeArtSessionCount,
+    defaultSessions: 12,
+    label: "Creative Art"
+  },
+  {
+    type: "water_color",
+    checkbox: waterColorProgram,
+    input: waterColorSessionCount,
+    defaultSessions: 8,
+    label: "Water Color"
+  },
+  {
+    type: "clay",
+    checkbox: clayProgram,
+    input: claySessionCount,
+    defaultSessions: 4,
+    label: "ปั้นดินเบา (CLAY)"
+  }
+];
 
 const statusLabels = {
   pending: "รอตรวจสอบ",
@@ -184,8 +219,21 @@ function updateSessionPackageFields() {
 
   if (robotSessionCount) robotSessionCount.disabled = !canReview || !robotEnabled;
   if (artSessionCount) artSessionCount.disabled = !canReview || !artEnabled;
+  artProgramControls.forEach((program) => {
+    if (program.checkbox) program.checkbox.disabled = !canReview || !artEnabled;
+    if (program.input) {
+      program.input.disabled = !canReview || !artEnabled || !program.checkbox?.checked;
+    }
+  });
   robotSessionsField?.classList.toggle("muted", !robotEnabled);
   artSessionsField?.classList.toggle("muted", !artEnabled);
+}
+
+function setArtProgramsEnabled(enabled) {
+  if (enabled && !artProgramControls.some((program) => program.checkbox?.checked)) {
+    artProgramControls[0].checkbox.checked = true;
+  }
+  updateSessionPackageFields();
 }
 
 function getSessionPackageValue(input, label) {
@@ -441,9 +489,25 @@ function showAdminView(viewName) {
 }
 
 function getCourseEnrollmentLabel(enrollment) {
-  if (enrollment.course_type === "robot") return "โรบอท + โค้ดดิ้ง";
-  if (enrollment.course_type === "art") return enrollment.level_label || "ศิลปะ";
-  return enrollment.course_type || "คอร์ส";
+  const label = courseLabels[enrollment.course_type]?.[0] ||
+    enrollment.program_label ||
+    enrollment.course_type ||
+    "คอร์ส";
+  if (enrollment.level_label && !String(enrollment.level_label).includes(label)) {
+    return `${label} · ${enrollment.level_label}`;
+  }
+  return label;
+}
+
+function isArtCourseType(courseType) {
+  return artCourseTypes.includes(courseType);
+}
+
+function getCourseIcon(courseType) {
+  if (courseType === "robot") return "🤖";
+  if (courseType === "water_color") return "💧";
+  if (courseType === "clay") return "🧱";
+  return "🎨";
 }
 
 function getLearningFilteredRows() {
@@ -457,7 +521,9 @@ function getLearningFilteredRows() {
       enrollment.level_label
     ].filter(Boolean).join(" ").toLowerCase();
     const matchesKeyword = !keyword || haystack.includes(keyword);
-    const matchesCourse = course === "all" || enrollment.course_type === course;
+    const matchesCourse = course === "all" ||
+      enrollment.course_type === course ||
+      (course === "art_family" && isArtCourseType(enrollment.course_type));
     return matchesKeyword && matchesCourse;
   });
 }
@@ -495,10 +561,17 @@ async function loadLearningProgress() {
 }
 
 async function loadApplicationCoursePackages(applicationId) {
-  const packages = { robot: 30, art: 12 };
+  const packages = {
+    robot: 30,
+    art: 12,
+    creative_art: 12,
+    water_color: 8,
+    clay: 4,
+    selectedArtPrograms: new Set()
+  };
   const { data, error } = await supabaseClient
     .from("course_enrollments")
-    .select("course_type,total_sessions")
+    .select("course_type,total_sessions,program_label")
     .eq("application_id", applicationId);
 
   if (error) return packages;
@@ -508,6 +581,12 @@ async function loadApplicationCoursePackages(applicationId) {
     }
     if (enrollment.course_type === "art") {
       packages.art = Number(enrollment.total_sessions || 12);
+      packages.creative_art = Number(enrollment.total_sessions || 12);
+      packages.selectedArtPrograms.add("creative_art");
+    }
+    if (["creative_art", "water_color", "clay"].includes(enrollment.course_type)) {
+      packages[enrollment.course_type] = Number(enrollment.total_sessions || packages[enrollment.course_type]);
+      packages.selectedArtPrograms.add(enrollment.course_type);
     }
   });
   return packages;
@@ -528,27 +607,32 @@ function renderLearningProgress() {
         ? completed >= total ? "รับเกียรติบัตรครบคอร์สแล้ว" : "ถึงเกณฑ์รับเกียรติบัตร 15 ครั้งแล้ว"
         : `อีก ${Math.max(15 - completed, 0)} ครั้งถึงเกียรติบัตรแรก`
       : completed >= total
-        ? "รับเกียรติบัตร Level นี้แล้ว"
-        : `อีก ${remaining} ครั้งจบ Level`;
+        ? "จบแพ็กเกจนี้แล้ว พร้อมออกเกียรติบัตร"
+        : `อีก ${remaining} ครั้งจบแพ็กเกจนี้`;
+    const courseLabel = getCourseEnrollmentLabel(enrollment);
 
     return `
-      <article class="learning-progress-card">
-        <div class="learning-progress-top">
-          <span class="learning-avatar">${enrollment.course_type === "robot" ? "🤖" : "🎨"}</span>
+      <article class="learning-progress-row">
+        <div class="learning-progress-top learning-student-cell">
+          <span class="learning-avatar">${getCourseIcon(enrollment.course_type)}</span>
           <div>
             <strong>${escapeHtml(enrollment.student_name)}</strong>
-            <small>${escapeHtml(enrollment.student_nickname || "ไม่มีชื่อเล่น")} · ${escapeHtml(getCourseEnrollmentLabel(enrollment))}</small>
+            <small>${escapeHtml(enrollment.student_nickname || "ไม่มีชื่อเล่น")} · ${escapeHtml(courseLabel)}</small>
           </div>
         </div>
-        <div class="learning-meter">
-          <i style="width: ${percent}%"></i>
+        <div class="learning-course-cell">
+          <strong>${escapeHtml(courseLabel)}</strong>
+          <small>${escapeHtml(certificateText)}</small>
         </div>
-        <div class="learning-numbers">
+        <div class="learning-meter-cell">
+          <div class="learning-meter"><i style="width: ${percent}%"></i></div>
+          <small>${percent}%</small>
+        </div>
+        <div class="learning-numbers learning-row-numbers">
           <span><strong>${completed}</strong> เรียนแล้ว</span>
           <span><strong>${remaining}</strong> เหลือ</span>
           <span><strong>${total}</strong> รวม</span>
         </div>
-        <p>${escapeHtml(certificateText)}</p>
         <button class="review-button learning-record-button" type="button" data-record-enrollment="${enrollment.id}">
           + บันทึกครั้งเรียน
         </button>
@@ -1014,6 +1098,14 @@ async function openReview(applicationId) {
   const packages = await loadApplicationCoursePackages(activeApplication.id);
   if (robotSessionCount) robotSessionCount.value = packages.robot || 30;
   if (artSessionCount) artSessionCount.value = packages.art || 12;
+  artProgramControls.forEach((program) => {
+    const selected = packages.selectedArtPrograms.has(program.type);
+    if (program.checkbox) program.checkbox.checked = artAccess.checked && selected;
+    if (program.input) program.input.value = packages[program.type] || program.defaultSessions;
+  });
+  if (artAccess.checked && !artProgramControls.some((program) => program.checkbox?.checked)) {
+    artProgramControls[0].checkbox.checked = true;
+  }
   rejectionReason.value = activeApplication.rejection_reason || "";
   approveButton.textContent = activeApplication.status === "approved"
     ? "✓ บันทึกสิทธิ์คอร์ส"
@@ -1070,7 +1162,9 @@ async function reviewApplication(decision) {
     showToast("คุณอนุมัติได้เฉพาะใบสมัครของสาขาที่รับผิดชอบ", true);
     return;
   }
-  if (decision === "approved" && !robotAccess.checked && !artAccess.checked) {
+  const selectedArtPrograms = artProgramControls.filter((program) => program.checkbox?.checked);
+  const artEnabled = Boolean(artAccess.checked && selectedArtPrograms.length);
+  if (decision === "approved" && !robotAccess.checked && !artEnabled) {
     showToast("กรุณาเลือกอย่างน้อยหนึ่งคอร์ส", true);
     return;
   }
@@ -1081,15 +1175,17 @@ async function reviewApplication(decision) {
   }
 
   let robotSessions = null;
-  let artSessions = null;
+  const artSessions = {};
   if (decision === "approved") {
     try {
       robotSessions = robotAccess.checked
         ? getSessionPackageValue(robotSessionCount, "โรบอท")
         : null;
-      artSessions = artAccess.checked
-        ? getSessionPackageValue(artSessionCount, "ศิลปะ")
-        : null;
+      artProgramControls.forEach((program) => {
+        artSessions[program.type] = program.checkbox?.checked
+          ? getSessionPackageValue(program.input, program.label)
+          : null;
+      });
     } catch (error) {
       showToast(error.message, true);
       return;
@@ -1102,16 +1198,18 @@ async function reviewApplication(decision) {
       p_application_id: activeApplication.id,
       p_decision: decision,
       p_robot_access: robotAccess.checked,
-      p_art_access: artAccess.checked,
+      p_art_access: artEnabled,
       p_rejection_reason: rejectionReason.value.trim() || null
     });
     if (error) throw error;
 
     if (decision === "approved") {
-      const { error: packageError } = await supabaseClient.rpc("set_course_enrollment_package", {
+      const { error: packageError } = await supabaseClient.rpc("set_course_enrollment_packages", {
         p_application_id: activeApplication.id,
         p_robot_sessions: robotSessions,
-        p_art_sessions: artSessions,
+        p_creative_art_sessions: artSessions.creative_art,
+        p_water_color_sessions: artSessions.water_color,
+        p_clay_sessions: artSessions.clay,
         p_note: null
       });
       if (packageError) throw packageError;
@@ -2338,7 +2436,14 @@ document.querySelector("#approveButton").addEventListener("click", () =>
 document.querySelector("#rejectButton").addEventListener("click", () =>
   reviewApplication("rejected"));
 robotAccess?.addEventListener("change", updateSessionPackageFields);
-artAccess?.addEventListener("change", updateSessionPackageFields);
+artAccess?.addEventListener("change", () => setArtProgramsEnabled(Boolean(artAccess.checked)));
+artProgramControls.forEach((program) => {
+  program.checkbox?.addEventListener("change", () => {
+    const hasSelectedArtProgram = artProgramControls.some((item) => item.checkbox?.checked);
+    if (artAccess) artAccess.checked = hasSelectedArtProgram;
+    updateSessionPackageFields();
+  });
+});
 document.querySelector("#menuButton").addEventListener("click", () =>
   document.querySelector(".sidebar").classList.toggle("open"));
 document.querySelectorAll("[data-admin-view]").forEach((button) => {

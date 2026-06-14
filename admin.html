@@ -236,7 +236,11 @@
             <select id="learningCourseFilter" class="soft-select">
               <option value="all">ทุกคอร์ส</option>
               <option value="robot">โรบอท</option>
-              <option value="art">ศิลปะ</option>
+              <option value="art_family">ศิลปะทั้งหมด</option>
+              <option value="creative_art">Creative Art</option>
+              <option value="water_color">Water Color</option>
+              <option value="clay">ปั้นดินเบา (CLAY)</option>
+              <option value="art">ศิลปะเดิม</option>
             </select>
           </div>
 
@@ -596,7 +600,7 @@
             <label class="access-option art">
               <input id="artAccess" type="checkbox">
               <span>🎨</span>
-              <div><strong>ห้องเรียนศิลปะ</strong><small>เปิดสิทธิ์บทเรียน Creative Art</small></div>
+              <div><strong>ห้องเรียนศิลปะ</strong><small>เลือกโปรแกรมศิลปะและจำนวนครั้งด้านล่าง</small></div>
               <i>✓</i>
             </label>
           </fieldset>
@@ -606,11 +610,31 @@
               <input id="robotSessionCount" type="number" min="1" max="120" step="1" value="30">
               <small>ระบุตามแพ็กเกจที่ผู้ปกครองซื้อ เช่น 4, 8 หรือ 30 ครั้ง</small>
             </label>
-            <label class="session-package-field" id="artSessionsField">
-              จำนวนครั้งศิลปะ
-              <input id="artSessionCount" type="number" min="1" max="120" step="1" value="12">
-              <small>ปรับได้ตาม Level หรือแพ็กเกจที่สาขาขาย</small>
-            </label>
+            <div class="session-package-field art-program-package" id="artSessionsField">
+              <div class="art-program-heading">
+                <strong>โปรแกรมศิลปะที่อนุมัติ</strong>
+                <small>เด็กหนึ่งคนลงได้หลายโปรแกรม เช่น วาดรูป + ปั้นดินเบา</small>
+              </div>
+              <label class="art-program-row">
+                <input id="creativeArtProgram" type="checkbox">
+                <span>🎨 Creative Art</span>
+                <input id="creativeArtSessionCount" type="number" min="1" max="120" step="1" value="12">
+                <small>ครั้ง</small>
+              </label>
+              <label class="art-program-row">
+                <input id="waterColorProgram" type="checkbox">
+                <span>💧 Water Color</span>
+                <input id="waterColorSessionCount" type="number" min="1" max="120" step="1" value="8">
+                <small>ครั้ง</small>
+              </label>
+              <label class="art-program-row">
+                <input id="clayProgram" type="checkbox">
+                <span>🧱 ปั้นดินเบา (CLAY)</span>
+                <input id="claySessionCount" type="number" min="1" max="120" step="1" value="4">
+                <small>ครั้ง</small>
+              </label>
+              <input id="artSessionCount" type="hidden" value="12">
+            </div>
           </div>
           <label class="reason-field" id="reasonField">
             เหตุผลกรณีไม่อนุมัติ
@@ -629,6 +653,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js?v=20260614-flexible-sessions"></script>
+  <script src="admin.js?v=20260614-art-programs"></script>
 </body>
 </html>
