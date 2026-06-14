@@ -69,6 +69,7 @@ const learningLoadingState = document.querySelector("#learningLoadingState");
 const learningEmptyState = document.querySelector("#learningEmptyState");
 const learningSearchInput = document.querySelector("#learningSearchInput");
 const learningCourseFilter = document.querySelector("#learningCourseFilter");
+const learningStatusFilter = document.querySelector("#learningStatusFilter");
 const learningScopeText = document.querySelector("#learningScopeText");
 const refreshLearningButton = document.querySelector("#refreshLearningButton");
 const recordSessionModal = document.querySelector("#recordSessionModal");
@@ -510,9 +511,41 @@ function getCourseIcon(courseType) {
   return "🎨";
 }
 
+function getLearningEnrollmentState(enrollment) {
+  const completed = Number(enrollment.completed_sessions || 0);
+  const total = Number(enrollment.total_sessions || 0);
+  const remaining = Math.max(total - completed, 0);
+
+  if (total > 0 && completed >= total) {
+    return {
+      key: "completed",
+      label: "จบคอร์สแล้ว",
+      helper: "เก็บประวัติไว้และค้นย้อนหลังได้",
+      badgeClass: "completed"
+    };
+  }
+
+  if (total > 0 && remaining <= 2) {
+    return {
+      key: "almost_done",
+      label: "ใกล้จบ",
+      helper: `เหลือ ${remaining} ครั้ง เหมาะสำหรับติดตามต่อคอร์ส`,
+      badgeClass: "almost"
+    };
+  }
+
+  return {
+    key: "active",
+    label: "กำลังเรียน",
+    helper: "ยังอยู่ในแพ็กเกจปัจจุบัน",
+    badgeClass: "active"
+  };
+}
+
 function getLearningFilteredRows() {
   const keyword = (learningSearchInput?.value || "").trim().toLowerCase();
   const course = learningCourseFilter?.value || "all";
+  const status = learningStatusFilter?.value || "active";
   return learningEnrollments.filter((enrollment) => {
     const haystack = [
       enrollment.student_name,
@@ -524,7 +557,11 @@ function getLearningFilteredRows() {
     const matchesCourse = course === "all" ||
       enrollment.course_type === course ||
       (course === "art_family" && isArtCourseType(enrollment.course_type));
-    return matchesKeyword && matchesCourse;
+    const learningState = getLearningEnrollmentState(enrollment);
+    const matchesStatus = status === "all" ||
+      learningState.key === status ||
+      (status === "active" && learningState.key !== "completed");
+    return matchesKeyword && matchesCourse && matchesStatus;
   });
 }
 
@@ -610,9 +647,13 @@ function renderLearningProgress() {
         ? "จบแพ็กเกจนี้แล้ว พร้อมออกเกียรติบัตร"
         : `อีก ${remaining} ครั้งจบแพ็กเกจนี้`;
     const courseLabel = getCourseEnrollmentLabel(enrollment);
+    const learningState = getLearningEnrollmentState(enrollment);
+    const recordButtonLabel = learningState.key === "completed"
+      ? "ดู/บันทึกย้อนหลัง"
+      : "+ บันทึกครั้งเรียน";
 
     return `
-      <article class="learning-progress-row">
+      <article class="learning-progress-row ${learningState.key === "completed" ? "is-completed" : ""}">
         <div class="learning-progress-top learning-student-cell">
           <span class="learning-avatar">${getCourseIcon(enrollment.course_type)}</span>
           <div>
@@ -623,10 +664,11 @@ function renderLearningProgress() {
         <div class="learning-course-cell">
           <strong>${escapeHtml(courseLabel)}</strong>
           <small>${escapeHtml(certificateText)}</small>
+          <span class="learning-status-badge ${learningState.badgeClass}">${escapeHtml(learningState.label)}</span>
         </div>
         <div class="learning-meter-cell">
           <div class="learning-meter"><i style="width: ${percent}%"></i></div>
-          <small>${percent}%</small>
+          <small>${percent}% · ${escapeHtml(learningState.helper)}</small>
         </div>
         <div class="learning-numbers learning-row-numbers">
           <span><strong>${completed}</strong> เรียนแล้ว</span>
@@ -634,7 +676,7 @@ function renderLearningProgress() {
           <span><strong>${total}</strong> รวม</span>
         </div>
         <button class="review-button learning-record-button" type="button" data-record-enrollment="${enrollment.id}">
-          + บันทึกครั้งเรียน
+          ${recordButtonLabel}
         </button>
       </article>
     `;
@@ -2417,6 +2459,7 @@ branchAdminRows.addEventListener("click", (event) => {
 refreshLearningButton?.addEventListener("click", loadLearningProgress);
 learningSearchInput?.addEventListener("input", renderLearningProgress);
 learningCourseFilter?.addEventListener("change", renderLearningProgress);
+learningStatusFilter?.addEventListener("change", renderLearningProgress);
 learningProgressRows?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-record-enrollment]");
   if (button) openRecordSession(button.dataset.recordEnrollment);

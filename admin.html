@@ -242,6 +242,12 @@
               <option value="clay">ปั้นดินเบา (CLAY)</option>
               <option value="art">ศิลปะเดิม</option>
             </select>
+            <select id="learningStatusFilter" class="soft-select">
+              <option value="active">กำลังเรียน</option>
+              <option value="almost_done">ใกล้จบ</option>
+              <option value="completed">จบคอร์สแล้ว</option>
+              <option value="all">ทั้งหมด</option>
+            </select>
           </div>
 
           <div class="learning-progress-grid" id="learningProgressRows"></div>
@@ -653,6 +659,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js?v=20260614-art-programs"></script>
+  <script src="admin.js?v=20260614-learning-status"></script>
 </body>
 </html>

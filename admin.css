@@ -589,6 +589,11 @@ body { font-size: 16px; }
   padding: 16px 18px;
 }
 
+.learning-progress-row.is-completed {
+  background: #fbfaf6;
+  opacity: 0.82;
+}
+
 .learning-progress-top {
   display: flex;
   align-items: center;
@@ -639,6 +644,32 @@ body { font-size: 16px; }
   color: #8b7a6b;
   font-size: 13px;
   line-height: 1.35;
+}
+
+.learning-status-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.learning-status-badge.active {
+  color: #4f7d48;
+  background: #e8f4df;
+}
+
+.learning-status-badge.almost {
+  color: #8d6422;
+  background: #fff0bf;
+}
+
+.learning-status-badge.completed {
+  color: #7c7169;
+  background: #eee8df;
 }
 
 .learning-meter {
