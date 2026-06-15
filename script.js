@@ -153,18 +153,23 @@ function renderParentDashboard({ applications = [], enrollments = [], sessions =
     const completed = Number(enrollment.completed_sessions || 0);
     return sum + Math.max(total - completed, 0);
   }, 0);
+  const activeCourseCount = enrollments.length;
 
   parentDashboardStats.innerHTML = [
-    ["สมัครเรียน", `${applications.length}`, "ครั้ง"],
+    ["คอร์สที่เปิดอยู่", `${activeCourseCount}`, "รายการ"],
     ["เรียนแล้ว", `${totalCompleted}`, "ครั้ง"],
-    ["ยังเหลือ", `${totalRemaining}`, "ครั้ง"]
+    ["เหลือรวม", `${totalRemaining}`, "ครั้ง"]
   ].map(([label, value, unit]) => `
     <div class="parent-stat-card">
       <span>${label}</span>
       <strong>${value}</strong>
       <small>${unit}</small>
     </div>
-  `).join("");
+  `).join("") + `
+    <p class="parent-stat-note">
+      ใบสมัครทั้งหมด ${applications.length} ใบ · “เหลือรวม” คือจำนวนครั้งที่ยังไม่ได้บันทึกจากทุกคอร์สด้านล่างรวมกัน
+    </p>
+  `;
 
   if (!enrollments.length) {
     parentCourseProgress.innerHTML = `
