@@ -135,7 +135,7 @@ function setParentHeaderLoggedIn({ user, application }) {
   headerLoginButton.classList.toggle("is-pending", !isApproved);
   headerLoginButton.setAttribute(
     "aria-label",
-    isApproved ? `เปิดสมุดพัฒนาการของ ${displayName}` : "บัญชีรออนุมัติ"
+    isApproved ? `เปิดบันทึกการเรียนรู้ของ ${displayName}` : "บัญชีรออนุมัติ"
   );
   headerLoginButton.innerHTML = `
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -143,7 +143,7 @@ function setParentHeaderLoggedIn({ user, application }) {
     </svg>
     <span class="parent-login-label">
       <small>${isApproved ? "เข้าสู่ระบบแล้ว" : "รออนุมัติ"}</small>
-      <strong>${isApproved ? "สมุดพัฒนาการ" : "บัญชีผู้ปกครอง"}</strong>
+      <strong>${isApproved ? "บันทึกการเรียนรู้" : "บัญชีผู้ปกครอง"}</strong>
     </span>
   `;
 
@@ -183,7 +183,24 @@ function getParentCourseLabel(enrollment) {
     clay: "Clay Art"
   };
   const course = courseMap[enrollment.course_type] || enrollment.course_type || "คอร์สเรียน";
-  return enrollment.level_label ? `${course} · ${enrollment.level_label}` : course;
+  const levelLabel = String(enrollment.level_label || "").trim();
+  if (!levelLabel) return course;
+
+  const normalizeLabel = (value) => String(value)
+    .toLowerCase()
+    .replace(/[\s·+()_-]/g, "");
+  const normalizedCourse = normalizeLabel(course);
+  const normalizedLevel = normalizeLabel(levelLabel);
+  const courseAlreadyInLevel =
+    normalizedLevel.includes(normalizedCourse) ||
+    normalizedCourse.includes(normalizedLevel);
+
+  if (courseAlreadyInLevel) return levelLabel;
+  if (["art", "creative_art", "water_color", "clay", "robot"].includes(enrollment.course_type)) {
+    return levelLabel;
+  }
+
+  return `${course} · ${levelLabel}`;
 }
 
 function getLearningCourseMeta(courseType = "art") {
@@ -443,7 +460,7 @@ function renderParentDashboard({ applications = [], enrollments = [], sessions =
     latestApplication?.student_nickname ||
     latestApplication?.student_name ||
     "นักเรียนของเรา";
-  parentDashboardTitle.textContent = `สมุดพัฒนาการของ ${displayName}`;
+  parentDashboardTitle.textContent = `บันทึกการเรียนรู้ของ ${displayName}`;
 
   const totalCompleted = enrollments.reduce(
     (sum, enrollment) => sum + Number(enrollment.completed_sessions || 0),
@@ -474,7 +491,7 @@ function renderParentDashboard({ applications = [], enrollments = [], sessions =
 
   if (!enrollments.length) {
     parentCourseProgress.innerHTML = `
-      <div class="parent-empty-panel">ยังไม่มีคอร์สที่เปิดสิทธิ์ในสมุดพัฒนาการ</div>
+      <div class="parent-empty-panel">ยังไม่มีคอร์สที่เปิดสิทธิ์ในบันทึกการเรียนรู้</div>
     `;
   } else {
     parentCourseProgress.innerHTML = enrollments.map((enrollment) => {
@@ -540,7 +557,7 @@ async function openParentDashboard(userId) {
   parentDashboardModal.classList.add("open");
   parentDashboardModal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
-  parentDashboardTitle.textContent = "กำลังโหลดสมุดพัฒนาการ...";
+  parentDashboardTitle.textContent = "กำลังโหลดบันทึกการเรียนรู้...";
   parentDashboardStats.innerHTML = "";
   parentCourseProgress.innerHTML = '<div class="parent-empty-panel">กำลังอ่านข้อมูลคอร์สเรียน...</div>';
   parentSessionTimeline.innerHTML = '<div class="parent-empty-panel">กำลังอ่านรูปผลงานล่าสุด...</div>';
@@ -575,7 +592,7 @@ async function openParentDashboard(userId) {
       sessions: sessionResult.data || []
     });
   } catch (error) {
-    parentDashboardTitle.textContent = "ยังโหลดสมุดพัฒนาการไม่ได้";
+    parentDashboardTitle.textContent = "ยังโหลดบันทึกการเรียนรู้ไม่ได้";
     parentDashboardStats.innerHTML = "";
     parentCourseProgress.innerHTML = `
       <div class="parent-empty-panel">
@@ -585,7 +602,7 @@ async function openParentDashboard(userId) {
     parentSessionTimeline.innerHTML = `
       <div class="parent-empty-panel">${escapeHtml(error.message || "ไม่ทราบสาเหตุ")}</div>
     `;
-    showToast(`โหลดสมุดพัฒนาการไม่สำเร็จ: ${error.message}`);
+    showToast(`โหลดบันทึกการเรียนรู้ไม่สำเร็จ: ${error.message}`);
   }
 }
 
