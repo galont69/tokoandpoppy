@@ -171,11 +171,64 @@ button { cursor: pointer; }
   clip-path: polygon(0 42%, 7% 52%, 14% 45%, 22% 62%, 30% 48%, 39% 69%, 49% 50%, 58% 66%, 68% 43%, 77% 59%, 87% 38%, 94% 53%, 100% 38%, 100% 100%, 0 100%);
 }
 
-.courses-section { background: #fffdf8; }
+.pain-section,
+.story-method-section,
+.courses-section,
+.age-path-section,
+.sample-section,
+.outcome-section,
+.details-section,
+.faq-section { background: #fffdf8; }
 .section-heading { max-width: 700px; margin: 0 auto 42px; text-align: center; }
+.section-heading.text-left { margin: 0; text-align: left; }
 .section-heading > span, .join-kicker { color: #d7836e; font-size: 13px; font-weight: 700; letter-spacing: .05em; }
 .section-heading h2, .join-section h2 { margin: 8px 0 10px; color: #513e32; font-size: clamp(29px, 4vw, 43px); line-height: 1.35; font-weight: 700; }
 .section-heading p, .join-section p { margin: 0; color: #877264; line-height: 1.7; }
+.pain-section { background: linear-gradient(180deg, #fffdf8, #fff7e7); }
+.pain-grid,
+.method-grid,
+.age-path-grid,
+.sample-grid,
+.outcome-grid,
+.details-list,
+.faq-list { display: grid; gap: 18px; }
+.pain-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pain-grid article,
+.method-grid article,
+.age-path-grid article,
+.sample-grid article,
+.details-list article {
+  border: 1px solid rgba(96,72,46,.1);
+  border-radius: 24px;
+  background: rgba(255,255,255,.82);
+  box-shadow: 0 12px 28px rgba(92,71,49,.06);
+}
+.pain-grid article { padding: 24px; }
+.pain-grid strong,
+.method-grid strong,
+.age-path-grid strong,
+.sample-grid strong,
+.details-list strong { display: block; color: #513e32; font-size: 20px; line-height: 1.35; }
+.pain-grid p,
+.method-grid p,
+.age-path-grid p,
+.sample-grid p,
+.details-list p,
+.faq-list p { margin: 9px 0 0; color: #806e61; line-height: 1.75; }
+.story-method-section { background: #fffaf0; }
+.method-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.method-grid article { padding: 24px; }
+.method-grid article > span {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 16px;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: #6f9d55;
+  font: 900 18px Nunito, sans-serif;
+}
 .course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 22px; }
 .course-card {
   position: relative; overflow: hidden; min-height: 350px; border: 2px solid rgba(96,72,46,.08); border-radius: 30px; padding: 30px;
@@ -185,17 +238,92 @@ button { cursor: pointer; }
 .course-card:after { content: ""; position: absolute; width: 180px; height: 180px; right: -75px; bottom: -80px; border-radius: 50%; opacity: .42; }
 .robot-card:after { background: #cbe6c2; }
 .art-card:after { background: #f7cac8; }
-.game-card:after { background: #c4e1e5; }
-.homeschool-card:after { background: #ffe2a7; }
+.clay-card:after { background: #ffe2a7; }
+.watercolor-card:after { background: #c4e1e5; }
 .course-icon { display: grid; width: 68px; height: 68px; place-items: center; border-radius: 23px; background: #f6f1e5; font-size: 34px; transform: rotate(-4deg); }
 .course-chip { display: inline-block; margin-top: 20px; border-radius: 99px; padding: 5px 10px; color: #7a654e; background: #f8f1dc; font-size: 10px; font-weight: 700; }
 .course-card h3 { margin: 10px 0 8px; font-size: 24px; }
 .course-card p { margin: 0; color: #806e61; font-size: 14px; line-height: 1.75; }
 .course-card ul { display: grid; gap: 8px; margin: 20px 0 0; padding: 0; list-style: none; color: #655448; font-size: 12px; }
-.course-entry { position: relative; z-index: 2; display: inline-flex; margin-top: 20px; border-radius: 99px; padding: 8px 12px; color: #517548; background: #e7f1df; font-size: 10px; font-weight: 700; text-decoration: none; }
-.codekids-entry { color: #3f7180; background: #dff0f2; }
-.homeschool-entry { color: #82613a; background: #fff1ce; }
+.course-entry { position: relative; z-index: 2; display: inline-flex; margin-top: 20px; border: 0; border-radius: 99px; padding: 10px 14px; color: #517548; background: #e7f1df; font-size: 12px; font-weight: 800; text-decoration: none; }
+.clay-entry { color: #82613a; background: #fff1ce; }
+.watercolor-entry { color: #3f7180; background: #dff0f2; }
 .robot-card li::first-letter { color: #689154; }
+.course-note {
+  margin: 24px auto 0;
+  max-width: 760px;
+  border: 1px dashed rgba(111,157,85,.35);
+  border-radius: 22px;
+  padding: 16px 20px;
+  color: #755f4f;
+  background: #fbf7ec;
+  text-align: center;
+  line-height: 1.7;
+}
+.course-note strong { color: #517548; }
+.age-path-section { background: linear-gradient(180deg, #fffdf8, #f7fbf3); }
+.age-path-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.age-path-grid article { padding: 26px; }
+.age-path-grid article > span {
+  display: inline-flex;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #4f7d48;
+  background: #e8f2e0;
+  font-weight: 900;
+}
+.sample-section { background: #fffaf0; }
+.sample-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.sample-grid article { padding: 24px; }
+.sample-grid article > span { display: block; margin-bottom: 13px; font-size: 36px; }
+.outcome-section { background: #fffdf8; }
+.outcome-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.outcome-grid div {
+  display: grid;
+  min-height: 132px;
+  place-items: center;
+  gap: 10px;
+  border: 1px solid rgba(96,72,46,.09);
+  border-radius: 24px;
+  padding: 18px;
+  background: white;
+  box-shadow: 0 12px 28px rgba(92,71,49,.06);
+  text-align: center;
+  font-size: 34px;
+}
+.outcome-grid strong { color: #5b493d; font-size: 15px; line-height: 1.45; }
+.details-section { background: linear-gradient(135deg, #f6eed5, #f7fbf3); }
+.details-card {
+  border-radius: 30px;
+  padding: clamp(28px, 4vw, 44px);
+  color: #513e32;
+  background: white;
+  box-shadow: var(--shadow);
+}
+.details-card > span {
+  color: #d7836e;
+  font-weight: 900;
+  letter-spacing: .05em;
+}
+.details-card h2 { margin: 10px 0 12px; font-size: clamp(28px, 4vw, 45px); line-height: 1.25; }
+.details-card p { margin: 0 0 24px; color: #806e61; line-height: 1.8; }
+.details-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.details-list article { padding: 24px; }
+.faq-section { background: #fffdf8; }
+.faq-list details {
+  border: 1px solid rgba(96,72,46,.1);
+  border-radius: 22px;
+  padding: 18px 22px;
+  background: white;
+  box-shadow: 0 10px 24px rgba(92,71,49,.05);
+}
+.faq-list summary {
+  color: #513e32;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+}
 .join-section { position: relative; overflow: hidden; background: #f5eecf; }
 .join-section:before, .join-section:after { content: "✦"; position: absolute; color: rgba(222,165,55,.5); font-size: 65px; }
 .join-section:before { top: 22px; left: 8%; }
@@ -385,7 +513,6 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
   .float-robot { left: 12%; }
   .float-art { right: 11%; }
   .course-grid { grid-template-columns: 1fr 1fr; }
-  .game-card { grid-column: 1 / -1; }
 }
 
 @media (max-width: 720px) {
@@ -398,7 +525,6 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
   .float-robot { left: 0; }
   .float-art { right: 0; }
   .course-grid { grid-template-columns: 1fr; }
-  .game-card { grid-column: auto; }
   .auth-modal {
     display: block; height: auto; max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px);
     border-width: 3px; border-radius: 26px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
@@ -791,5 +917,59 @@ legend { font-size: 15px; }
   .parent-session-placeholder {
     width: 100%;
     height: 180px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .pain-grid,
+  .method-grid,
+  .sample-grid,
+  .outcome-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .section-heading.text-left {
+    margin: 0 auto 28px;
+    text-align: center;
+  }
+
+  .age-path-grid,
+  .details-list {
+    grid-template-columns: 1fr;
+  }
+
+  .outcome-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 580px) {
+  .pain-grid,
+  .method-grid,
+  .sample-grid,
+  .outcome-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pain-grid article,
+  .method-grid article,
+  .age-path-grid article,
+  .sample-grid article,
+  .details-list article {
+    padding: 20px;
+  }
+
+  .outcome-grid div {
+    min-height: 104px;
+  }
+
+  .details-card {
+    padding: 26px 22px;
+  }
+
+  .faq-list details {
+    padding: 16px 18px;
   }
 }
