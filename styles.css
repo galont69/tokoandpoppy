@@ -39,6 +39,51 @@ button { cursor: pointer; }
 }
 .btn-login:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(72, 110, 66, .16); }
 .btn-login svg { width: 19px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 2; }
+.btn-login.is-logged-in {
+  border-color: rgba(111, 157, 85, .35);
+  color: #426b3b;
+  background: #f3faef;
+}
+.btn-login.is-pending {
+  border-color: rgba(244, 185, 54, .55);
+  color: #83663a;
+  background: #fff8e6;
+}
+.parent-login-label {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1.05;
+}
+.parent-login-label small {
+  color: #8b7b6f;
+  font-size: 10px;
+  font-weight: 800;
+}
+.parent-login-label strong {
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.btn-logout {
+  min-height: 42px;
+  padding: 9px 14px;
+  color: #8f5a4b;
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid rgba(143, 90, 75, .22);
+  border-radius: 999px;
+  font-weight: 800;
+  transition: .2s ease;
+}
+.btn-logout:hover {
+  color: #744336;
+  background: #fff6f2;
+  transform: translateY(-2px);
+}
 
 .hero { position: relative; overflow: hidden; background: radial-gradient(circle at 14% 20%, #fff 0, #fff9e9 32%, transparent 58%), #fff8e9; }
 .hero:before {
@@ -368,6 +413,10 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
 }
 
 @media (max-width: 480px) {
+  .btn-login { padding: 8px 12px; }
+  .parent-login-label small { display: none; }
+  .parent-login-label strong { max-width: 92px; font-size: 13px; }
+  .btn-logout { min-height: 39px; padding: 8px 11px; font-size: 13px; }
   .hero-copy h1 { font-size: 38px; }
   .hero-actions { display: grid; }
   .hero-actions > * { width: 100%; }

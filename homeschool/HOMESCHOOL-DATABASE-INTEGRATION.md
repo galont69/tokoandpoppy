@@ -71,4 +71,4 @@ select * from public.branches;
 
 ## หมายเหตุสำคัญ
 
-ตอนนี้ไฟล์ Homeschool ยังมี Supabase URL และ anon key แบบฝังอยู่ใน HTML เดิม ขั้นต่อไปควรรวมให้ทุกหน้าใช้ `outputs/supabase-config.js` ชุดเดียวกับเว็บ Toko & Poppy เพื่อให้เปลี่ยนโปรเจกต์ Supabase ได้จากที่เดียว
+ชุดไฟล์ปัจจุบันให้หน้า Homeschool ใช้ `../supabase-config.js` ชุดเดียวกับเว็บ Toko & Poppy แล้ว และหน้าแรกของเว็บหลักก็อ่านค่าจาก `supabase-config.js` เช่นกัน ดังนั้นการเปลี่ยน Supabase project ให้แก้ที่ไฟล์ config กลางเพียงจุดเดียว

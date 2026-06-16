@@ -23,10 +23,11 @@ const parentDashboardTitle = document.querySelector("#parentDashboardTitle");
 const parentDashboardStats = document.querySelector("#parentDashboardStats");
 const parentCourseProgress = document.querySelector("#parentCourseProgress");
 const parentSessionTimeline = document.querySelector("#parentSessionTimeline");
-const fallbackSupabaseConfig = {
-  url: "https://kpdikwbutsfxwsanetvm.supabase.co",
-  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtwZGlrd2J1dHNmeHdzYW5ldHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NTg2MzIsImV4cCI6MjA5NjMzNDYzMn0.6D-FQjRAv0SLZJfnEHPGsM4yt4s5sf7zvH90bVRtGLM"
-};
+const headerLoginButton = document.querySelector(".btn-login[data-open-auth='login']");
+const headerNavActions = headerLoginButton?.parentElement || null;
+const loginButtonDefaultMarkup = headerLoginButton?.innerHTML || "เข้าสู่ระบบ";
+let parentLoggedInUser = null;
+let parentLogoutButton = null;
 const externalSupabaseConfig = window.SUPABASE_CONFIG || {};
 const externalConfigIsValid = Boolean(
   externalSupabaseConfig.url &&
@@ -34,9 +35,7 @@ const externalConfigIsValid = Boolean(
   !externalSupabaseConfig.url.includes("YOUR_PROJECT") &&
   !externalSupabaseConfig.anonKey.includes("YOUR_SUPABASE")
 );
-const supabaseConfig = externalConfigIsValid
-  ? externalSupabaseConfig
-  : fallbackSupabaseConfig;
+const supabaseConfig = externalConfigIsValid ? externalSupabaseConfig : {};
 const supabaseConfigured = Boolean(supabaseConfig.url &&
   supabaseConfig.anonKey &&
   !supabaseConfig.url.includes("YOUR_PROJECT") &&
@@ -72,6 +71,11 @@ function setAuthMode(mode) {
 }
 
 function openAuth(mode) {
+  if (mode === "login" && parentLoggedInUser?.userId) {
+    openParentDashboard(parentLoggedInUser.userId);
+    return;
+  }
+
   setAuthMode(mode);
   authModal.classList.add("open");
   authModal.setAttribute("aria-hidden", "false");
@@ -83,6 +87,66 @@ function closeAuth() {
   authModal.classList.remove("open");
   authModal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+}
+
+function getParentDisplayName(application, user) {
+  return (
+    application?.student_nickname ||
+    application?.student_name ||
+    user?.email ||
+    "ผู้ปกครอง"
+  );
+}
+
+function setParentHeaderLoggedOut() {
+  parentLoggedInUser = null;
+
+  if (headerLoginButton) {
+    headerLoginButton.classList.remove("is-logged-in", "is-pending");
+    headerLoginButton.innerHTML = loginButtonDefaultMarkup;
+    headerLoginButton.setAttribute("aria-label", "เข้าสู่ระบบ");
+  }
+
+  parentLogoutButton?.remove();
+  parentLogoutButton = null;
+}
+
+function setParentHeaderLoggedIn({ user, application }) {
+  if (!headerLoginButton || !headerNavActions) return;
+
+  const isApproved = application?.status === "approved";
+  const displayName = getParentDisplayName(application, user);
+  parentLoggedInUser = {
+    userId: user.id,
+    email: user.email,
+    application,
+    displayName
+  };
+
+  headerLoginButton.classList.toggle("is-logged-in", isApproved);
+  headerLoginButton.classList.toggle("is-pending", !isApproved);
+  headerLoginButton.setAttribute(
+    "aria-label",
+    isApproved ? `เปิดสมุดพัฒนาการของ ${displayName}` : "บัญชีรออนุมัติ"
+  );
+  headerLoginButton.innerHTML = `
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 19.5V5a2 2 0 012-2h12v18H6a2 2 0 01-2-1.5zM8 7h7M8 11h7M8 15h4"/>
+    </svg>
+    <span class="parent-login-label">
+      <small>${isApproved ? "เข้าสู่ระบบแล้ว" : "รออนุมัติ"}</small>
+      <strong>${isApproved ? "สมุดพัฒนาการ" : "บัญชีผู้ปกครอง"}</strong>
+    </span>
+  `;
+
+  if (!parentLogoutButton) {
+    parentLogoutButton = document.createElement("button");
+    parentLogoutButton.type = "button";
+    parentLogoutButton.className = "btn-logout";
+    parentLogoutButton.textContent = "ออกจากระบบ";
+    parentLogoutButton.addEventListener("click", signOutParent);
+    headerNavActions.appendChild(parentLogoutButton);
+  }
 }
 
 function escapeHtml(value = "") {
@@ -128,6 +192,53 @@ function getCertificateCopy(enrollment) {
   }
 
   return remaining === 0 ? "เรียนครบตามรอบแล้ว" : `เหลือ ${remaining} ครั้ง`;
+}
+
+async function getLatestParentApplication(userId) {
+  if (!enrollmentSupabase || !userId) return null;
+
+  const { data, error } = await enrollmentSupabase
+    .from("enrollment_applications")
+    .select("status, robot_access, art_access, student_name, student_nickname")
+    .eq("parent_user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data || null;
+}
+
+async function signOutParent() {
+  if (enrollmentSupabase) {
+    await enrollmentSupabase.auth.signOut();
+  }
+
+  closeParentDashboard();
+  setParentHeaderLoggedOut();
+  showToast("ออกจากระบบเรียบร้อยแล้ว");
+}
+
+async function restoreParentSession() {
+  if (!enrollmentSupabase) {
+    setParentHeaderLoggedOut();
+    return;
+  }
+
+  const { data } = await enrollmentSupabase.auth.getSession();
+  const user = data?.session?.user;
+  if (!user) {
+    setParentHeaderLoggedOut();
+    return;
+  }
+
+  try {
+    const application = await getLatestParentApplication(user.id);
+    setParentHeaderLoggedIn({ user, application });
+  } catch (error) {
+    setParentHeaderLoggedOut();
+    showToast(`ตรวจสถานะบัญชีไม่สำเร็จ: ${error.message}`);
+  }
 }
 
 function closeParentDashboard() {
@@ -687,16 +798,19 @@ loginForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  const { data: application } = await enrollmentSupabase
-    .from("enrollment_applications")
-    .select("status, robot_access, art_access")
-    .eq("parent_user_id", data.user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  let application = null;
+  try {
+    application = await getLatestParentApplication(data.user.id);
+  } catch (error) {
+    submitButton.disabled = false;
+    submitButton.innerHTML = 'เข้าสู่ระบบ <span>→</span>';
+    showToast(`ตรวจสถานะบัญชีไม่สำเร็จ: ${error.message}`);
+    return;
+  }
 
   submitButton.disabled = false;
   submitButton.innerHTML = 'เข้าสู่ระบบ <span>→</span>';
+  setParentHeaderLoggedIn({ user: data.user, application });
   closeAuth();
 
   if (application?.status === "approved") {
@@ -715,3 +829,4 @@ syncEnrollmentSource();
 syncPaymentRequirements();
 setFriendlyValidationMessages();
 loadBranches();
+restoreParentSession();
