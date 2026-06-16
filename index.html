@@ -22,7 +22,7 @@
       }
     };
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260616-sale-page">
+  <link rel="stylesheet" href="styles.css?v=20260616-parent-profile">
 </head>
 <body class="font-thai text-[#49372d]">
   <div class="page-noise" aria-hidden="true"></div>
@@ -57,9 +57,14 @@
             <h1 id="learningHomeTitle">เลือกคอร์สเรียนของหนู</h1>
             <p id="learningHomeSubtitle">คอร์สที่เปิดสิทธิ์แล้วจะแสดงที่นี่ พร้อม Codekids สำหรับฝึกตรรกะผ่านเกม</p>
           </div>
-          <button type="button" class="btn-primary learning-progress-button" id="openLearningProgress">
-            ดูบันทึกการเรียนรู้ <span aria-hidden="true">→</span>
-          </button>
+          <div class="learning-home-actions">
+            <button type="button" class="btn-ghost learning-profile-button" id="openLearnerProfile">
+              ข้อมูลผู้เรียน
+            </button>
+            <button type="button" class="btn-primary learning-progress-button" id="openLearningProgress">
+              ดูบันทึกการเรียนรู้ <span aria-hidden="true">→</span>
+            </button>
+          </div>
         </div>
         <div class="learning-status" id="learningStatus" hidden></div>
         <div class="learning-course-grid" id="learningCourseGrid"></div>
@@ -555,9 +560,60 @@
     </div>
   </div>
 
+  <div class="parent-profile-modal" id="parentProfileModal" aria-hidden="true">
+    <form class="parent-profile-card" id="parentProfileForm" role="dialog" aria-modal="true">
+      <button class="modal-close parent-close" id="closeParentProfile" type="button" aria-label="ปิด">×</button>
+      <div class="parent-profile-head">
+        <span>ข้อมูลผู้เรียน</span>
+        <h2>ข้อมูลผู้เรียนและผู้ปกครอง</h2>
+        <p>แก้ไขข้อมูลติดต่อและข้อมูลที่คุณครูควรรู้ ส่วนคอร์สเรียนและการชำระเงินให้ติดต่อแอดมิน</p>
+      </div>
+
+      <div class="profile-form-grid">
+        <label>ชื่อผู้เรียน
+          <input name="student_name" type="text" maxlength="150" required>
+        </label>
+        <label>ชื่อเล่น
+          <input name="student_nickname" type="text" maxlength="80">
+        </label>
+        <label>วันเกิด
+          <input name="birth_date" type="date">
+        </label>
+        <label>ชื่อผู้ปกครอง
+          <input name="parent_name" type="text" maxlength="150">
+        </label>
+        <label>เบอร์โทรผู้ปกครอง
+          <input name="parent_phone" type="tel" inputmode="tel" maxlength="30" required>
+        </label>
+        <label>อีเมลบัญชี
+          <input name="parent_email" type="email" readonly>
+        </label>
+      </div>
+
+      <div class="profile-form-grid profile-form-notes">
+        <label>แพ้อาหาร
+          <input name="allergy_food" type="text" maxlength="220" placeholder="เช่น แพ้นม ถั่ว ไข่ หรือไม่มี">
+        </label>
+        <label>แพ้เกสร / ภูมิแพ้
+          <input name="allergy_pollen" type="text" maxlength="220" placeholder="เช่น แพ้เกสร ฝุ่น หรือไม่มี">
+        </label>
+        <label class="profile-wide">ข้อมูลเพิ่มเติมของเด็ก
+          <textarea name="student_notes" rows="4" maxlength="600" placeholder="สิ่งที่ครูควรรู้ เช่น นิสัย สิ่งที่ชอบ ข้อควรระวัง"></textarea>
+        </label>
+      </div>
+
+      <div class="profile-locked-note">
+        <strong>ข้อมูลที่ล็อกไว้:</strong>
+        คอร์สเรียน สิทธิ์เข้าเรียน สาขา และสถานะการชำระเงินจะให้แอดมินแก้ไขเพื่อป้องกันสิทธิ์เรียนคลาดเคลื่อน
+      </div>
+
+      <button class="submit-button profile-save-button" type="submit">บันทึกข้อมูล <span>→</span></button>
+    </form>
+  </div>
+
   <div class="toast" id="toast" role="status"></div>
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260607-2"></script>
-  <script src="script.js?v=20260616-sale-page"></script>
+  <script src="script.js?v=20260616-parent-profile"></script>
 </body>
 </html>

@@ -23,12 +23,16 @@ const parentDashboardTitle = document.querySelector("#parentDashboardTitle");
 const parentDashboardStats = document.querySelector("#parentDashboardStats");
 const parentCourseProgress = document.querySelector("#parentCourseProgress");
 const parentSessionTimeline = document.querySelector("#parentSessionTimeline");
+const parentProfileModal = document.querySelector("#parentProfileModal");
+const parentProfileForm = document.querySelector("#parentProfileForm");
+const closeParentProfileButton = document.querySelector("#closeParentProfile");
 const myLearningSection = document.querySelector("#myLearning");
 const learningHomeTitle = document.querySelector("#learningHomeTitle");
 const learningHomeSubtitle = document.querySelector("#learningHomeSubtitle");
 const learningStatus = document.querySelector("#learningStatus");
 const learningCourseGrid = document.querySelector("#learningCourseGrid");
 const openLearningProgressButton = document.querySelector("#openLearningProgress");
+const openLearnerProfileButton = document.querySelector("#openLearnerProfile");
 const showSalePageButton = document.querySelector("#showSalePage");
 const headerLoginButton = document.querySelector(".btn-login[data-open-auth='login']");
 const headerNavActions = headerLoginButton?.parentElement || null;
@@ -292,7 +296,7 @@ async function getLatestParentApplication(userId) {
 
   const { data, error } = await enrollmentSupabase
     .from("enrollment_applications")
-    .select("status, robot_access, art_access, student_name, student_nickname")
+    .select("id, status, robot_access, art_access, student_name, student_nickname, parent_name, parent_phone, parent_email, birth_date, allergy_food, allergy_pollen, student_notes")
     .eq("parent_user_id", userId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -419,6 +423,7 @@ async function signOutParent() {
   }
 
   closeParentDashboard();
+  closeParentProfile();
   setParentHeaderLoggedOut();
   showSaleExperience();
   showToast("ออกจากระบบเรียบร้อยแล้ว");
@@ -452,6 +457,65 @@ function closeParentDashboard() {
   parentDashboardModal?.classList.remove("open");
   parentDashboardModal?.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+}
+
+function closeParentProfile() {
+  parentProfileModal?.classList.remove("open");
+  parentProfileModal?.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function setProfileField(name, value = "") {
+  const field = parentProfileForm?.elements?.[name];
+  if (field) field.value = value || "";
+}
+
+function fillParentProfileForm(application, user) {
+  if (!parentProfileForm) return;
+
+  setProfileField("student_name", application?.student_name);
+  setProfileField("student_nickname", application?.student_nickname);
+  setProfileField("birth_date", application?.birth_date);
+  setProfileField("parent_name", application?.parent_name);
+  setProfileField("parent_phone", application?.parent_phone);
+  setProfileField("parent_email", application?.parent_email || user?.email);
+  setProfileField("allergy_food", application?.allergy_food);
+  setProfileField("allergy_pollen", application?.allergy_pollen);
+  setProfileField("student_notes", application?.student_notes);
+}
+
+async function openParentProfile() {
+  if (!parentProfileModal || !parentProfileForm || !parentLoggedInUser?.userId) return;
+
+  parentProfileModal.classList.add("open");
+  parentProfileModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+
+  try {
+    let application = parentLoggedInUser.application;
+    if (!application?.id) {
+      application = await getLatestParentApplication(parentLoggedInUser.userId);
+      parentLoggedInUser.application = application;
+    }
+    fillParentProfileForm(application, {
+      email: parentLoggedInUser.email
+    });
+  } catch (error) {
+    showToast(`โหลดข้อมูลผู้เรียนไม่สำเร็จ: ${error.message}`);
+  }
+}
+
+function getProfileFormPayload(formData) {
+  return {
+    student_name: formData.get("student_name")?.trim(),
+    student_nickname: formData.get("student_nickname")?.trim() || null,
+    parent_name: formData.get("parent_name")?.trim() || null,
+    parent_phone: formData.get("parent_phone")?.trim(),
+    birth_date: formData.get("birth_date") || null,
+    allergy_food: formData.get("allergy_food")?.trim() || null,
+    allergy_pollen: formData.get("allergy_pollen")?.trim() || null,
+    student_notes: formData.get("student_notes")?.trim() || null
+  };
 }
 
 function renderParentDashboard({ applications = [], enrollments = [], sessions = [] }) {
@@ -717,6 +781,13 @@ function getFriendlySupabaseError(error) {
   if (lowerMessage.includes("selected branch is not active")) {
     return "สาขาที่เลือกยังไม่เปิดใช้งาน กรุณาเลือกสาขาใหม่";
   }
+  if (
+    lowerMessage.includes("update_parent_application_profile") ||
+    lowerMessage.includes("could not find the function") ||
+    (lowerMessage.includes("function") && lowerMessage.includes("not found"))
+  ) {
+    return "ยังไม่ได้รัน SQL สำหรับแก้ไขข้อมูลผู้เรียน กรุณารันไฟล์ outputs/supabase-parent-profile-update.sql ใน Supabase ก่อน";
+  }
   if (lowerMessage.includes("row-level security") || lowerMessage.includes("permission denied")) {
     return "สิทธิ์ Supabase ยังไม่ครบ กรุณารัน SQL schema ล่าสุดอีกครั้งใน Supabase";
   }
@@ -797,9 +868,17 @@ parentDashboardModal?.addEventListener("click", (event) => {
 
 closeParentDashboardButton?.addEventListener("click", closeParentDashboard);
 
+parentProfileModal?.addEventListener("click", (event) => {
+  if (event.target === parentProfileModal) closeParentProfile();
+});
+
+closeParentProfileButton?.addEventListener("click", closeParentProfile);
+
 openLearningProgressButton?.addEventListener("click", () => {
   if (parentLoggedInUser?.userId) openParentDashboard(parentLoggedInUser.userId);
 });
+
+openLearnerProfileButton?.addEventListener("click", openParentProfile);
 
 showSalePageButton?.addEventListener("click", () => {
   document.body.classList.add("sale-peek");
@@ -814,7 +893,9 @@ authModal.addEventListener("wheel", (event) => {
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
-    if (parentDashboardModal?.classList.contains("open")) {
+    if (parentProfileModal?.classList.contains("open")) {
+      closeParentProfile();
+    } else if (parentDashboardModal?.classList.contains("open")) {
       closeParentDashboard();
     } else if (statusModal.classList.contains("open")) {
       statusModal.classList.remove("open");
@@ -822,6 +903,64 @@ document.addEventListener("keydown", (event) => {
     } else {
       closeAuth();
     }
+  }
+});
+
+parentProfileForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!canUseSupabase() || !parentLoggedInUser?.userId) return;
+  if (!parentProfileForm.checkValidity()) {
+    parentProfileForm.reportValidity();
+    return;
+  }
+
+  const currentApplication = parentLoggedInUser.application;
+  if (!currentApplication?.id) {
+    showToast("ยังไม่พบใบสมัครสำหรับแก้ไขข้อมูล");
+    return;
+  }
+
+  const submitButton = parentProfileForm.querySelector(".profile-save-button");
+  const formData = new FormData(parentProfileForm);
+  const payload = getProfileFormPayload(formData);
+  submitButton.disabled = true;
+  submitButton.innerHTML = "กำลังบันทึก...";
+
+  try {
+    const { data, error } = await enrollmentSupabase.rpc(
+      "update_parent_application_profile",
+      {
+        p_application_id: currentApplication.id,
+        p_student_name: payload.student_name,
+        p_student_nickname: payload.student_nickname,
+        p_parent_name: payload.parent_name,
+        p_parent_phone: payload.parent_phone,
+        p_birth_date: payload.birth_date,
+        p_allergy_food: payload.allergy_food,
+        p_allergy_pollen: payload.allergy_pollen,
+        p_student_notes: payload.student_notes
+      }
+    );
+
+    if (error) throw error;
+
+    parentLoggedInUser.application = data;
+    setParentHeaderLoggedIn({
+      user: { id: parentLoggedInUser.userId, email: parentLoggedInUser.email },
+      application: data
+    });
+    await loadAndRenderLearningHome(
+      { id: parentLoggedInUser.userId, email: parentLoggedInUser.email },
+      data
+    );
+    fillParentProfileForm(data, { email: parentLoggedInUser.email });
+    closeParentProfile();
+    showToast("บันทึกข้อมูลผู้เรียนเรียบร้อยแล้ว");
+  } catch (error) {
+    showToast(`บันทึกข้อมูลไม่สำเร็จ: ${getFriendlySupabaseError(error)}`, 12000);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.innerHTML = 'บันทึกข้อมูล <span>→</span>';
   }
 });
 

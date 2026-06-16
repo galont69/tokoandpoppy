@@ -213,7 +213,19 @@ body.sale-peek footer { display: block; }
   font-size: clamp(16px, 1.5vw, 20px);
   line-height: 1.75;
 }
-.learning-progress-button { flex: 0 0 auto; }
+.learning-home-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+.learning-progress-button,
+.learning-profile-button { flex: 0 0 auto; }
+.learning-profile-button {
+  border-color: rgba(97, 136, 80, .24);
+  background: #fffaf0;
+}
 .learning-status {
   margin-bottom: 22px;
   border: 1px dashed rgba(215, 131, 110, .35);
@@ -784,7 +796,8 @@ legend { font-size: 15px; }
   .form-intro p { font-size: 15px; }
 }
 
-.parent-dashboard-modal {
+.parent-dashboard-modal,
+.parent-profile-modal {
   position: fixed;
   inset: 0;
   z-index: 90;
@@ -798,12 +811,14 @@ legend { font-size: 15px; }
   transition: 0.22s ease;
 }
 
-.parent-dashboard-modal.open {
+.parent-dashboard-modal.open,
+.parent-profile-modal.open {
   opacity: 1;
   visibility: visible;
 }
 
-.parent-dashboard-card {
+.parent-dashboard-card,
+.parent-profile-card {
   position: relative;
   width: min(1120px, calc(100vw - 32px));
   max-height: calc(100vh - 38px);
@@ -813,6 +828,10 @@ legend { font-size: 15px; }
   background: #fffdf7;
   box-shadow: 0 34px 80px rgba(66, 52, 41, 0.24);
   padding: 34px;
+}
+
+.parent-profile-card {
+  width: min(860px, calc(100vw - 32px));
 }
 
 .parent-close {
@@ -830,11 +849,13 @@ legend { font-size: 15px; }
   cursor: pointer;
 }
 
-.parent-dashboard-head {
+.parent-dashboard-head,
+.parent-profile-head {
   padding-right: 72px;
 }
 
 .parent-dashboard-head span,
+.parent-profile-head span,
 .parent-session-panel > div:first-child span {
   color: #d07767;
   font-size: 15px;
@@ -843,18 +864,79 @@ legend { font-size: 15px; }
   text-transform: uppercase;
 }
 
-.parent-dashboard-head h2 {
+.parent-dashboard-head h2,
+.parent-profile-head h2 {
   margin: 8px 0 6px;
   color: #4b3a31;
   font-size: clamp(34px, 4vw, 58px);
   line-height: 1.05;
 }
 
-.parent-dashboard-head p {
+.parent-dashboard-head p,
+.parent-profile-head p {
   margin: 0;
   color: #8a786b;
   font-size: 18px;
   line-height: 1.7;
+}
+
+.profile-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.profile-form-grid label {
+  display: grid;
+  gap: 8px;
+  color: #5f4a3d;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.profile-form-grid input,
+.profile-form-grid textarea {
+  width: 100%;
+  border: 1px solid #e3d4c4;
+  border-radius: 18px;
+  padding: 14px 16px;
+  color: #4d3b31;
+  background: #fffaf2;
+  font-size: 16px;
+  outline: none;
+}
+
+.profile-form-grid input:focus,
+.profile-form-grid textarea:focus {
+  border-color: #8aaa7a;
+  box-shadow: 0 0 0 4px rgba(122, 163, 105, .16);
+}
+
+.profile-form-grid input[readonly] {
+  color: #8d7a6e;
+  background: #f2eadf;
+}
+
+.profile-wide {
+  grid-column: 1 / -1;
+}
+
+.profile-locked-note {
+  margin-top: 18px;
+  border: 1px dashed rgba(208,119,103,.35);
+  border-radius: 20px;
+  padding: 14px 16px;
+  color: #7b6a5f;
+  background: #fff7ec;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.profile-save-button {
+  width: 100%;
+  margin-top: 18px;
+  justify-content: center;
 }
 
 .parent-stats {
@@ -1041,7 +1123,8 @@ legend { font-size: 15px; }
 }
 
 @media (max-width: 760px) {
-  .parent-dashboard-card {
+  .parent-dashboard-card,
+  .parent-profile-card {
     padding: 24px 18px;
     border-radius: 28px;
   }
@@ -1051,8 +1134,13 @@ legend { font-size: 15px; }
     grid-template-columns: 1fr;
   }
 
-  .parent-dashboard-head {
+  .parent-dashboard-head,
+  .parent-profile-head {
     padding-right: 58px;
+  }
+
+  .profile-form-grid {
+    grid-template-columns: 1fr;
   }
 
   .parent-session-image,
@@ -1077,8 +1165,14 @@ legend { font-size: 15px; }
     align-items: start;
   }
 
-  .learning-progress-button {
+  .learning-home-actions,
+  .learning-progress-button,
+  .learning-profile-button {
     width: 100%;
+  }
+
+  .learning-home-actions {
+    justify-content: stretch;
   }
 
   .section-heading.text-left {
