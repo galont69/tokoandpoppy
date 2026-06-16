@@ -37,9 +37,9 @@
         </span>
       </a>
       <div class="flex items-center gap-2 sm:gap-3">
-        <a href="#courses" class="nav-link hidden md:inline-flex">คอร์สของเรา</a>
-        <a href="#lessons" class="nav-link hidden lg:inline-flex">ตัวอย่างบทเรียน</a>
-        <a href="#faq" class="nav-link hidden lg:inline-flex">FAQ</a>
+        <a href="#courses" class="nav-link sale-nav hidden md:inline-flex">คอร์สของเรา</a>
+        <a href="#lessons" class="nav-link sale-nav hidden lg:inline-flex">ตัวอย่างบทเรียน</a>
+        <a href="#faq" class="nav-link sale-nav hidden lg:inline-flex">FAQ</a>
         <button class="btn-login" type="button" data-open-auth="login">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3m9-9h6a3 3 0 013 3v12a3 3 0 01-3 3h-6"/></svg>
           เข้าสู่ระบบ
@@ -49,6 +49,28 @@
   </header>
 
   <main id="home">
+    <section class="learning-home-section" id="myLearning" hidden>
+      <div class="mx-auto max-w-7xl px-5 py-16 lg:px-8">
+        <div class="learning-home-head">
+          <div>
+            <span>คอร์สของฉัน</span>
+            <h1 id="learningHomeTitle">เลือกคอร์สเรียนของหนู</h1>
+            <p id="learningHomeSubtitle">คอร์สที่เปิดสิทธิ์แล้วจะแสดงที่นี่ พร้อม Codekids สำหรับฝึกตรรกะผ่านเกม</p>
+          </div>
+          <button type="button" class="btn-primary learning-progress-button" id="openLearningProgress">
+            ดูสมุดพัฒนาการ <span aria-hidden="true">→</span>
+          </button>
+        </div>
+        <div class="learning-status" id="learningStatus" hidden></div>
+        <div class="learning-course-grid" id="learningCourseGrid"></div>
+        <div class="learning-more">
+          <button type="button" class="btn-ghost learning-sale-link" id="showSalePage">
+            ดูหลักสูตรอื่นสำหรับสมัครเพิ่ม
+          </button>
+        </div>
+      </div>
+    </section>
+
     <section class="hero">
       <div class="hero-blob hero-blob-one" aria-hidden="true"></div>
       <div class="hero-blob hero-blob-two" aria-hidden="true"></div>

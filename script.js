@@ -23,6 +23,13 @@ const parentDashboardTitle = document.querySelector("#parentDashboardTitle");
 const parentDashboardStats = document.querySelector("#parentDashboardStats");
 const parentCourseProgress = document.querySelector("#parentCourseProgress");
 const parentSessionTimeline = document.querySelector("#parentSessionTimeline");
+const myLearningSection = document.querySelector("#myLearning");
+const learningHomeTitle = document.querySelector("#learningHomeTitle");
+const learningHomeSubtitle = document.querySelector("#learningHomeSubtitle");
+const learningStatus = document.querySelector("#learningStatus");
+const learningCourseGrid = document.querySelector("#learningCourseGrid");
+const openLearningProgressButton = document.querySelector("#openLearningProgress");
+const showSalePageButton = document.querySelector("#showSalePage");
 const headerLoginButton = document.querySelector(".btn-login[data-open-auth='login']");
 const headerNavActions = headerLoginButton?.parentElement || null;
 const loginButtonDefaultMarkup = headerLoginButton?.innerHTML || "เข้าสู่ระบบ";
@@ -109,6 +116,7 @@ function setParentHeaderLoggedOut() {
 
   parentLogoutButton?.remove();
   parentLogoutButton = null;
+  showSaleExperience();
 }
 
 function setParentHeaderLoggedIn({ user, application }) {
@@ -169,10 +177,78 @@ function getPublicLearningPhotoUrl(path) {
 function getParentCourseLabel(enrollment) {
   const courseMap = {
     robot: "โรบอท + โค้ดดิ้ง",
-    art: "ศิลปะ"
+    art: "ศิลปะ",
+    creative_art: "Creative Art",
+    water_color: "Watercolor",
+    clay: "Clay Art"
   };
   const course = courseMap[enrollment.course_type] || enrollment.course_type || "คอร์สเรียน";
   return enrollment.level_label ? `${course} · ${enrollment.level_label}` : course;
+}
+
+function getLearningCourseMeta(courseType = "art") {
+  const normalizedType = courseType || "art";
+  const meta = {
+    robot: {
+      icon: "🤖",
+      title: "โรบอท + โค้ดดิ้ง",
+      copy: "เข้าเรียนภารกิจหุ่นยนต์ ฝึกคิดเป็นลำดับ วางคำสั่ง และแก้ปัญหา",
+      href: "robot-lessons.html",
+      accent: "#cbe6c2"
+    },
+    art: {
+      icon: "🎨",
+      title: "ศิลปะสร้างสรรค์",
+      copy: "เข้าเรียนศิลปะผ่านนิทาน วาด ออกแบบ และเล่าไอเดียผ่านผลงาน",
+      href: "art-lessons.html",
+      accent: "#f7cac8"
+    },
+    creative_art: {
+      icon: "🎨",
+      title: "Creative Art",
+      copy: "วาด ออกแบบตัวละคร ฉาก และเรื่องราวจากโจทย์สร้างสรรค์",
+      href: "art-lessons.html",
+      accent: "#f7cac8"
+    },
+    water_color: {
+      icon: "💧",
+      title: "Watercolor",
+      copy: "ฝึกควบคุมน้ำ สี และพู่กันผ่านนิทานและผลงานละมุน",
+      href: "art-lessons.html",
+      accent: "#c4e1e5"
+    },
+    clay: {
+      icon: "🧸",
+      title: "Clay Art",
+      copy: "ปั้นดินเบา ฝึกกล้ามเนื้อมือและสร้างผลงานสามมิติที่จับต้องได้",
+      href: "art-lessons.html",
+      accent: "#ffe2a7"
+    }
+  };
+
+  return meta[normalizedType] || meta.art;
+}
+
+function getFallbackEnrollmentsFromApplication(application) {
+  if (!application || application.status !== "approved") return [];
+  const enrollments = [];
+  if (application.robot_access) {
+    enrollments.push({
+      id: "fallback-robot",
+      course_type: "robot",
+      total_sessions: 15,
+      completed_sessions: 0
+    });
+  }
+  if (application.art_access) {
+    enrollments.push({
+      id: "fallback-art",
+      course_type: "art",
+      total_sessions: 12,
+      completed_sessions: 0
+    });
+  }
+  return enrollments;
 }
 
 function getCertificateCopy(enrollment) {
@@ -209,6 +285,117 @@ async function getLatestParentApplication(userId) {
   return data || null;
 }
 
+async function getParentEnrollments(userId) {
+  if (!enrollmentSupabase || !userId) return [];
+
+  const { data, error } = await enrollmentSupabase
+    .from("course_enrollments")
+    .select("*")
+    .eq("parent_user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+function showSaleExperience() {
+  document.body.classList.remove("parent-authenticated", "sale-peek");
+  if (myLearningSection) myLearningSection.hidden = true;
+}
+
+function showParentLearningExperience() {
+  document.body.classList.add("parent-authenticated");
+  document.body.classList.remove("sale-peek");
+  if (myLearningSection) myLearningSection.hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function renderLearningHome({ user, application, enrollments = [] }) {
+  if (!myLearningSection || !learningCourseGrid) return;
+
+  const isApproved = application?.status === "approved";
+  const displayName = getParentDisplayName(application, user);
+  learningHomeTitle.textContent = isApproved
+    ? `เลือกคอร์สเรียนของ ${displayName}`
+    : "บัญชีกำลังรออนุมัติ";
+  learningHomeSubtitle.textContent = isApproved
+    ? "คอร์สที่เปิดสิทธิ์แล้วอยู่ด้านล่าง พร้อม Codekids สำหรับฝึกตรรกะผ่านเกม"
+    : "แอดมินกำลังตรวจใบสมัครและสถานะการชำระเงิน เมื่ออนุมัติแล้วคอร์สเรียนจะแสดงที่หน้านี้";
+  openLearningProgressButton.hidden = !isApproved;
+
+  const displayEnrollments = enrollments.length
+    ? enrollments
+    : getFallbackEnrollmentsFromApplication(application);
+
+  if (!isApproved) {
+    learningStatus.hidden = false;
+    learningStatus.innerHTML = `
+      <strong>ยังไม่สามารถเข้าเรียนได้</strong><br>
+      ใบสมัครของบัญชีนี้ยังอยู่ระหว่างรอการอนุมัติจากแอดมิน
+    `;
+    learningCourseGrid.innerHTML = "";
+    showParentLearningExperience();
+    return;
+  }
+
+  learningStatus.hidden = displayEnrollments.length > 0;
+  learningStatus.innerHTML = displayEnrollments.length > 0
+    ? ""
+    : `
+      <strong>ยังไม่พบคอร์สที่เปิดสิทธิ์</strong><br>
+      หากเพิ่งได้รับการอนุมัติ กรุณารอสักครู่หรือแจ้งแอดมินให้ตรวจสิทธิ์คอร์ส
+    `;
+
+  const courseCards = displayEnrollments.map((enrollment) => {
+    const meta = getLearningCourseMeta(enrollment.course_type);
+    const completed = Number(enrollment.completed_sessions || 0);
+    const total = Number(enrollment.total_sessions || 0);
+    const progress = total > 0 ? `${completed}/${total} ครั้ง` : "พร้อมเข้าเรียน";
+    return `
+      <article class="learning-course-card" style="--learning-accent:${meta.accent}">
+        <div class="learning-course-main">
+          <span class="learning-course-icon">${meta.icon}</span>
+          <h3>${escapeHtml(getParentCourseLabel(enrollment) || meta.title)}</h3>
+          <p>${escapeHtml(meta.copy)}</p>
+          <div class="learning-course-meta">
+            <span>${escapeHtml(progress)}</span>
+            <span>${escapeHtml(getCertificateCopy(enrollment))}</span>
+          </div>
+        </div>
+        <a class="learning-course-action" href="${meta.href}">เข้าเรียน →</a>
+      </article>
+    `;
+  });
+
+  courseCards.push(`
+    <article class="learning-course-card" style="--learning-accent:#c4e1e5">
+      <div class="learning-course-main">
+        <span class="learning-course-icon">🕹️</span>
+        <h3>Codekids</h3>
+        <p>เกมเขาวงกตฝึกตรรกะ วางคำสั่งล่วงหน้าแล้วช่วย Toko เดินทางกลับบ้าน</p>
+        <div class="learning-course-meta">
+          <span>กิจกรรมเสริม</span>
+          <span>เล่นได้ทุกคอร์ส</span>
+        </div>
+      </div>
+      <a class="learning-course-action secondary" href="codekids.html">เริ่มเล่น →</a>
+    </article>
+  `);
+
+  learningCourseGrid.innerHTML = courseCards.join("");
+  showParentLearningExperience();
+}
+
+async function loadAndRenderLearningHome(user, application) {
+  try {
+    const enrollments = await getParentEnrollments(user.id);
+    renderLearningHome({ user, application, enrollments });
+  } catch (error) {
+    renderLearningHome({ user, application, enrollments: [] });
+    showToast(`โหลดคอร์สเรียนไม่สำเร็จ: ${error.message}`);
+  }
+}
+
 async function signOutParent() {
   if (enrollmentSupabase) {
     await enrollmentSupabase.auth.signOut();
@@ -216,6 +403,7 @@ async function signOutParent() {
 
   closeParentDashboard();
   setParentHeaderLoggedOut();
+  showSaleExperience();
   showToast("ออกจากระบบเรียบร้อยแล้ว");
 }
 
@@ -235,8 +423,10 @@ async function restoreParentSession() {
   try {
     const application = await getLatestParentApplication(user.id);
     setParentHeaderLoggedIn({ user, application });
+    await loadAndRenderLearningHome(user, application);
   } catch (error) {
     setParentHeaderLoggedOut();
+    showSaleExperience();
     showToast(`ตรวจสถานะบัญชีไม่สำเร็จ: ${error.message}`);
   }
 }
@@ -590,6 +780,15 @@ parentDashboardModal?.addEventListener("click", (event) => {
 
 closeParentDashboardButton?.addEventListener("click", closeParentDashboard);
 
+openLearningProgressButton?.addEventListener("click", () => {
+  if (parentLoggedInUser?.userId) openParentDashboard(parentLoggedInUser.userId);
+});
+
+showSalePageButton?.addEventListener("click", () => {
+  document.body.classList.add("sale-peek");
+  document.querySelector("#courses")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
 authModal.addEventListener("wheel", (event) => {
   if (window.innerWidth <= 720 || authContent.contains(event.target)) return;
   authContent.scrollBy({ top: event.deltaY });
@@ -819,8 +1018,9 @@ loginForm.addEventListener("submit", async (event) => {
       application.art_access ? "ศิลปะ" : ""
     ].filter(Boolean).join(" และ ");
     showToast(`เข้าสู่ระบบสำเร็จ เปิดสิทธิ์คอร์ส${courses}แล้ว`);
-    await openParentDashboard(data.user.id);
+    await loadAndRenderLearningHome(data.user, application);
   } else {
+    await loadAndRenderLearningHome(data.user, application);
     showToast("บัญชียังอยู่ระหว่างรอการอนุมัติจากแอดมิน");
   }
 });
