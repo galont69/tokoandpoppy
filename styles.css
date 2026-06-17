@@ -482,6 +482,7 @@ body.sale-peek footer { display: block; }
 }
 .robot-course-showcase,
 .creative-course-showcase,
+.clay-course-showcase,
 .watercolor-course-showcase {
   position: relative;
   display: grid;
@@ -501,12 +502,17 @@ body.sale-peek footer { display: block; }
   grid-template-columns: 1.12fr .88fr;
   background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,245,242,.92));
 }
+.clay-course-showcase {
+  grid-template-columns: 1.08fr .92fr;
+  background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,248,226,.92));
+}
 .watercolor-course-showcase {
   grid-template-columns: .86fr 1.14fr;
   background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(238,249,252,.92));
 }
 .robot-showcase-copy span,
 .creative-showcase-copy span,
+.clay-showcase-copy span,
 .watercolor-showcase-copy span {
   color: #d7836e;
   font-size: 13px;
@@ -515,6 +521,7 @@ body.sale-peek footer { display: block; }
 }
 .robot-showcase-copy h3,
 .creative-showcase-copy h3,
+.clay-showcase-copy h3,
 .watercolor-showcase-copy h3 {
   margin: 8px 0 10px;
   color: #513e32;
@@ -523,6 +530,7 @@ body.sale-peek footer { display: block; }
 }
 .robot-showcase-copy p,
 .creative-showcase-copy p,
+.clay-showcase-copy p,
 .watercolor-showcase-copy p {
   margin: 0;
   color: #806e61;
@@ -530,6 +538,7 @@ body.sale-peek footer { display: block; }
 }
 .robot-showcase-gallery,
 .creative-showcase-gallery,
+.clay-showcase-gallery,
 .watercolor-showcase-gallery {
   display: grid;
   grid-template-rows: repeat(2, minmax(128px, 1fr));
@@ -542,11 +551,15 @@ body.sale-peek footer { display: block; }
 .creative-showcase-gallery {
   grid-template-columns: 1.18fr .82fr;
 }
+.clay-showcase-gallery {
+  grid-template-columns: 1.16fr .84fr;
+}
 .watercolor-showcase-gallery {
   grid-template-columns: 1.2fr .8fr;
 }
 .robot-showcase-gallery img,
 .creative-showcase-gallery img,
+.clay-showcase-gallery img,
 .watercolor-showcase-gallery img {
   width: 100%;
   height: 100%;
@@ -557,6 +570,7 @@ body.sale-peek footer { display: block; }
 }
 .robot-showcase-main,
 .creative-showcase-main,
+.clay-showcase-main,
 .watercolor-showcase-main {
   grid-row: span 2;
 }
@@ -577,6 +591,15 @@ body.sale-peek footer { display: block; }
 }
 .creative-showcase-gallery img:nth-child(3) {
   object-position: center 48%;
+}
+.clay-showcase-gallery img:first-child {
+  object-position: center 44%;
+}
+.clay-showcase-gallery img:nth-child(2) {
+  object-position: center 54%;
+}
+.clay-showcase-gallery img:nth-child(3) {
+  object-position: center 42%;
 }
 .watercolor-showcase-gallery img:first-child {
   object-position: center 58%;
@@ -1409,6 +1432,7 @@ legend { font-size: 15px; }
 
   .robot-course-showcase,
   .creative-course-showcase,
+  .clay-course-showcase,
   .watercolor-course-showcase {
     grid-template-columns: 1fr;
   }
@@ -1426,6 +1450,7 @@ legend { font-size: 15px; }
 @media (max-width: 580px) {
   .robot-course-showcase,
   .creative-course-showcase,
+  .clay-course-showcase,
   .watercolor-course-showcase {
     padding: 16px;
     border-radius: 24px;
@@ -1433,6 +1458,7 @@ legend { font-size: 15px; }
 
   .robot-showcase-gallery,
   .creative-showcase-gallery,
+  .clay-showcase-gallery,
   .watercolor-showcase-gallery {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 190px 128px;
@@ -1441,6 +1467,7 @@ legend { font-size: 15px; }
 
   .robot-showcase-main,
   .creative-showcase-main,
+  .clay-showcase-main,
   .watercolor-showcase-main {
     grid-column: 1 / -1;
     grid-row: auto;
