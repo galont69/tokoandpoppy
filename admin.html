@@ -84,6 +84,7 @@
         <button class="nav-item" type="button" data-admin-view="progress"><span>📸</span> สมุดพัฒนาการ</button>
         <button class="nav-item" type="button" data-admin-view="lessons" data-main-admin-only><span>📚</span> จัดการบทเรียน</button>
         <button class="nav-item" type="button" data-admin-view="art" data-main-admin-only><span>🎨</span> บทเรียนศิลปะ</button>
+        <button class="nav-item" type="button" data-admin-view="freeResources" data-main-admin-only><span>🎁</span> สื่อฟรี</button>
         <a class="nav-item nav-link-item" href="homeschool/admin.html" data-main-admin-only><span>🏡</span> Homeschool</a>
       </nav>
       <div class="sidebar-character">
@@ -541,6 +542,127 @@
           </form>
         </div>
       </section>
+
+      <section class="content admin-view" id="freeResourcesView" hidden>
+        <div class="lesson-admin-hero free-resource-hero-admin">
+          <div>
+            <span>FREE LEARNING HUB</span>
+            <h2>จัดการสื่อฟรีและใบงานดาวน์โหลด</h2>
+            <p>อัปโหลดวิดีโอหรือลิงก์ ใบงาน PDF และ PowerPoint พร้อมเลือกหมวดที่จะแสดงหน้าเว็บ</p>
+          </div>
+          <a href="index.html#free-resources" target="_blank" rel="noopener">ดูหน้าเว็บ ↗</a>
+        </div>
+
+        <div class="free-admin-layout">
+          <form class="lesson-editor free-resource-editor" id="freeResourceForm">
+            <input id="freeResourceId" type="hidden">
+            <div class="editor-heading">
+              <div class="editor-number art-number">🎁</div>
+              <div>
+                <span>กำลังแก้ไข</span>
+                <h2 id="freeResourceEditorHeading">สื่อฟรีรายการใหม่</h2>
+              </div>
+              <label class="publish-toggle">
+                <input id="freeResourcePublished" type="checkbox" checked>
+                <span></span>
+                เผยแพร่
+              </label>
+            </div>
+
+            <div class="art-form-grid">
+              <label>ชื่อสื่อ / ใบงาน
+                <input id="freeResourceTitle" type="text" maxlength="180" required placeholder="เช่น ใบงานแตงโมแสนชื่นใจ">
+              </label>
+              <label>Slug สำหรับลิงก์
+                <input id="freeResourceSlug" type="text" maxlength="120" placeholder="ปล่อยว่างเพื่อสร้างอัตโนมัติ">
+              </label>
+            </div>
+            <div class="art-form-grid">
+              <label>หมวด
+                <select id="freeResourceCategory" required>
+                  <option value="thai">ภาษาไทยผ่านนิทาน</option>
+                  <option value="math">คณิตศาสตร์</option>
+                  <option value="science">วิทยาศาสตร์รอบตัว</option>
+                  <option value="art">ศิลปะ</option>
+                  <option value="unplugged_coding">Unplugged Coding</option>
+                </select>
+              </label>
+              <label>ช่วงอายุ
+                <input id="freeResourceAgeGroup" type="text" maxlength="80" value="3-6 ปี">
+              </label>
+            </div>
+            <label>คำอธิบายสั้น ๆ
+              <textarea id="freeResourceDescription" rows="3" maxlength="700" placeholder="สื่อชุดนี้ช่วยฝึกอะไร เหมาะกับเด็กแบบไหน"></textarea>
+            </label>
+            <label>ลิงก์วิดีโอ
+              <input id="freeResourceVideoUrl" type="url" maxlength="500" placeholder="https://youtube.com/... หรือ https://facebook.com/...">
+            </label>
+
+            <div class="media-upload-grid">
+              <section class="media-upload-card">
+                <div class="media-card-title">
+                  <span>🖼️</span>
+                  <div><strong>ภาพหน้าปก</strong><small>ใช้บนการ์ดหน้าเว็บ</small></div>
+                </div>
+                <label class="file-drop">
+                  <input id="freeResourceThumbnail" type="file" accept="image/jpeg,image/png,image/webp">
+                  <span>＋</span>
+                  <strong>เลือกภาพหน้าปก</strong>
+                  <small>PNG, JPG หรือ WEBP · ไม่เกิน 8 MB</small>
+                </label>
+                <div class="current-file" id="currentFreeThumbnail">ยังไม่มีภาพหน้าปก</div>
+              </section>
+
+              <section class="media-upload-card pdf">
+                <div class="media-card-title">
+                  <span>📄</span>
+                  <div><strong>ใบงาน PDF</strong><small>ไฟล์ที่ผู้ปกครองดาวน์โหลด</small></div>
+                </div>
+                <label class="file-drop">
+                  <input id="freeResourceWorksheet" type="file" accept="application/pdf">
+                  <span>＋</span>
+                  <strong>เลือกไฟล์ใบงาน</strong>
+                  <small>PDF · ไม่เกิน 50 MB</small>
+                </label>
+                <div class="current-file" id="currentFreeWorksheet">ยังไม่มีไฟล์ใบงาน</div>
+              </section>
+
+              <section class="media-upload-card ppt">
+                <div class="media-card-title">
+                  <span>📊</span>
+                  <div><strong>PowerPoint</strong><small>PPT/PPTX สำหรับสอน</small></div>
+                </div>
+                <label class="file-drop">
+                  <input id="freeResourcePowerpoint" type="file" accept=".ppt,.pptx,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation">
+                  <span>＋</span>
+                  <strong>เลือกไฟล์ PowerPoint</strong>
+                  <small>PPT หรือ PPTX · ไม่เกิน 80 MB</small>
+                </label>
+                <div class="current-file" id="currentFreePowerpoint">ยังไม่มีไฟล์ PowerPoint</div>
+              </section>
+            </div>
+
+            <div class="editor-note">
+              <span>💡</span>
+              ถ้าใส่ slug แล้ว สามารถส่งลิงก์จากโซเชียลแบบ index.html?resource=slug#free-resources เพื่อเปิดฟอร์มรายการนั้นได้ทันที
+            </div>
+            <div class="lesson-save-bar">
+              <button class="delete-lesson-button" id="resetFreeResourceForm" type="button">ล้างฟอร์ม</button>
+              <button class="save-lesson-button" type="submit">บันทึกสื่อฟรี</button>
+            </div>
+          </form>
+
+          <section class="lesson-list-panel free-resource-list-panel">
+            <div class="lesson-list-heading">
+              <div><strong>สื่อฟรีทั้งหมด</strong><small><span id="freeResourceCount">0</span> รายการ</small></div>
+              <button id="refreshFreeResourcesButton" type="button">↻</button>
+            </div>
+            <div class="free-resource-admin-list" id="freeResourceAdminList">
+              <div class="loading-state"><i></i><span>กำลังโหลดสื่อฟรี...</span></div>
+            </div>
+          </section>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -659,6 +781,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js?v=20260614-learning-status"></script>
+  <script src="admin.js?v=20260618-free-resources"></script>
 </body>
 </html>

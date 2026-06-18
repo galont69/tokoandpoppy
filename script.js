@@ -34,11 +34,23 @@ const learningCourseGrid = document.querySelector("#learningCourseGrid");
 const openLearningProgressButton = document.querySelector("#openLearningProgress");
 const openLearnerProfileButton = document.querySelector("#openLearnerProfile");
 const showSalePageButton = document.querySelector("#showSalePage");
+const freeResourceGrid = document.querySelector("#freeResourceGrid");
+const freeResourceModal = document.querySelector("#freeResourceModal");
+const closeFreeResourceModalButton = document.querySelector("#closeFreeResourceModal");
+const freeResourceLeadForm = document.querySelector("#freeResourceLeadForm");
+const freeResourceModalCategory = document.querySelector("#freeResourceModalCategory");
+const freeResourceModalTitle = document.querySelector("#freeResourceModalTitle");
+const freeResourceModalDescription = document.querySelector("#freeResourceModalDescription");
+const freeResourceVideoLink = document.querySelector("#freeResourceVideoLink");
+const freeResourceDownloadResult = document.querySelector("#freeResourceDownloadResult");
+const freeResourceDownloadLinks = document.querySelector("#freeResourceDownloadLinks");
 const headerLoginButton = document.querySelector(".btn-login[data-open-auth='login']");
 const headerNavActions = headerLoginButton?.parentElement || null;
 const loginButtonDefaultMarkup = headerLoginButton?.innerHTML || "เข้าสู่ระบบ";
 let parentLoggedInUser = null;
 let parentLogoutButton = null;
+let freeResources = [];
+let activeFreeResource = null;
 const externalSupabaseConfig = window.SUPABASE_CONFIG || {};
 const externalConfigIsValid = Boolean(
   externalSupabaseConfig.url &&
@@ -58,6 +70,50 @@ const enrollmentSupabase = supabaseConfigured && supabaseSdkAvailable
   : null;
 document.documentElement.dataset.supabaseReady =
   String(Boolean(enrollmentSupabase));
+
+const freeResourceCategoryLabels = {
+  thai: "ภาษาไทย",
+  math: "คณิตศาสตร์",
+  science: "วิทยาศาสตร์",
+  art: "ศิลปะ",
+  unplugged_coding: "Unplugged Coding"
+};
+
+const fallbackFreeResources = [
+  {
+    id: "fallback-art",
+    slug: "creative-art-story",
+    title: "ใบงานศิลปะผ่านนิทาน",
+    category: "art",
+    age_group: "3-6 ปี",
+    description: "ตัวอย่างกิจกรรมวาด ระบายสี และเล่าไอเดียจากเรื่องราว",
+    video_url: "",
+    worksheet_url: "",
+    powerpoint_url: ""
+  },
+  {
+    id: "fallback-coding",
+    slug: "unplugged-coding-algorithm",
+    title: "ภารกิจคิดเป็นขั้นตอน",
+    category: "unplugged_coding",
+    age_group: "4-6 ปี",
+    description: "ใบงานฝึก algorithm แบบไม่ต้องใช้คอมพิวเตอร์สำหรับเด็กเล็ก",
+    video_url: "",
+    worksheet_url: "",
+    powerpoint_url: ""
+  },
+  {
+    id: "fallback-math",
+    slug: "play-with-numbers",
+    title: "เล่นกับตัวเลขรอบตัว",
+    category: "math",
+    age_group: "3-6 ปี",
+    description: "กิจกรรมสังเกต นับ จับคู่ และแก้ปัญหาง่าย ๆ ผ่านการเล่น",
+    video_url: "",
+    worksheet_url: "",
+    powerpoint_url: ""
+  }
+];
 
 function canUseSupabase() {
   if (!supabaseConfigured) {
@@ -168,6 +224,126 @@ function escapeHtml(value = "") {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function getFreeResourceCategoryLabel(category) {
+  return freeResourceCategoryLabels[category] || category || "สื่อฟรี";
+}
+
+function renderFreeResources(resources = fallbackFreeResources) {
+  if (!freeResourceGrid) return;
+  freeResources = resources.length ? resources : fallbackFreeResources;
+  freeResourceGrid.innerHTML = freeResources.map((resource) => {
+    const image = resource.thumbnail_url
+      ? `<img src="${escapeHtml(resource.thumbnail_url)}" alt="${escapeHtml(resource.title)}" loading="lazy">`
+      : "";
+    return `
+      <article class="free-resource-card">
+        ${image}
+        <span>${escapeHtml(getFreeResourceCategoryLabel(resource.category))} · ${escapeHtml(resource.age_group || "3-6 ปี")}</span>
+        <h3>${escapeHtml(resource.title)}</h3>
+        <p>${escapeHtml(resource.description || "สื่อฟรีสำหรับลองเล่นและเรียนรู้กับลูกที่บ้าน")}</p>
+        <button type="button" data-free-resource-id="${escapeHtml(resource.id)}">รับสื่อฟรี →</button>
+      </article>
+    `;
+  }).join("");
+}
+
+async function loadFreeResources() {
+  renderFreeResources(fallbackFreeResources);
+  if (!enrollmentSupabase) return;
+
+  const { data, error } = await enrollmentSupabase
+    .from("free_resources")
+    .select("id, slug, title, category, age_group, description, video_url, thumbnail_url, worksheet_url, powerpoint_url, worksheet_file_name, powerpoint_file_name")
+    .eq("status", "published")
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  if (error) {
+    console.warn("Free resources are not ready yet:", error.message);
+    return;
+  }
+
+  if (data?.length) renderFreeResources(data);
+  const resourceSlug = new URLSearchParams(window.location.search).get("resource");
+  if (resourceSlug) {
+    const resource = (data || []).find((item) => item.slug === resourceSlug);
+    if (resource) setTimeout(() => openFreeResourceModal(resource), 300);
+  }
+}
+
+function openFreeResourceModal(resource) {
+  if (!freeResourceModal || !freeResourceLeadForm) return;
+  activeFreeResource = resource;
+  freeResourceLeadForm.hidden = false;
+  freeResourceLeadForm.reset();
+  freeResourceDownloadResult.hidden = true;
+  freeResourceDownloadLinks.innerHTML = "";
+  freeResourceLeadForm.elements.resourceId.value = resource.id || "";
+  freeResourceLeadForm.elements.resourceSlug.value = resource.slug || "";
+  freeResourceModalCategory.textContent =
+    `${getFreeResourceCategoryLabel(resource.category)} · ${resource.age_group || "3-6 ปี"}`;
+  freeResourceModalTitle.textContent = resource.title || "รับสื่อการเรียนรู้ฟรี";
+  freeResourceModalDescription.textContent =
+    resource.description || "กรอกข้อมูลสั้น ๆ เพื่อรับลิงก์ดาวน์โหลด";
+  if (resource.video_url) {
+    freeResourceVideoLink.hidden = false;
+    freeResourceVideoLink.href = resource.video_url;
+  } else {
+    freeResourceVideoLink.hidden = true;
+    freeResourceVideoLink.removeAttribute("href");
+  }
+  freeResourceModal.classList.add("open");
+  freeResourceModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  setTimeout(() => freeResourceLeadForm.querySelector("input[name=parentName]")?.focus(), 180);
+}
+
+function closeFreeResourceModal() {
+  if (!freeResourceModal) return;
+  freeResourceModal.classList.remove("open");
+  freeResourceModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function getFreeLeadPayload(formData) {
+  const contactEmail = String(formData.get("contactEmail") || "").trim();
+  const contactPhone = String(formData.get("contactPhone") || "").trim();
+  const interests = formData.getAll("interest");
+  return {
+    resource_id: activeFreeResource?.id?.startsWith("fallback-")
+      ? null
+      : activeFreeResource?.id || null,
+    resource_slug: activeFreeResource?.slug || formData.get("resourceSlug") || null,
+    parent_name: String(formData.get("parentName") || "").trim(),
+    contact_email: contactEmail || null,
+    contact_phone: contactPhone || null,
+    line_id: contactPhone || null,
+    child_age: String(formData.get("childAge") || "").trim(),
+    province: String(formData.get("province") || "").trim(),
+    district: String(formData.get("district") || "").trim(),
+    interested_categories: interests,
+    consent_contact: Boolean(formData.get("consentContact")),
+    source: new URLSearchParams(window.location.search).get("source") || document.referrer || "website",
+    user_agent: navigator.userAgent || null
+  };
+}
+
+function renderFreeDownloadLinks(resource) {
+  const links = [];
+  if (resource?.worksheet_url) {
+    links.push(`<a href="${escapeHtml(resource.worksheet_url)}" target="_blank" rel="noopener">ดาวน์โหลดใบงาน PDF</a>`);
+  }
+  if (resource?.powerpoint_url) {
+    links.push(`<a href="${escapeHtml(resource.powerpoint_url)}" target="_blank" rel="noopener">ดาวน์โหลด PowerPoint</a>`);
+  }
+  freeResourceDownloadLinks.className = "free-download-links";
+  freeResourceDownloadLinks.innerHTML = links.length
+    ? links.join("")
+    : "<p>ทีมงานได้รับข้อมูลแล้วครับ รายการนี้ยังไม่ได้แนบไฟล์ดาวน์โหลด แอดมินจะส่งสื่อให้ตามช่องทางที่กรอกไว้</p>";
+  freeResourceLeadForm.hidden = true;
+  freeResourceDownloadResult.hidden = false;
 }
 
 function getPublicLearningPhotoUrl(path) {
@@ -854,6 +1030,57 @@ document.querySelectorAll("[data-open-auth]").forEach((button) => {
   button.addEventListener("click", () => openAuth(button.dataset.openAuth));
 });
 
+freeResourceGrid?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-free-resource-id], [data-free-resource-fallback]");
+  if (!button) return;
+  const resourceId = button.dataset.freeResourceId;
+  const fallbackCategory = button.dataset.freeResourceFallback;
+  const resource = freeResources.find((item) => item.id === resourceId) ||
+    fallbackFreeResources.find((item) => item.category === fallbackCategory) ||
+    fallbackFreeResources[0];
+  openFreeResourceModal(resource);
+});
+
+closeFreeResourceModalButton?.addEventListener("click", closeFreeResourceModal);
+freeResourceModal?.addEventListener("click", (event) => {
+  if (event.target === freeResourceModal) closeFreeResourceModal();
+});
+
+freeResourceLeadForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!freeResourceLeadForm.checkValidity()) {
+    freeResourceLeadForm.reportValidity();
+    return;
+  }
+  const payload = getFreeLeadPayload(new FormData(freeResourceLeadForm));
+  if (!payload.contact_email && !payload.contact_phone) {
+    showToast("กรุณากรอกอีเมล หรือเบอร์โทร/LINE อย่างน้อยหนึ่งช่อง");
+    return;
+  }
+  if (!payload.consent_contact) {
+    showToast("กรุณาติ๊กยินยอมให้ติดต่อกลับก่อนรับสื่อฟรี");
+    return;
+  }
+
+  const submitButton = freeResourceLeadForm.querySelector(".submit-button");
+  submitButton.disabled = true;
+  submitButton.textContent = "กำลังบันทึกข้อมูล...";
+  try {
+    if (enrollmentSupabase) {
+      const { error } = await enrollmentSupabase
+        .from("free_resource_leads")
+        .insert(payload);
+      if (error) throw error;
+    }
+    renderFreeDownloadLinks(activeFreeResource);
+  } catch (error) {
+    showToast(`บันทึกข้อมูลไม่สำเร็จ: ${getFriendlySupabaseError(error)}`, 12000);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.innerHTML = 'รับลิงก์ดาวน์โหลดฟรี <span>→</span>';
+  }
+});
+
 document.querySelector(".modal-close").addEventListener("click", closeAuth);
 registerTab.addEventListener("click", () => setAuthMode("register"));
 loginTab.addEventListener("click", () => setAuthMode("login"));
@@ -895,6 +1122,8 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     if (parentProfileModal?.classList.contains("open")) {
       closeParentProfile();
+    } else if (freeResourceModal?.classList.contains("open")) {
+      closeFreeResourceModal();
     } else if (parentDashboardModal?.classList.contains("open")) {
       closeParentDashboard();
     } else if (statusModal.classList.contains("open")) {
@@ -1184,5 +1413,6 @@ loginForm.addEventListener("submit", async (event) => {
 syncEnrollmentSource();
 syncPaymentRequirements();
 setFriendlyValidationMessages();
+loadFreeResources();
 loadBranches();
 restoreParentSession();

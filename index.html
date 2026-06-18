@@ -22,7 +22,7 @@
       }
     };
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260617-hero-font">
+  <link rel="stylesheet" href="styles.css?v=20260618-free-resources">
 </head>
 <body class="font-thai text-[#49372d]">
   <div class="page-noise" aria-hidden="true"></div>
@@ -38,6 +38,7 @@
       </a>
       <div class="flex items-center gap-2 sm:gap-3">
         <a href="#courses" class="nav-link sale-nav hidden md:inline-flex">คอร์สของเรา</a>
+        <a href="#free-resources" class="nav-link sale-nav hidden lg:inline-flex">สื่อฟรี</a>
         <a href="#lessons" class="nav-link sale-nav hidden lg:inline-flex">ตัวอย่างบทเรียน</a>
         <a href="#faq" class="nav-link sale-nav hidden lg:inline-flex">FAQ</a>
         <button class="btn-login" type="button" data-open-auth="login">
@@ -171,6 +172,48 @@
           <article><span>2</span><strong>มีส่วนร่วมมากขึ้น</strong><p>เด็กไม่ได้แค่นั่งฟัง แต่ช่วยแก้ภารกิจ วางแผน และเลือกวิธีของตัวเอง</p></article>
           <article><span>3</span><strong>ลงมือทำจริง</strong><p>วาด ปั้น ระบายสี สั่งหุ่นยนต์ ทดลอง แก้ไข และเห็นผลงานของตัวเอง</p></article>
           <article><span>4</span><strong>ฝึกหลายทักษะพร้อมกัน</strong><p>คิดเป็นระบบ จินตนาการ สมาธิ กล้ามเนื้อมือ การสังเกต และการแก้ปัญหา</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="free-resources" class="free-resources-section">
+      <div class="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+        <div class="free-resource-hero">
+          <div>
+            <span>Free Learning Resources</span>
+            <h2>แจกใบงานและสื่อการเรียนรู้ฟรี</h2>
+            <p>ดูคลิปสั้น ๆ แล้วรับใบงานหรือ PowerPoint ไปลองเล่นกับลูกที่บ้าน เหมาะกับเด็ก 3-6 ปี และต่อยอดสู่คอร์สเรียนจริงได้ง่าย</p>
+          </div>
+          <a href="#freeResourceGrid" class="btn-primary">เลือกสื่อฟรี <span>→</span></a>
+        </div>
+
+        <div class="free-resource-categories" aria-label="หมวดสื่อฟรี">
+          <span>ภาษาไทย</span>
+          <span>คณิตศาสตร์</span>
+          <span>วิทยาศาสตร์รอบตัว</span>
+          <span>ศิลปะ</span>
+          <span>Unplugged Coding</span>
+        </div>
+
+        <div class="free-resource-grid" id="freeResourceGrid">
+          <article class="free-resource-card">
+            <span>🎨 ศิลปะ</span>
+            <h3>ใบงานศิลปะผ่านนิทาน</h3>
+            <p>ตัวอย่างกิจกรรมวาด ระบายสี และเล่าไอเดียจากเรื่องราว</p>
+            <button type="button" data-free-resource-fallback="art">รับใบงานฟรี →</button>
+          </article>
+          <article class="free-resource-card">
+            <span>🤖 Unplugged Coding</span>
+            <h3>ภารกิจคิดเป็นขั้นตอน</h3>
+            <p>ใบงานฝึก algorithm แบบไม่ต้องใช้คอมพิวเตอร์สำหรับเด็กเล็ก</p>
+            <button type="button" data-free-resource-fallback="unplugged_coding">รับใบงานฟรี →</button>
+          </article>
+          <article class="free-resource-card">
+            <span>🔢 คณิตศาสตร์</span>
+            <h3>เล่นกับตัวเลขรอบตัว</h3>
+            <p>กิจกรรมสังเกต นับ จับคู่ และแก้ปัญหาง่าย ๆ ผ่านการเล่น</p>
+            <button type="button" data-free-resource-fallback="math">รับใบงานฟรี →</button>
+          </article>
         </div>
       </div>
     </section>
@@ -626,6 +669,69 @@
     </div>
   </div>
 
+  <div class="free-modal-backdrop" id="freeResourceModal" aria-hidden="true">
+    <section class="free-resource-modal" role="dialog" aria-modal="true" aria-labelledby="freeResourceModalTitle">
+      <button class="modal-close" id="closeFreeResourceModal" type="button" aria-label="ปิดหน้าต่าง">×</button>
+      <div class="free-resource-modal-head">
+        <span id="freeResourceModalCategory">Free Resource</span>
+        <h2 id="freeResourceModalTitle">รับสื่อการเรียนรู้ฟรี</h2>
+        <p id="freeResourceModalDescription">กรอกข้อมูลสั้น ๆ เพื่อรับลิงก์ดาวน์โหลด และให้ทีมงานแนะนำสื่อที่เหมาะกับวัยลูกได้ดีขึ้น</p>
+        <a id="freeResourceVideoLink" href="#" target="_blank" rel="noopener" hidden>ดูวิดีโอตัวอย่าง ↗</a>
+      </div>
+
+      <form class="free-resource-lead-form" id="freeResourceLeadForm">
+        <input type="hidden" name="resourceId">
+        <input type="hidden" name="resourceSlug">
+        <div class="free-form-grid">
+          <label>ชื่อผู้ปกครอง <span class="field-badge required">จำเป็น</span>
+            <input name="parentName" type="text" maxlength="150" required placeholder="เช่น คุณแม่มะลิ">
+          </label>
+          <label>อายุลูก <span class="field-badge required">จำเป็น</span>
+            <select name="childAge" required>
+              <option value="">เลือกอายุ</option>
+              <option value="3 ปี">3 ปี</option>
+              <option value="4 ปี">4 ปี</option>
+              <option value="5 ปี">5 ปี</option>
+              <option value="6 ปี">6 ปี</option>
+              <option value="7 ปีขึ้นไป">7 ปีขึ้นไป</option>
+            </select>
+          </label>
+          <label>อีเมล
+            <input name="contactEmail" type="email" maxlength="180" placeholder="parent@email.com">
+          </label>
+          <label>เบอร์โทรหรือ LINE
+            <input name="contactPhone" type="text" maxlength="80" placeholder="08x-xxx-xxxx หรือ LINE ID">
+          </label>
+          <label>จังหวัด <span class="field-badge required">จำเป็น</span>
+            <input name="province" type="text" maxlength="90" required placeholder="เช่น เชียงใหม่">
+          </label>
+          <label>อำเภอ/เขต <span class="field-badge required">จำเป็น</span>
+            <input name="district" type="text" maxlength="90" required placeholder="เช่น เมืองเชียงใหม่">
+          </label>
+        </div>
+        <fieldset class="free-interest-fieldset">
+          <legend>หมวดที่สนใจเพิ่มเติม</legend>
+          <label><input type="checkbox" name="interest" value="thai"> ภาษาไทย</label>
+          <label><input type="checkbox" name="interest" value="math"> เลข</label>
+          <label><input type="checkbox" name="interest" value="science"> วิทยาศาสตร์</label>
+          <label><input type="checkbox" name="interest" value="art"> ศิลปะ</label>
+          <label><input type="checkbox" name="interest" value="unplugged_coding"> Coding</label>
+        </fieldset>
+        <label class="consent free-consent">
+          <input name="consentContact" type="checkbox" required>
+          <span>ยินยอมให้ Toko & Poppy ติดต่อกลับเพื่อส่งสื่อ แนะนำกิจกรรม และแจ้งคอร์สที่เหมาะกับพื้นที่ของฉัน</span>
+        </label>
+        <button class="submit-button" type="submit">รับลิงก์ดาวน์โหลดฟรี <span>→</span></button>
+      </form>
+
+      <div class="free-download-result" id="freeResourceDownloadResult" hidden>
+        <strong>เรียบร้อยครับ ลิงก์ดาวน์โหลดอยู่ด้านล่าง</strong>
+        <p>ขอบคุณที่สนใจสื่อของ Toko & Poppy ขอให้สนุกกับการเล่นและเรียนรู้กับลูกนะครับ</p>
+        <div id="freeResourceDownloadLinks"></div>
+      </div>
+    </section>
+  </div>
+
   <div class="parent-dashboard-modal" id="parentDashboardModal" aria-hidden="true">
     <div class="parent-dashboard-card" role="dialog" aria-modal="true">
       <button class="modal-close parent-close" id="closeParentDashboard" type="button" aria-label="ปิด">×</button>
@@ -700,6 +806,6 @@
   <div class="toast" id="toast" role="status"></div>
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260607-2"></script>
-  <script src="script.js?v=20260617-hero-font"></script>
+  <script src="script.js?v=20260618-free-resources"></script>
 </body>
 </html>

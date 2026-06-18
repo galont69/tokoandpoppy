@@ -83,6 +83,10 @@ const recordTeacherComment = document.querySelector("#recordTeacherComment");
 const recordSessionPhoto = document.querySelector("#recordSessionPhoto");
 const recordSessionPhotoPreview = document.querySelector("#recordSessionPhotoPreview");
 const saveSessionButton = document.querySelector("#saveSessionButton");
+const freeResourceForm = document.querySelector("#freeResourceForm");
+const freeResourceAdminList = document.querySelector("#freeResourceAdminList");
+const freeResourceCount = document.querySelector("#freeResourceCount");
+const refreshFreeResourcesButton = document.querySelector("#refreshFreeResourcesButton");
 
 let applications = [];
 let activeStatus = "all";
@@ -100,6 +104,7 @@ let artLessons = [];
 let activeArtLesson = null;
 let learningEnrollments = [];
 let activeLearningEnrollment = null;
+let freeResources = [];
 
 const courseLabels = {
   robot: ["โรบอท + โค้ดดิ้ง", "SPIKE Essential"],
@@ -111,6 +116,14 @@ const courseLabels = {
 };
 
 const artCourseTypes = ["art", "creative_art", "water_color", "clay"];
+
+const freeResourceCategoryLabels = {
+  thai: "ภาษาไทยผ่านนิทาน",
+  math: "คณิตศาสตร์",
+  science: "วิทยาศาสตร์รอบตัว",
+  art: "ศิลปะ",
+  unplugged_coding: "Unplugged Coding"
+};
 
 const artProgramControls = [
   {
@@ -476,7 +489,8 @@ function showAdminView(viewName) {
     branches: ["สาขาเฟรนไชน์", "FRANCHISE CENTER"],
     progress: ["สมุดพัฒนาการนักเรียน", "LEARNING JOURNAL"],
     lessons: ["จัดการบทเรียนโรบอท", "ROBOT COURSE STUDIO"],
-    art: ["จัดการบทเรียนศิลปะ", "ART COURSE STUDIO"]
+    art: ["จัดการบทเรียนศิลปะ", "ART COURSE STUDIO"],
+    freeResources: ["สื่อฟรี", "FREE LEARNING HUB"]
   };
   const [title, kicker] = viewCopy[viewName] || viewCopy.applications;
   document.querySelector(".topbar h1").textContent = title;
@@ -487,6 +501,7 @@ function showAdminView(viewName) {
   if (viewName === "progress") loadLearningProgress();
   if (viewName === "lessons") loadRobotLessons();
   if (viewName === "art") loadArtStudio();
+  if (viewName === "freeResources") loadFreeResourcesAdmin();
 }
 
 function getCourseEnrollmentLabel(enrollment) {
@@ -2360,6 +2375,233 @@ artEditor.addEventListener("submit", async (event) => {
   }
 });
 
+function getFreeResourceCategoryLabel(category) {
+  return freeResourceCategoryLabels[category] || category || "สื่อฟรี";
+}
+
+function makeFreeResourceSlug(value) {
+  const base = String(value || "free-resource")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9ก-๙-]+/gi, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  return base || `free-resource-${Date.now()}`;
+}
+
+function getFreeResourcePublicUrl(path) {
+  if (!path) return "";
+  const { data } = supabaseClient.storage.from("free-resources").getPublicUrl(path);
+  return data?.publicUrl || "";
+}
+
+async function uploadFreeResourceFile(file, folder, slug, maxBytes, accepted, label) {
+  if (!file || !file.size) return null;
+  if (file.size > maxBytes) throw new Error(`${label} มีขนาดเกินกำหนด`);
+  if (!accepted(file)) throw new Error(`ชนิดไฟล์ ${label} ไม่ถูกต้อง`);
+
+  const path = `${folder}/${makeFreeResourceSlug(slug)}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+  const { error } = await supabaseClient.storage
+    .from("free-resources")
+    .upload(path, file, {
+      cacheControl: "3600",
+      contentType: file.type || "application/octet-stream",
+      upsert: false
+    });
+  if (error) throw error;
+  return { path, publicUrl: getFreeResourcePublicUrl(path), fileName: file.name };
+}
+
+function resetFreeResourceForm() {
+  freeResourceForm?.reset();
+  document.querySelector("#freeResourceId").value = "";
+  document.querySelector("#freeResourceAgeGroup").value = "3-6 ปี";
+  document.querySelector("#freeResourcePublished").checked = true;
+  document.querySelector("#freeResourceEditorHeading").textContent = "สื่อฟรีรายการใหม่";
+  document.querySelector("#currentFreeThumbnail").textContent = "ยังไม่มีภาพหน้าปก";
+  document.querySelector("#currentFreeWorksheet").textContent = "ยังไม่มีไฟล์ใบงาน";
+  document.querySelector("#currentFreePowerpoint").textContent = "ยังไม่มีไฟล์ PowerPoint";
+}
+
+function fillFreeResourceForm(resource) {
+  document.querySelector("#freeResourceId").value = resource.id || "";
+  document.querySelector("#freeResourceTitle").value = resource.title || "";
+  document.querySelector("#freeResourceSlug").value = resource.slug || "";
+  document.querySelector("#freeResourceCategory").value = resource.category || "art";
+  document.querySelector("#freeResourceAgeGroup").value = resource.age_group || "3-6 ปี";
+  document.querySelector("#freeResourceDescription").value = resource.description || "";
+  document.querySelector("#freeResourceVideoUrl").value = resource.video_url || "";
+  document.querySelector("#freeResourcePublished").checked = resource.status === "published";
+  document.querySelector("#freeResourceEditorHeading").textContent = resource.title || "สื่อฟรีรายการใหม่";
+  document.querySelector("#currentFreeThumbnail").textContent =
+    resource.thumbnail_url ? "มีภาพหน้าปกแล้ว" : "ยังไม่มีภาพหน้าปก";
+  document.querySelector("#currentFreeWorksheet").textContent =
+    resource.worksheet_file_name || (resource.worksheet_url ? "มีไฟล์ใบงานแล้ว" : "ยังไม่มีไฟล์ใบงาน");
+  document.querySelector("#currentFreePowerpoint").textContent =
+    resource.powerpoint_file_name || (resource.powerpoint_url ? "มีไฟล์ PowerPoint แล้ว" : "ยังไม่มีไฟล์ PowerPoint");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function loadFreeResourcesAdmin() {
+  if (!isMainAdmin()) return;
+  freeResourceAdminList.innerHTML =
+    '<div class="loading-state"><i></i><span>กำลังโหลดสื่อฟรี...</span></div>';
+  const { data, error } = await supabaseClient
+    .from("free_resources")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    freeResourceAdminList.innerHTML = "";
+    showToast(`โหลดสื่อฟรีไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  freeResources = data || [];
+  renderFreeResourcesAdmin();
+}
+
+function renderFreeResourcesAdmin() {
+  freeResourceCount.textContent = freeResources.length;
+  if (!freeResources.length) {
+    freeResourceAdminList.innerHTML =
+      '<div class="gallery-empty">ยังไม่มีสื่อฟรี กรอกฟอร์มด้านซ้ายเพื่อเพิ่มรายการแรก</div>';
+    return;
+  }
+  freeResourceAdminList.innerHTML = freeResources.map((resource) => `
+    <article class="free-admin-card ${resource.status === "published" ? "" : "draft"}">
+      <div class="free-admin-meta">
+        <span>${escapeHtml(getFreeResourceCategoryLabel(resource.category))}</span>
+        <span>${escapeHtml(resource.status === "published" ? "เผยแพร่" : "ฉบับร่าง")}</span>
+      </div>
+      <strong>${escapeHtml(resource.title)}</strong>
+      <p>${escapeHtml(resource.description || "ยังไม่มีคำอธิบาย")}</p>
+      <div class="free-admin-actions">
+        <button type="button" data-free-edit="${resource.id}">แก้ไข</button>
+        <button type="button" data-free-toggle="${resource.id}">${resource.status === "published" ? "ซ่อน" : "เผยแพร่"}</button>
+        ${resource.worksheet_url ? `<a href="${escapeHtml(resource.worksheet_url)}" target="_blank" rel="noopener">ใบงาน</a>` : ""}
+        ${resource.powerpoint_url ? `<a href="${escapeHtml(resource.powerpoint_url)}" target="_blank" rel="noopener">PPT</a>` : ""}
+        <button type="button" data-free-delete="${resource.id}">ลบ</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+async function saveFreeResource(event) {
+  event.preventDefault();
+  if (!isMainAdmin()) return;
+
+  const id = document.querySelector("#freeResourceId").value;
+  const existing = freeResources.find((resource) => resource.id === id) || {};
+  const title = document.querySelector("#freeResourceTitle").value.trim();
+  const slug = makeFreeResourceSlug(document.querySelector("#freeResourceSlug").value || title);
+  if (!title) {
+    showToast("กรุณากรอกชื่อสื่อฟรี", true);
+    return;
+  }
+
+  const submitButton = freeResourceForm.querySelector(".save-lesson-button");
+  submitButton.disabled = true;
+  submitButton.textContent = "กำลังบันทึก...";
+  try {
+    const thumbnailUpload = await uploadFreeResourceFile(
+      document.querySelector("#freeResourceThumbnail").files[0],
+      "covers",
+      slug,
+      8 * 1024 * 1024,
+      (file) => ["image/jpeg", "image/png", "image/webp"].includes(file.type),
+      "ภาพหน้าปก"
+    );
+    const worksheetUpload = await uploadFreeResourceFile(
+      document.querySelector("#freeResourceWorksheet").files[0],
+      "worksheets",
+      slug,
+      50 * 1024 * 1024,
+      (file) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"),
+      "ใบงาน PDF"
+    );
+    const powerpointUpload = await uploadFreeResourceFile(
+      document.querySelector("#freeResourcePowerpoint").files[0],
+      "powerpoints",
+      slug,
+      80 * 1024 * 1024,
+      (file) => [".ppt", ".pptx"].some((ext) => file.name.toLowerCase().endsWith(ext)) ||
+        [
+          "application/vnd.ms-powerpoint",
+          "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        ].includes(file.type),
+      "PowerPoint"
+    );
+
+    const payload = {
+      slug,
+      title,
+      category: document.querySelector("#freeResourceCategory").value,
+      age_group: document.querySelector("#freeResourceAgeGroup").value.trim() || "3-6 ปี",
+      description: document.querySelector("#freeResourceDescription").value.trim() || null,
+      video_url: document.querySelector("#freeResourceVideoUrl").value.trim() || null,
+      thumbnail_url: thumbnailUpload?.publicUrl || existing.thumbnail_url || null,
+      worksheet_url: worksheetUpload?.publicUrl || existing.worksheet_url || null,
+      worksheet_file_name: worksheetUpload?.fileName || existing.worksheet_file_name || null,
+      powerpoint_url: powerpointUpload?.publicUrl || existing.powerpoint_url || null,
+      powerpoint_file_name: powerpointUpload?.fileName || existing.powerpoint_file_name || null,
+      status: document.querySelector("#freeResourcePublished").checked ? "published" : "draft",
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = id
+      ? await supabaseClient.from("free_resources").update(payload).eq("id", id)
+      : await supabaseClient.from("free_resources").insert({
+          ...payload,
+          created_by: currentAdminProfile?.user_id || null
+        });
+    if (error) throw error;
+
+    showToast("บันทึกสื่อฟรีเรียบร้อย");
+    resetFreeResourceForm();
+    await loadFreeResourcesAdmin();
+  } catch (error) {
+    showToast(`บันทึกสื่อฟรีไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "บันทึกสื่อฟรี";
+  }
+}
+
+async function toggleFreeResource(id) {
+  const resource = freeResources.find((item) => item.id === id);
+  if (!resource) return;
+  const nextStatus = resource.status === "published" ? "draft" : "published";
+  const { error } = await supabaseClient
+    .from("free_resources")
+    .update({ status: nextStatus, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) {
+    showToast(`ปรับสถานะไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+  showToast(nextStatus === "published" ? "เผยแพร่สื่อฟรีแล้ว" : "ซ่อนสื่อฟรีแล้ว");
+  await loadFreeResourcesAdmin();
+}
+
+async function deleteFreeResource(id) {
+  const resource = freeResources.find((item) => item.id === id);
+  if (!resource) return;
+  if (!confirm(`ลบ "${resource.title}" ใช่ไหม? ข้อมูล lead ที่เคยกรอกจะยังอยู่`)) return;
+  const { error } = await supabaseClient
+    .from("free_resources")
+    .delete()
+    .eq("id", id);
+  if (error) {
+    showToast(`ลบสื่อฟรีไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+  showToast("ลบสื่อฟรีแล้ว");
+  resetFreeResourceForm();
+  await loadFreeResourcesAdmin();
+}
+
 loginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!configured) {
@@ -2492,6 +2734,30 @@ document.querySelector("#menuButton").addEventListener("click", () =>
 document.querySelectorAll("[data-admin-view]").forEach((button) => {
   button.addEventListener("click", () =>
     showAdminView(button.dataset.adminView));
+});
+freeResourceForm?.addEventListener("submit", saveFreeResource);
+document.querySelector("#resetFreeResourceForm")?.addEventListener("click", resetFreeResourceForm);
+refreshFreeResourcesButton?.addEventListener("click", loadFreeResourcesAdmin);
+document.querySelector("#freeResourceTitle")?.addEventListener("input", (event) => {
+  const slugInput = document.querySelector("#freeResourceSlug");
+  if (!slugInput || slugInput.value.trim()) return;
+  slugInput.value = makeFreeResourceSlug(event.currentTarget.value);
+});
+freeResourceAdminList?.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-free-edit]");
+  const toggleButton = event.target.closest("[data-free-toggle]");
+  const deleteButton = event.target.closest("[data-free-delete]");
+
+  if (editButton) {
+    const resource = freeResources.find((item) => item.id === editButton.dataset.freeEdit);
+    if (resource) fillFreeResourceForm(resource);
+    return;
+  }
+  if (toggleButton) {
+    toggleFreeResource(toggleButton.dataset.freeToggle);
+    return;
+  }
+  if (deleteButton) deleteFreeResource(deleteButton.dataset.freeDelete);
 });
 lessonAdminList.addEventListener("click", (event) => {
   const button = event.target.closest("[data-lesson-id]");

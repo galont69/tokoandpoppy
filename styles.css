@@ -482,6 +482,243 @@ body.sale-peek footer { display: block; }
   background: #6f9d55;
   font: 900 18px Nunito, sans-serif;
 }
+
+.free-resources-section {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 12% 20%, rgba(104,145,84,.12), transparent 28%),
+    radial-gradient(circle at 88% 15%, rgba(232,174,60,.16), transparent 26%),
+    #fffdf7;
+}
+.free-resource-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 22px;
+  align-items: center;
+  border: 1px solid rgba(111,82,55,.12);
+  border-radius: 30px;
+  padding: clamp(24px, 4vw, 42px);
+  background: rgba(255,255,255,.84);
+  box-shadow: 0 22px 60px rgba(78,61,42,.08);
+}
+.free-resource-hero span {
+  color: #d27d69;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.free-resource-hero h2 {
+  margin: 8px 0 10px;
+  color: #49372d;
+  font-family: Mitr, Mali, sans-serif;
+  font-size: clamp(34px, 5vw, 64px);
+  font-weight: 600;
+  line-height: 1.14;
+}
+.free-resource-hero p {
+  max-width: 780px;
+  margin: 0;
+  color: #7f6d5f;
+  font-size: clamp(16px, 1.5vw, 20px);
+  line-height: 1.75;
+}
+.free-resource-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 22px 0 26px;
+}
+.free-resource-categories span {
+  border: 1px solid rgba(103,137,79,.18);
+  border-radius: 999px;
+  padding: 9px 14px;
+  color: #5e7e50;
+  background: #f4faee;
+  font-weight: 900;
+}
+.free-resource-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.free-resource-card {
+  display: grid;
+  align-content: start;
+  min-height: 280px;
+  border: 1px solid rgba(93,70,50,.12);
+  border-radius: 24px;
+  padding: 24px;
+  background: white;
+  box-shadow: 0 16px 44px rgba(78,61,42,.06);
+}
+.free-resource-card img {
+  width: 100%;
+  aspect-ratio: 1.55;
+  margin-bottom: 16px;
+  border-radius: 18px;
+  object-fit: cover;
+}
+.free-resource-card > span {
+  width: max-content;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #6c8458;
+  background: #eff6e7;
+  font-size: 13px;
+  font-weight: 900;
+}
+.free-resource-card h3 {
+  margin: 14px 0 8px;
+  color: #4d3b31;
+  font-size: clamp(24px, 2.4vw, 34px);
+  line-height: 1.2;
+}
+.free-resource-card p {
+  margin: 0 0 18px;
+  color: #816f62;
+  line-height: 1.72;
+}
+.free-resource-card button {
+  align-self: end;
+  margin-top: auto;
+  border: 0;
+  border-radius: 16px;
+  padding: 13px 16px;
+  color: white;
+  background: linear-gradient(135deg, #709b59, #4f7b47);
+  box-shadow: 0 10px 22px rgba(77,118,68,.18);
+  font-weight: 900;
+}
+
+.free-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 115;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  visibility: hidden;
+  background: rgba(58,45,37,.54);
+  backdrop-filter: blur(10px);
+  opacity: 0;
+  transition: .22s ease;
+}
+.free-modal-backdrop.open { visibility: visible; opacity: 1; }
+.free-resource-modal {
+  position: relative;
+  width: min(860px, 100%);
+  max-height: calc(100vh - 36px);
+  max-height: calc(100dvh - 36px);
+  overflow: auto;
+  border: 5px solid rgba(255,255,255,.85);
+  border-radius: 32px;
+  padding: clamp(24px, 4vw, 42px);
+  background: #fffdf7;
+  box-shadow: 0 34px 90px rgba(38,28,20,.28);
+  transform: translateY(18px) scale(.98);
+  transition: .24s ease;
+}
+.free-modal-backdrop.open .free-resource-modal { transform: translateY(0) scale(1); }
+.free-resource-modal-head { padding-right: 50px; }
+.free-resource-modal-head span {
+  color: #d27d69;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.free-resource-modal-head h2 {
+  margin: 8px 0;
+  color: #49372d;
+  font-family: Mitr, Mali, sans-serif;
+  font-size: clamp(32px, 4vw, 54px);
+  font-weight: 600;
+  line-height: 1.12;
+}
+.free-resource-modal-head p {
+  margin: 0;
+  color: #877467;
+  line-height: 1.75;
+}
+.free-resource-modal-head a {
+  display: inline-flex;
+  margin-top: 12px;
+  color: #5f854e;
+  font-weight: 900;
+  text-decoration: none;
+}
+.free-resource-lead-form {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+}
+.free-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.free-form-grid label,
+.free-interest-fieldset legend {
+  display: grid;
+  gap: 8px;
+  color: #5b463a;
+  font-weight: 900;
+}
+.free-form-grid input,
+.free-form-grid select {
+  width: 100%;
+  outline: none;
+  border: 1.5px solid #e5dacf;
+  border-radius: 14px;
+  padding: 14px 16px;
+  color: #49372d;
+  background: white;
+  font-size: 16px;
+}
+.free-form-grid input:focus,
+.free-form-grid select:focus {
+  border-color: #80a36b;
+  box-shadow: 0 0 0 4px rgba(111,157,85,.1);
+}
+.free-interest-fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.free-interest-fieldset legend { width: 100%; }
+.free-interest-fieldset label {
+  border-radius: 999px;
+  padding: 9px 12px;
+  color: #667d55;
+  background: #f2f7ec;
+  font-weight: 900;
+}
+.free-download-result {
+  margin-top: 22px;
+  border: 1px solid rgba(102,139,85,.2);
+  border-radius: 22px;
+  padding: 20px;
+  background: #f5faef;
+}
+.free-download-result strong {
+  display: block;
+  color: #4f7448;
+  font-size: 22px;
+}
+.free-download-result p { margin: 6px 0 14px; color: #77695d; }
+.free-download-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.free-download-links a {
+  border-radius: 14px;
+  padding: 12px 15px;
+  color: white;
+  background: #5f8a50;
+  font-weight: 900;
+  text-decoration: none;
+}
 .course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 22px; }
 .course-card {
   position: relative; overflow: hidden; min-height: 350px; border: 2px solid rgba(96,72,46,.08); border-radius: 30px; padding: 30px;
@@ -987,6 +1224,7 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
   .float-robot { left: 12%; }
   .float-art { right: 11%; }
   .course-grid { grid-template-columns: 1fr 1fr; }
+  .free-resource-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 720px) {
@@ -1008,6 +1246,9 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
   .hero-photo-badge-soft {
     margin-top: -2px;
   }
+  .free-resource-hero,
+  .free-form-grid { grid-template-columns: 1fr; }
+  .free-resource-hero .btn-primary { width: 100%; justify-content: center; }
   .hero-photo-caption {
     position: static;
     display: inline-flex;
@@ -1578,6 +1819,7 @@ legend { font-size: 15px; }
   .pain-grid,
   .method-grid,
   .sample-grid,
+  .free-resource-grid,
   .outcome-grid {
     grid-template-columns: 1fr;
   }
