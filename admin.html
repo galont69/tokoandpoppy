@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260613-learning">
+  <link rel="stylesheet" href="admin.css?v=20260618-free-resources-upload-fix">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -573,8 +573,9 @@
               <label>ชื่อสื่อ / ใบงาน
                 <input id="freeResourceTitle" type="text" maxlength="180" required placeholder="เช่น ใบงานแตงโมแสนชื่นใจ">
               </label>
-              <label>Slug สำหรับลิงก์
-                <input id="freeResourceSlug" type="text" maxlength="120" placeholder="ปล่อยว่างเพื่อสร้างอัตโนมัติ">
+              <label>ลิงก์สั้นสำหรับส่งให้ผู้ปกครอง
+                <input id="freeResourceSlug" type="text" maxlength="120" placeholder="ปล่อยว่างได้ เช่น worksheet-watermelon">
+                <small class="field-help">ใช้ทำลิงก์เฉพาะรายการ เช่น index.html?resource=worksheet-watermelon#free-resources</small>
               </label>
             </div>
             <div class="art-form-grid">
@@ -644,7 +645,7 @@
 
             <div class="editor-note">
               <span>💡</span>
-              ถ้าใส่ slug แล้ว สามารถส่งลิงก์จากโซเชียลแบบ index.html?resource=slug#free-resources เพื่อเปิดฟอร์มรายการนั้นได้ทันที
+              ลิงก์สั้นคือชื่อท้าย URL สำหรับส่งจากโซเชียล ถ้าไม่กรอก ระบบจะสร้างจากชื่อสื่อให้ตอนกดบันทึก
             </div>
             <div class="lesson-save-bar">
               <button class="delete-lesson-button" id="resetFreeResourceForm" type="button">ล้างฟอร์ม</button>
@@ -781,6 +782,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js?v=20260618-free-resources"></script>
+  <script src="admin.js?v=20260618-free-resources-upload-fix"></script>
 </body>
 </html>

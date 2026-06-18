@@ -2416,6 +2416,7 @@ async function uploadFreeResourceFile(file, folder, slug, maxBytes, accepted, la
 function resetFreeResourceForm() {
   freeResourceForm?.reset();
   document.querySelector("#freeResourceId").value = "";
+  document.querySelector("#freeResourceSlug").value = "";
   document.querySelector("#freeResourceAgeGroup").value = "3-6 ปี";
   document.querySelector("#freeResourcePublished").checked = true;
   document.querySelector("#freeResourceEditorHeading").textContent = "สื่อฟรีรายการใหม่";
@@ -2441,6 +2442,17 @@ function fillFreeResourceForm(resource) {
   document.querySelector("#currentFreePowerpoint").textContent =
     resource.powerpoint_file_name || (resource.powerpoint_url ? "มีไฟล์ PowerPoint แล้ว" : "ยังไม่มีไฟล์ PowerPoint");
   window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function bindFreeResourceFilePreview(inputId, labelId, emptyText) {
+  const input = document.querySelector(inputId);
+  const label = document.querySelector(labelId);
+  input?.addEventListener("change", () => {
+    const file = input.files?.[0];
+    label.textContent = file
+      ? `เลือกแล้ว: ${file.name} (${formatFileSize(file.size)})`
+      : emptyText;
+  });
 }
 
 async function loadFreeResourcesAdmin() {
@@ -2738,11 +2750,9 @@ document.querySelectorAll("[data-admin-view]").forEach((button) => {
 freeResourceForm?.addEventListener("submit", saveFreeResource);
 document.querySelector("#resetFreeResourceForm")?.addEventListener("click", resetFreeResourceForm);
 refreshFreeResourcesButton?.addEventListener("click", loadFreeResourcesAdmin);
-document.querySelector("#freeResourceTitle")?.addEventListener("input", (event) => {
-  const slugInput = document.querySelector("#freeResourceSlug");
-  if (!slugInput || slugInput.value.trim()) return;
-  slugInput.value = makeFreeResourceSlug(event.currentTarget.value);
-});
+bindFreeResourceFilePreview("#freeResourceThumbnail", "#currentFreeThumbnail", "ยังไม่มีภาพหน้าปก");
+bindFreeResourceFilePreview("#freeResourceWorksheet", "#currentFreeWorksheet", "ยังไม่มีไฟล์ใบงาน");
+bindFreeResourceFilePreview("#freeResourcePowerpoint", "#currentFreePowerpoint", "ยังไม่มีไฟล์ PowerPoint");
 freeResourceAdminList?.addEventListener("click", (event) => {
   const editButton = event.target.closest("[data-free-edit]");
   const toggleButton = event.target.closest("[data-free-toggle]");
