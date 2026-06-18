@@ -293,7 +293,10 @@ function getVideoEmbedUrl(url = "") {
   try {
     const parsed = new URL(url);
     if (parsed.hostname.includes("youtube.com")) {
-      const videoId = parsed.searchParams.get("v");
+      const pathParts = parsed.pathname.split("/").filter(Boolean);
+      const shortsIndex = pathParts.indexOf("shorts");
+      const videoId = parsed.searchParams.get("v") ||
+        (shortsIndex >= 0 ? pathParts[shortsIndex + 1] : "");
       return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
     }
     if (parsed.hostname.includes("youtu.be")) {
@@ -320,12 +323,14 @@ function renderFreeResourceVideo(resource) {
   const embedUrl = getVideoEmbedUrl(resource.video_url);
   if (embedUrl) {
     freeResourceVideoEmbed.innerHTML = `
-      <iframe
-        src="${escapeHtml(embedUrl)}"
-        title="${escapeHtml(resource.title || "วิดีโอสื่อฟรี")}"
-        loading="lazy"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen></iframe>
+      <div class="free-portrait-video-frame">
+        <iframe
+          src="${escapeHtml(embedUrl)}"
+          title="${escapeHtml(resource.title || "วิดีโอสื่อฟรี")}"
+          loading="lazy"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen></iframe>
+      </div>
     `;
   } else {
     freeResourceVideoEmbed.innerHTML =
