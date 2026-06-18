@@ -22,7 +22,7 @@
       }
     };
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260618-free-resources">
+  <link rel="stylesheet" href="styles.css?v=20260618-free-resources-video-flow">
 </head>
 <body class="font-thai text-[#49372d]">
   <div class="page-noise" aria-hidden="true"></div>
@@ -200,19 +200,28 @@
             <span>🎨 ศิลปะ</span>
             <h3>ใบงานศิลปะผ่านนิทาน</h3>
             <p>ตัวอย่างกิจกรรมวาด ระบายสี และเล่าไอเดียจากเรื่องราว</p>
-            <button type="button" data-free-resource-fallback="art">รับใบงานฟรี →</button>
+            <div class="free-card-actions">
+              <button type="button" data-free-resource-fallback="art">ดูรายละเอียด →</button>
+              <button type="button" data-free-download-fallback="art">รับใบงานฟรี</button>
+            </div>
           </article>
           <article class="free-resource-card">
             <span>🤖 Unplugged Coding</span>
             <h3>ภารกิจคิดเป็นขั้นตอน</h3>
             <p>ใบงานฝึก algorithm แบบไม่ต้องใช้คอมพิวเตอร์สำหรับเด็กเล็ก</p>
-            <button type="button" data-free-resource-fallback="unplugged_coding">รับใบงานฟรี →</button>
+            <div class="free-card-actions">
+              <button type="button" data-free-resource-fallback="unplugged_coding">ดูรายละเอียด →</button>
+              <button type="button" data-free-download-fallback="unplugged_coding">รับใบงานฟรี</button>
+            </div>
           </article>
           <article class="free-resource-card">
             <span>🔢 คณิตศาสตร์</span>
             <h3>เล่นกับตัวเลขรอบตัว</h3>
             <p>กิจกรรมสังเกต นับ จับคู่ และแก้ปัญหาง่าย ๆ ผ่านการเล่น</p>
-            <button type="button" data-free-resource-fallback="math">รับใบงานฟรี →</button>
+            <div class="free-card-actions">
+              <button type="button" data-free-resource-fallback="math">ดูรายละเอียด →</button>
+              <button type="button" data-free-download-fallback="math">รับใบงานฟรี</button>
+            </div>
           </article>
         </div>
       </div>
@@ -675,11 +684,34 @@
       <div class="free-resource-modal-head">
         <span id="freeResourceModalCategory">Free Resource</span>
         <h2 id="freeResourceModalTitle">รับสื่อการเรียนรู้ฟรี</h2>
-        <p id="freeResourceModalDescription">กรอกข้อมูลสั้น ๆ เพื่อรับลิงก์ดาวน์โหลด และให้ทีมงานแนะนำสื่อที่เหมาะกับวัยลูกได้ดีขึ้น</p>
-        <a id="freeResourceVideoLink" href="#" target="_blank" rel="noopener" hidden>ดูวิดีโอตัวอย่าง ↗</a>
+        <p id="freeResourceModalDescription">ดูวิดีโอและรายละเอียดสื่อก่อน แล้วค่อยรับไฟล์ไปลองเล่นกับลูกที่บ้าน</p>
       </div>
 
-      <form class="free-resource-lead-form" id="freeResourceLeadForm">
+      <div class="free-resource-video-panel" id="freeResourceVideoPanel" hidden>
+        <div id="freeResourceVideoEmbed"></div>
+        <a id="freeResourceVideoLink" href="#" target="_blank" rel="noopener">เปิดวิดีโอในแท็บใหม่ ↗</a>
+      </div>
+
+      <div class="free-resource-detail-panel">
+        <div>
+          <strong>ไฟล์ที่มีให้ดาวน์โหลด</strong>
+          <div class="free-file-summary" id="freeResourceFileSummary"></div>
+        </div>
+        <button class="btn-primary" id="showFreeResourceLeadForm" type="button">รับไฟล์ดาวน์โหลดฟรี <span>→</span></button>
+      </div>
+
+      <div class="free-returning-lead" id="freeReturningLead" hidden>
+        <div>
+          <strong id="freeReturningLeadTitle">ใช้ข้อมูลเดิมเพื่อรับไฟล์</strong>
+          <p id="freeReturningLeadCopy">ระบบจำข้อมูลที่เคยกรอกไว้ในเครื่องนี้แล้ว</p>
+        </div>
+        <div class="free-returning-actions">
+          <button type="button" id="useSavedFreeLead">รับไฟล์ด้วยข้อมูลเดิม</button>
+          <button type="button" id="editSavedFreeLead">แก้ไขข้อมูล</button>
+        </div>
+      </div>
+
+      <form class="free-resource-lead-form" id="freeResourceLeadForm" hidden>
         <input type="hidden" name="resourceId">
         <input type="hidden" name="resourceSlug">
         <div class="free-form-grid">
@@ -806,6 +838,6 @@
   <div class="toast" id="toast" role="status"></div>
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260607-2"></script>
-  <script src="script.js?v=20260618-free-resources"></script>
+  <script src="script.js?v=20260618-free-resources-video-flow"></script>
 </body>
 </html>
