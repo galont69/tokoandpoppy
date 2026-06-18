@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260618-free-resources-preview-fix">
+  <link rel="stylesheet" href="admin.css?v=20260618-free-leads-admin">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -666,6 +666,45 @@
             </div>
           </section>
         </div>
+
+        <section class="panel free-leads-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>ผู้ปกครองที่รับสื่อฟรี</h2>
+              <p>ข้อมูลนี้มาจากฟอร์มก่อนดาวน์โหลดไฟล์ ใช้ติดตามความสนใจและส่งต่อให้สาขาใกล้เคียงได้</p>
+            </div>
+            <div class="panel-actions">
+              <select id="freeLeadResourceFilter">
+                <option value="">ทุกสื่อฟรี</option>
+              </select>
+              <button class="refresh-button" id="refreshFreeLeadsButton" type="button">↻ รีเฟรช</button>
+              <button class="export-button" id="exportFreeLeadsButton" type="button">⬇ Export CSV</button>
+            </div>
+          </div>
+          <div class="free-lead-summary">
+            <strong id="freeLeadCount">0</strong>
+            <span>รายชื่อที่กรอกข้อมูลรับสื่อฟรีล่าสุด</span>
+          </div>
+          <div class="table-wrap free-leads-table-wrap">
+            <table class="student-table free-leads-table">
+              <thead>
+                <tr>
+                  <th>วันที่</th>
+                  <th>ผู้ปกครอง</th>
+                  <th>ติดต่อ</th>
+                  <th>ลูก</th>
+                  <th>พื้นที่</th>
+                  <th>สื่อที่รับ</th>
+                  <th>สนใจหมวด</th>
+                  <th>ที่มา</th>
+                </tr>
+              </thead>
+              <tbody id="freeLeadRows">
+                <tr><td colspan="8" class="loading-cell">กำลังโหลดรายชื่อ...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </section>
     </main>
   </div>
@@ -785,6 +824,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js?v=20260618-free-resources-preview-fix"></script>
+  <script src="admin.js?v=20260618-free-leads-admin"></script>
 </body>
 </html>
