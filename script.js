@@ -46,6 +46,7 @@ const freeResourceVideoEmbed = document.querySelector("#freeResourceVideoEmbed")
 const freeResourceVideoLink = document.querySelector("#freeResourceVideoLink");
 const freeResourceFileSummary = document.querySelector("#freeResourceFileSummary");
 const showFreeResourceLeadFormButton = document.querySelector("#showFreeResourceLeadForm");
+const freeResourceShareLink = document.querySelector("#freeResourceShareLink");
 const freeReturningLead = document.querySelector("#freeReturningLead");
 const freeReturningLeadTitle = document.querySelector("#freeReturningLeadTitle");
 const freeReturningLeadCopy = document.querySelector("#freeReturningLeadCopy");
@@ -53,6 +54,7 @@ const useSavedFreeLeadButton = document.querySelector("#useSavedFreeLead");
 const editSavedFreeLeadButton = document.querySelector("#editSavedFreeLead");
 const freeResourceDownloadResult = document.querySelector("#freeResourceDownloadResult");
 const freeResourceDownloadLinks = document.querySelector("#freeResourceDownloadLinks");
+const freeResourceNextStep = document.querySelector("#freeResourceNextStep");
 const headerLoginButton = document.querySelector(".btn-login[data-open-auth='login']");
 const headerNavActions = headerLoginButton?.parentElement || null;
 const loginButtonDefaultMarkup = headerLoginButton?.innerHTML || "เข้าสู่ระบบ";
@@ -61,6 +63,7 @@ let parentLogoutButton = null;
 let freeResources = [];
 let activeFreeResource = null;
 let savedFreeLead = null;
+let lastOpenedFreeResourceHash = "";
 const freeLeadStorageKey = "tokoPoppyFreeLead";
 const externalSupabaseConfig = window.SUPABASE_CONFIG || {};
 const externalConfigIsValid = Boolean(
@@ -241,6 +244,48 @@ function getFreeResourceCategoryLabel(category) {
   return freeResourceCategoryLabels[category] || category || "สื่อฟรี";
 }
 
+function getFreeResourceSlugFromHash() {
+  const hash = decodeURIComponent(window.location.hash || "");
+  const match = hash.match(/^#free-resource\/([^/?#]+)/);
+  return match ? match[1] : "";
+}
+
+function getFreeResourceShareUrl(resource) {
+  const slug = resource?.slug || resource?.id || "";
+  if (!slug) return `${window.location.origin}${window.location.pathname}#free-resources`;
+  return `${window.location.origin}${window.location.pathname}#free-resource/${encodeURIComponent(slug)}`;
+}
+
+function findFreeResourceBySlug(slug) {
+  if (!slug) return null;
+  return [...freeResources, ...fallbackFreeResources].find((resource) =>
+    resource.slug === slug || resource.id === slug
+  ) || null;
+}
+
+function openFreeResourceFromHash() {
+  const slug = getFreeResourceSlugFromHash();
+  if (!slug) return false;
+  const resource = findFreeResourceBySlug(slug);
+  if (!resource) return false;
+  const currentHash = `#free-resource/${slug}`;
+  if (freeResourceModal?.classList.contains("open") && lastOpenedFreeResourceHash === currentHash) {
+    return true;
+  }
+  setTimeout(() => openFreeResourceModal(resource, { preserveHash: true }), 80);
+  return true;
+}
+
+function setFreeResourceHash(resource) {
+  const slug = resource?.slug || resource?.id;
+  if (!slug) return;
+  const nextHash = `#free-resource/${encodeURIComponent(slug)}`;
+  if (window.location.hash !== nextHash) {
+    history.pushState(null, "", nextHash);
+  }
+  lastOpenedFreeResourceHash = decodeURIComponent(nextHash);
+}
+
 function getSavedFreeLead() {
   try {
     const saved = JSON.parse(localStorage.getItem(freeLeadStorageKey) || "null");
@@ -350,6 +395,25 @@ function renderFreeResourceFileSummary(resource) {
     : "<p>ยังไม่มีไฟล์แนบในระบบ แอดมินจะส่งให้ตามช่องทางที่กรอกไว้</p>";
 }
 
+function renderFreeResourceNextStep(resource) {
+  if (!freeResourceNextStep) return;
+  const relatedCourse = {
+    art: { label: "ดูคอร์สศิลปะแสนสนุก", href: "#courses" },
+    thai: { label: "ดูตัวอย่างบทเรียน", href: "#lessons" },
+    math: { label: "ดูหลักสูตรทั้งหมด", href: "#courses" },
+    science: { label: "ดูหลักสูตรทั้งหมด", href: "#courses" },
+    unplugged_coding: { label: "ดูคอร์ส Robot + Coding", href: "#courses" }
+  }[resource?.category] || { label: "ดูหลักสูตรทั้งหมด", href: "#courses" };
+  freeResourceNextStep.innerHTML = `
+    <strong>อยากได้กิจกรรมต่อเนื่อง?</strong>
+    <p>ลองดูสื่อฟรีชิ้นอื่น หรือดูคอร์สที่ต่อยอดจากกิจกรรมนี้ได้เลย</p>
+    <div>
+      <a href="#free-resources" data-close-free-modal>ดูสื่อฟรีอื่น</a>
+      <a href="${escapeHtml(relatedCourse.href)}" data-close-free-modal>${escapeHtml(relatedCourse.label)}</a>
+    </div>
+  `;
+}
+
 function renderFreeResources(resources = fallbackFreeResources) {
   if (!freeResourceGrid) return;
   freeResources = resources.length ? resources : fallbackFreeResources;
@@ -374,6 +438,7 @@ function renderFreeResources(resources = fallbackFreeResources) {
 
 async function loadFreeResources() {
   renderFreeResources(fallbackFreeResources);
+  openFreeResourceFromHash();
   if (!enrollmentSupabase) return;
 
   const { data, error } = await enrollmentSupabase
@@ -388,7 +453,10 @@ async function loadFreeResources() {
     return;
   }
 
-  if (data?.length) renderFreeResources(data);
+  if (data?.length) {
+    renderFreeResources(data);
+    openFreeResourceFromHash();
+  }
   const resourceSlug = new URLSearchParams(window.location.search).get("resource");
   if (resourceSlug) {
     const resource = (data || []).find((item) => item.slug === resourceSlug);
@@ -396,13 +464,15 @@ async function loadFreeResources() {
   }
 }
 
-function openFreeResourceModal(resource) {
+function openFreeResourceModal(resource, options = {}) {
   if (!freeResourceModal || !freeResourceLeadForm) return;
   activeFreeResource = resource;
+  if (!options.preserveHash) setFreeResourceHash(resource);
   freeResourceLeadForm.reset();
   freeResourceLeadForm.hidden = true;
   freeResourceDownloadResult.hidden = true;
   freeResourceDownloadLinks.innerHTML = "";
+  if (freeResourceNextStep) freeResourceNextStep.innerHTML = "";
   freeResourceLeadForm.elements.resourceId.value = resource.id || "";
   freeResourceLeadForm.elements.resourceSlug.value = resource.slug || "";
   freeResourceModalCategory.textContent =
@@ -412,6 +482,11 @@ function openFreeResourceModal(resource) {
     resource.description || "ดูวิดีโอและรายละเอียดสื่อก่อน แล้วค่อยรับไฟล์ไปลองเล่นกับลูกที่บ้าน";
   renderFreeResourceVideo(resource);
   renderFreeResourceFileSummary(resource);
+  if (freeResourceShareLink) {
+    const shareUrl = getFreeResourceShareUrl(resource);
+    freeResourceShareLink.href = shareUrl;
+    freeResourceShareLink.dataset.shareUrl = shareUrl;
+  }
   savedFreeLead = getSavedFreeLead();
   if (savedFreeLead && freeReturningLead) {
     freeReturningLead.hidden = false;
@@ -431,6 +506,10 @@ function closeFreeResourceModal() {
   freeResourceModal.classList.remove("open");
   freeResourceModal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+  if (getFreeResourceSlugFromHash()) {
+    history.pushState(null, "", "#free-resources");
+  }
+  lastOpenedFreeResourceHash = "";
 }
 
 function getFreeLeadPayload(formData) {
@@ -522,6 +601,7 @@ function renderFreeDownloadLinks(resource) {
   freeResourceDownloadLinks.innerHTML = links.length
     ? links.join("")
     : "<p>ทีมงานได้รับข้อมูลแล้วครับ รายการนี้ยังไม่ได้แนบไฟล์ดาวน์โหลด แอดมินจะส่งสื่อให้ตามช่องทางที่กรอกไว้</p>";
+  renderFreeResourceNextStep(resource);
   freeResourceLeadForm.hidden = true;
   freeResourceDownloadResult.hidden = false;
 }
@@ -1224,9 +1304,22 @@ freeResourceGrid?.addEventListener("click", (event) => {
   }
 });
 
+freeResourceShareLink?.addEventListener("click", async (event) => {
+  event.preventDefault();
+  const shareUrl = freeResourceShareLink.dataset.shareUrl || freeResourceShareLink.href;
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    showToast("คัดลอกลิงก์สื่อฟรีแล้ว ส่งให้ผู้ปกครองได้เลยครับ");
+  } catch {
+    window.prompt("คัดลอกลิงก์นี้เพื่อส่งให้ผู้ปกครอง", shareUrl);
+  }
+});
+
 closeFreeResourceModalButton?.addEventListener("click", closeFreeResourceModal);
 freeResourceModal?.addEventListener("click", (event) => {
   if (event.target === freeResourceModal) closeFreeResourceModal();
+  const closeLink = event.target.closest("[data-close-free-modal]");
+  if (closeLink) setTimeout(closeFreeResourceModal, 80);
 });
 
 showFreeResourceLeadFormButton?.addEventListener("click", () => {
@@ -1256,6 +1349,13 @@ freeResourceLeadForm?.addEventListener("submit", async (event) => {
   const payload = getFreeLeadPayload(new FormData(freeResourceLeadForm));
   const submitButton = freeResourceLeadForm.querySelector(".submit-button");
   await submitFreeResourceLead(payload, submitButton);
+});
+
+window.addEventListener("hashchange", () => {
+  if (openFreeResourceFromHash()) return;
+  if (freeResourceModal?.classList.contains("open") && !getFreeResourceSlugFromHash()) {
+    closeFreeResourceModal();
+  }
 });
 
 document.querySelector(".modal-close").addEventListener("click", closeAuth);

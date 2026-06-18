@@ -727,6 +727,20 @@ body.sale-peek footer { display: block; }
   margin: 0;
   color: #806f62;
 }
+.free-resource-detail-actions {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+}
+.free-resource-detail-actions .btn-primary {
+  min-width: 220px;
+  justify-content: center;
+}
+.free-resource-detail-actions a {
+  color: #6b8b58;
+  font-weight: 900;
+  text-decoration: none;
+}
 .free-returning-actions {
   display: flex;
   flex-wrap: wrap;
@@ -816,6 +830,35 @@ body.sale-peek footer { display: block; }
   background: #5f8a50;
   font-weight: 900;
   text-decoration: none;
+}
+.free-next-step {
+  margin-top: 18px;
+  border-top: 1px dashed rgba(102,139,85,.22);
+  padding-top: 16px;
+}
+.free-next-step strong {
+  color: #49372d;
+  font-size: 18px;
+}
+.free-next-step p {
+  margin: 5px 0 12px;
+}
+.free-next-step div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.free-next-step a {
+  border-radius: 999px;
+  padding: 10px 14px;
+  color: #5b7d4c;
+  background: white;
+  font-weight: 900;
+  text-decoration: none;
+}
+.free-next-step a + a {
+  color: white;
+  background: #5f8a50;
 }
 .course-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 22px; }
 .course-card {
@@ -1351,6 +1394,13 @@ legend { margin-bottom: 8px; color: #604d40; font-size: 11px; font-weight: 700; 
   .free-resource-detail-panel,
   .free-returning-lead {
     grid-template-columns: 1fr;
+  }
+  .free-resource-detail-actions {
+    justify-items: stretch;
+  }
+  .free-resource-detail-actions .btn-primary {
+    width: 100%;
+    min-width: 0;
   }
   .free-returning-actions {
     justify-content: flex-start;

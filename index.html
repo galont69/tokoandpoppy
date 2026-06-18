@@ -697,7 +697,10 @@
           <strong>ไฟล์ที่มีให้ดาวน์โหลด</strong>
           <div class="free-file-summary" id="freeResourceFileSummary"></div>
         </div>
-        <button class="btn-primary" id="showFreeResourceLeadForm" type="button">รับไฟล์ดาวน์โหลดฟรี <span>→</span></button>
+        <div class="free-resource-detail-actions">
+          <button class="btn-primary" id="showFreeResourceLeadForm" type="button">รับไฟล์ดาวน์โหลดฟรี <span>→</span></button>
+          <a id="freeResourceShareLink" href="#free-resources">คัดลอกลิงก์สำหรับส่งต่อ</a>
+        </div>
       </div>
 
       <div class="free-returning-lead" id="freeReturningLead" hidden>
@@ -760,6 +763,7 @@
         <strong>เรียบร้อยครับ ลิงก์ดาวน์โหลดอยู่ด้านล่าง</strong>
         <p>ขอบคุณที่สนใจสื่อของ Toko & Poppy ขอให้สนุกกับการเล่นและเรียนรู้กับลูกนะครับ</p>
         <div id="freeResourceDownloadLinks"></div>
+        <div class="free-next-step" id="freeResourceNextStep"></div>
       </div>
     </section>
   </div>
@@ -838,6 +842,6 @@
   <div class="toast" id="toast" role="status"></div>
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260607-2"></script>
-  <script src="script.js?v=20260618-portrait-free-videos"></script>
+  <script src="script.js?v=20260618-free-resource-deep-links"></script>
 </body>
 </html>
