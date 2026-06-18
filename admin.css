@@ -364,6 +364,19 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .current-file.ready { color: #517649; background: #e7f0e1; }
 .current-file.selected { color: #855f20; background: #fff0c5; }
 .current-file.uploading:before { content: "↻ "; display: inline-block; animation: spin .8s linear infinite; }
+.cover-preview {
+  overflow: hidden;
+  border: 1px solid #d8e6d1;
+  border-radius: 13px;
+  aspect-ratio: 16 / 9;
+  background: #fffefa;
+}
+.cover-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 .editor-note { display: flex; align-items: center; gap: 8px; border-radius: 11px; padding: 10px 12px; color: #876f51; background: #fff4d7; font-size: 8px; }
 .lesson-save-bar { position: sticky; bottom: 0; z-index: 5; display: flex; align-items: center; gap: 14px; margin: 0 -24px -24px; border-top: 1px solid var(--line); padding: 14px 24px; background: rgba(255,253,248,.94); backdrop-filter: blur(12px); }
 .lesson-save-bar > span { color: #8b786b; font-size: 8px; }
