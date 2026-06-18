@@ -1567,11 +1567,26 @@ async function loadRobotLessons() {
 }
 
 function safeFileName(fileName) {
-  return fileName
+  const extensionMatch = String(fileName || "").match(/(\.[a-z0-9]{1,8})$/i);
+  const extension = extensionMatch ? extensionMatch[1].toLowerCase() : "";
+  const baseName = String(fileName || "file")
+    .replace(extensionMatch?.[1] || "", "")
     .normalize("NFKD")
-    .replace(/[^\w.-]+/g, "-")
+    .replace(/[^a-z0-9]+/gi, "-")
     .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
     .toLowerCase();
+  return `${baseName || "file"}${extension}`;
+}
+
+function safeStorageSegment(value, fallback = "resource") {
+  const cleaned = String(value || "")
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+  return cleaned || `${fallback}-${Date.now()}`;
 }
 
 function formatFileSize(bytes) {
@@ -2401,7 +2416,7 @@ async function uploadFreeResourceFile(file, folder, slug, maxBytes, accepted, la
   if (file.size > maxBytes) throw new Error(`${label} มีขนาดเกินกำหนด`);
   if (!accepted(file)) throw new Error(`ชนิดไฟล์ ${label} ไม่ถูกต้อง`);
 
-  const path = `${folder}/${makeFreeResourceSlug(slug)}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+  const path = `${safeStorageSegment(folder, "folder")}/${safeStorageSegment(slug, "resource")}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
   const { error } = await supabaseClient.storage
     .from("free-resources")
     .upload(path, file, {
@@ -2423,6 +2438,12 @@ function resetFreeResourceForm() {
   document.querySelector("#currentFreeThumbnail").textContent = "ยังไม่มีภาพหน้าปก";
   document.querySelector("#currentFreeWorksheet").textContent = "ยังไม่มีไฟล์ใบงาน";
   document.querySelector("#currentFreePowerpoint").textContent = "ยังไม่มีไฟล์ PowerPoint";
+  const thumbnailPreview = document.querySelector("#freeResourceThumbnailPreview");
+  const thumbnailPreviewImage = thumbnailPreview?.querySelector("img");
+  if (thumbnailPreview && thumbnailPreviewImage) {
+    thumbnailPreview.hidden = true;
+    thumbnailPreviewImage.removeAttribute("src");
+  }
 }
 
 function fillFreeResourceForm(resource) {
@@ -2452,6 +2473,23 @@ function bindFreeResourceFilePreview(inputId, labelId, emptyText) {
     label.textContent = file
       ? `เลือกแล้ว: ${file.name} (${formatFileSize(file.size)})`
       : emptyText;
+  });
+}
+
+function bindFreeResourceThumbnailPreview() {
+  const input = document.querySelector("#freeResourceThumbnail");
+  const preview = document.querySelector("#freeResourceThumbnailPreview");
+  const previewImage = preview?.querySelector("img");
+  input?.addEventListener("change", () => {
+    const file = input.files?.[0];
+    if (!preview || !previewImage) return;
+    if (!file) {
+      preview.hidden = true;
+      previewImage.removeAttribute("src");
+      return;
+    }
+    previewImage.src = URL.createObjectURL(file);
+    preview.hidden = false;
   });
 }
 
@@ -2753,6 +2791,7 @@ refreshFreeResourcesButton?.addEventListener("click", loadFreeResourcesAdmin);
 bindFreeResourceFilePreview("#freeResourceThumbnail", "#currentFreeThumbnail", "ยังไม่มีภาพหน้าปก");
 bindFreeResourceFilePreview("#freeResourceWorksheet", "#currentFreeWorksheet", "ยังไม่มีไฟล์ใบงาน");
 bindFreeResourceFilePreview("#freeResourcePowerpoint", "#currentFreePowerpoint", "ยังไม่มีไฟล์ PowerPoint");
+bindFreeResourceThumbnailPreview();
 freeResourceAdminList?.addEventListener("click", (event) => {
   const editButton = event.target.closest("[data-free-edit]");
   const toggleButton = event.target.closest("[data-free-toggle]");

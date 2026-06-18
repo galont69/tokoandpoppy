@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260618-free-resources-upload-fix">
+  <link rel="stylesheet" href="admin.css?v=20260618-free-resources-preview-fix">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -611,6 +611,9 @@
                   <strong>เลือกภาพหน้าปก</strong>
                   <small>PNG, JPG หรือ WEBP · ไม่เกิน 8 MB</small>
                 </label>
+                <div class="cover-preview" id="freeResourceThumbnailPreview" hidden>
+                  <img alt="ตัวอย่างภาพหน้าปกที่เลือก">
+                </div>
                 <div class="current-file" id="currentFreeThumbnail">ยังไม่มีภาพหน้าปก</div>
               </section>
 
@@ -782,6 +785,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js?v=20260618-free-resources-upload-fix"></script>
+  <script src="admin.js?v=20260618-free-resources-preview-fix"></script>
 </body>
 </html>
