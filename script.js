@@ -41,7 +41,16 @@ const freeResourceLeadForm = document.querySelector("#freeResourceLeadForm");
 const freeResourceModalCategory = document.querySelector("#freeResourceModalCategory");
 const freeResourceModalTitle = document.querySelector("#freeResourceModalTitle");
 const freeResourceModalDescription = document.querySelector("#freeResourceModalDescription");
+const freeResourceVideoPanel = document.querySelector("#freeResourceVideoPanel");
+const freeResourceVideoEmbed = document.querySelector("#freeResourceVideoEmbed");
 const freeResourceVideoLink = document.querySelector("#freeResourceVideoLink");
+const freeResourceFileSummary = document.querySelector("#freeResourceFileSummary");
+const showFreeResourceLeadFormButton = document.querySelector("#showFreeResourceLeadForm");
+const freeReturningLead = document.querySelector("#freeReturningLead");
+const freeReturningLeadTitle = document.querySelector("#freeReturningLeadTitle");
+const freeReturningLeadCopy = document.querySelector("#freeReturningLeadCopy");
+const useSavedFreeLeadButton = document.querySelector("#useSavedFreeLead");
+const editSavedFreeLeadButton = document.querySelector("#editSavedFreeLead");
 const freeResourceDownloadResult = document.querySelector("#freeResourceDownloadResult");
 const freeResourceDownloadLinks = document.querySelector("#freeResourceDownloadLinks");
 const headerLoginButton = document.querySelector(".btn-login[data-open-auth='login']");
@@ -51,6 +60,8 @@ let parentLoggedInUser = null;
 let parentLogoutButton = null;
 let freeResources = [];
 let activeFreeResource = null;
+let savedFreeLead = null;
+const freeLeadStorageKey = "tokoPoppyFreeLead";
 const externalSupabaseConfig = window.SUPABASE_CONFIG || {};
 const externalConfigIsValid = Boolean(
   externalSupabaseConfig.url &&
@@ -230,6 +241,110 @@ function getFreeResourceCategoryLabel(category) {
   return freeResourceCategoryLabels[category] || category || "สื่อฟรี";
 }
 
+function getSavedFreeLead() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(freeLeadStorageKey) || "null");
+    if (!saved?.parent_name || !saved?.child_age) return null;
+    const savedAt = saved.saved_at ? new Date(saved.saved_at).getTime() : 0;
+    const ninetyDays = 90 * 24 * 60 * 60 * 1000;
+    if (!savedAt || Date.now() - savedAt > ninetyDays) {
+      localStorage.removeItem(freeLeadStorageKey);
+      return null;
+    }
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
+function saveFreeLeadToDevice(payload) {
+  const reusablePayload = {
+    parent_name: payload.parent_name,
+    contact_email: payload.contact_email,
+    contact_phone: payload.contact_phone,
+    line_id: payload.line_id,
+    child_age: payload.child_age,
+    province: payload.province,
+    district: payload.district,
+    interested_categories: payload.interested_categories || [],
+    consent_contact: payload.consent_contact,
+    saved_at: new Date().toISOString()
+  };
+  localStorage.setItem(freeLeadStorageKey, JSON.stringify(reusablePayload));
+  savedFreeLead = reusablePayload;
+}
+
+function fillFreeLeadFormFromSaved() {
+  if (!savedFreeLead || !freeResourceLeadForm) return;
+  freeResourceLeadForm.elements.parentName.value = savedFreeLead.parent_name || "";
+  freeResourceLeadForm.elements.childAge.value = savedFreeLead.child_age || "";
+  freeResourceLeadForm.elements.contactEmail.value = savedFreeLead.contact_email || "";
+  freeResourceLeadForm.elements.contactPhone.value =
+    savedFreeLead.contact_phone || savedFreeLead.line_id || "";
+  freeResourceLeadForm.elements.province.value = savedFreeLead.province || "";
+  freeResourceLeadForm.elements.district.value = savedFreeLead.district || "";
+  freeResourceLeadForm.elements.consentContact.checked = Boolean(savedFreeLead.consent_contact);
+  freeResourceLeadForm.querySelectorAll("input[name=interest]").forEach((input) => {
+    input.checked = (savedFreeLead.interested_categories || []).includes(input.value);
+  });
+}
+
+function getVideoEmbedUrl(url = "") {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname.includes("youtube.com")) {
+      const videoId = parsed.searchParams.get("v");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+    }
+    if (parsed.hostname.includes("youtu.be")) {
+      const videoId = parsed.pathname.split("/").filter(Boolean)[0];
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : "";
+    }
+    if (parsed.hostname.includes("facebook.com")) {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false&width=720`;
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
+function renderFreeResourceVideo(resource) {
+  if (!freeResourceVideoPanel || !freeResourceVideoEmbed || !freeResourceVideoLink) return;
+  freeResourceVideoEmbed.innerHTML = "";
+  if (!resource.video_url) {
+    freeResourceVideoPanel.hidden = true;
+    freeResourceVideoLink.removeAttribute("href");
+    return;
+  }
+  const embedUrl = getVideoEmbedUrl(resource.video_url);
+  if (embedUrl) {
+    freeResourceVideoEmbed.innerHTML = `
+      <iframe
+        src="${escapeHtml(embedUrl)}"
+        title="${escapeHtml(resource.title || "วิดีโอสื่อฟรี")}"
+        loading="lazy"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen></iframe>
+    `;
+  } else {
+    freeResourceVideoEmbed.innerHTML =
+      '<div class="free-video-placeholder">ดูวิดีโอตัวอย่างได้จากลิงก์ด้านล่าง</div>';
+  }
+  freeResourceVideoLink.href = resource.video_url;
+  freeResourceVideoPanel.hidden = false;
+}
+
+function renderFreeResourceFileSummary(resource) {
+  if (!freeResourceFileSummary) return;
+  const files = [];
+  if (resource?.worksheet_url) files.push("ใบงาน PDF");
+  if (resource?.powerpoint_url) files.push("PowerPoint");
+  freeResourceFileSummary.innerHTML = files.length
+    ? files.map((file) => `<span>${escapeHtml(file)}</span>`).join("")
+    : "<p>ยังไม่มีไฟล์แนบในระบบ แอดมินจะส่งให้ตามช่องทางที่กรอกไว้</p>";
+}
+
 function renderFreeResources(resources = fallbackFreeResources) {
   if (!freeResourceGrid) return;
   freeResources = resources.length ? resources : fallbackFreeResources;
@@ -243,7 +358,10 @@ function renderFreeResources(resources = fallbackFreeResources) {
         <span>${escapeHtml(getFreeResourceCategoryLabel(resource.category))} · ${escapeHtml(resource.age_group || "3-6 ปี")}</span>
         <h3>${escapeHtml(resource.title)}</h3>
         <p>${escapeHtml(resource.description || "สื่อฟรีสำหรับลองเล่นและเรียนรู้กับลูกที่บ้าน")}</p>
-        <button type="button" data-free-resource-id="${escapeHtml(resource.id)}">รับสื่อฟรี →</button>
+        <div class="free-card-actions">
+          <button type="button" data-free-resource-id="${escapeHtml(resource.id)}">ดูรายละเอียด →</button>
+          <button type="button" data-free-download-id="${escapeHtml(resource.id)}">รับไฟล์ฟรี</button>
+        </div>
       </article>
     `;
   }).join("");
@@ -276,8 +394,8 @@ async function loadFreeResources() {
 function openFreeResourceModal(resource) {
   if (!freeResourceModal || !freeResourceLeadForm) return;
   activeFreeResource = resource;
-  freeResourceLeadForm.hidden = false;
   freeResourceLeadForm.reset();
+  freeResourceLeadForm.hidden = true;
   freeResourceDownloadResult.hidden = true;
   freeResourceDownloadLinks.innerHTML = "";
   freeResourceLeadForm.elements.resourceId.value = resource.id || "";
@@ -286,18 +404,21 @@ function openFreeResourceModal(resource) {
     `${getFreeResourceCategoryLabel(resource.category)} · ${resource.age_group || "3-6 ปี"}`;
   freeResourceModalTitle.textContent = resource.title || "รับสื่อการเรียนรู้ฟรี";
   freeResourceModalDescription.textContent =
-    resource.description || "กรอกข้อมูลสั้น ๆ เพื่อรับลิงก์ดาวน์โหลด";
-  if (resource.video_url) {
-    freeResourceVideoLink.hidden = false;
-    freeResourceVideoLink.href = resource.video_url;
+    resource.description || "ดูวิดีโอและรายละเอียดสื่อก่อน แล้วค่อยรับไฟล์ไปลองเล่นกับลูกที่บ้าน";
+  renderFreeResourceVideo(resource);
+  renderFreeResourceFileSummary(resource);
+  savedFreeLead = getSavedFreeLead();
+  if (savedFreeLead && freeReturningLead) {
+    freeReturningLead.hidden = false;
+    freeReturningLeadTitle.textContent = `ใช้ข้อมูลเดิมของ ${savedFreeLead.parent_name}`;
+    freeReturningLeadCopy.textContent =
+      `ลูกอายุ ${savedFreeLead.child_age} · ${savedFreeLead.district}, ${savedFreeLead.province}`;
   } else {
-    freeResourceVideoLink.hidden = true;
-    freeResourceVideoLink.removeAttribute("href");
+    freeReturningLead.hidden = true;
   }
   freeResourceModal.classList.add("open");
   freeResourceModal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
-  setTimeout(() => freeResourceLeadForm.querySelector("input[name=parentName]")?.focus(), 180);
 }
 
 function closeFreeResourceModal() {
@@ -328,6 +449,60 @@ function getFreeLeadPayload(formData) {
     source: new URLSearchParams(window.location.search).get("source") || document.referrer || "website",
     user_agent: navigator.userAgent || null
   };
+}
+
+function getSavedLeadPayload() {
+  if (!savedFreeLead) return null;
+  return {
+    resource_id: activeFreeResource?.id?.startsWith("fallback-")
+      ? null
+      : activeFreeResource?.id || null,
+    resource_slug: activeFreeResource?.slug || null,
+    parent_name: savedFreeLead.parent_name,
+    contact_email: savedFreeLead.contact_email || null,
+    contact_phone: savedFreeLead.contact_phone || null,
+    line_id: savedFreeLead.line_id || savedFreeLead.contact_phone || null,
+    child_age: savedFreeLead.child_age,
+    province: savedFreeLead.province,
+    district: savedFreeLead.district,
+    interested_categories: savedFreeLead.interested_categories || [],
+    consent_contact: Boolean(savedFreeLead.consent_contact),
+    source: `${new URLSearchParams(window.location.search).get("source") || "website"}:saved-lead`,
+    user_agent: navigator.userAgent || null
+  };
+}
+
+async function submitFreeResourceLead(payload, submitButton = null) {
+  if (!payload?.contact_email && !payload?.contact_phone && !payload?.line_id) {
+    showToast("กรุณากรอกอีเมล หรือเบอร์โทร/LINE อย่างน้อยหนึ่งช่อง");
+    return;
+  }
+  if (!payload.consent_contact) {
+    showToast("กรุณาติ๊กยินยอมให้ติดต่อกลับก่อนรับสื่อฟรี");
+    return;
+  }
+
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "กำลังบันทึกข้อมูล...";
+  }
+  try {
+    if (enrollmentSupabase) {
+      const { error } = await enrollmentSupabase
+        .from("free_resource_leads")
+        .insert(payload);
+      if (error) throw error;
+    }
+    saveFreeLeadToDevice(payload);
+    renderFreeDownloadLinks(activeFreeResource);
+  } catch (error) {
+    showToast(`บันทึกข้อมูลไม่สำเร็จ: ${getFriendlySupabaseError(error)}`, 12000);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.innerHTML = 'รับลิงก์ดาวน์โหลดฟรี <span>→</span>';
+    }
+  }
 }
 
 function renderFreeDownloadLinks(resource) {
@@ -1031,19 +1206,40 @@ document.querySelectorAll("[data-open-auth]").forEach((button) => {
 });
 
 freeResourceGrid?.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-free-resource-id], [data-free-resource-fallback]");
+  const button = event.target.closest("[data-free-resource-id], [data-free-resource-fallback], [data-free-download-id], [data-free-download-fallback]");
   if (!button) return;
-  const resourceId = button.dataset.freeResourceId;
-  const fallbackCategory = button.dataset.freeResourceFallback;
+  const resourceId = button.dataset.freeResourceId || button.dataset.freeDownloadId;
+  const fallbackCategory = button.dataset.freeResourceFallback || button.dataset.freeDownloadFallback;
   const resource = freeResources.find((item) => item.id === resourceId) ||
     fallbackFreeResources.find((item) => item.category === fallbackCategory) ||
     fallbackFreeResources[0];
   openFreeResourceModal(resource);
+  if (button.dataset.freeDownloadId || button.dataset.freeDownloadFallback) {
+    setTimeout(() => showFreeResourceLeadFormButton?.click(), 80);
+  }
 });
 
 closeFreeResourceModalButton?.addEventListener("click", closeFreeResourceModal);
 freeResourceModal?.addEventListener("click", (event) => {
   if (event.target === freeResourceModal) closeFreeResourceModal();
+});
+
+showFreeResourceLeadFormButton?.addEventListener("click", () => {
+  freeResourceLeadForm.hidden = false;
+  if (freeResourceDownloadResult) freeResourceDownloadResult.hidden = true;
+  fillFreeLeadFormFromSaved();
+  setTimeout(() => freeResourceLeadForm.querySelector("input[name=parentName]")?.focus(), 120);
+});
+
+useSavedFreeLeadButton?.addEventListener("click", async () => {
+  const payload = getSavedLeadPayload();
+  await submitFreeResourceLead(payload, useSavedFreeLeadButton);
+});
+
+editSavedFreeLeadButton?.addEventListener("click", () => {
+  freeResourceLeadForm.hidden = false;
+  fillFreeLeadFormFromSaved();
+  setTimeout(() => freeResourceLeadForm.querySelector("input[name=parentName]")?.focus(), 120);
 });
 
 freeResourceLeadForm?.addEventListener("submit", async (event) => {
@@ -1053,32 +1249,8 @@ freeResourceLeadForm?.addEventListener("submit", async (event) => {
     return;
   }
   const payload = getFreeLeadPayload(new FormData(freeResourceLeadForm));
-  if (!payload.contact_email && !payload.contact_phone) {
-    showToast("กรุณากรอกอีเมล หรือเบอร์โทร/LINE อย่างน้อยหนึ่งช่อง");
-    return;
-  }
-  if (!payload.consent_contact) {
-    showToast("กรุณาติ๊กยินยอมให้ติดต่อกลับก่อนรับสื่อฟรี");
-    return;
-  }
-
   const submitButton = freeResourceLeadForm.querySelector(".submit-button");
-  submitButton.disabled = true;
-  submitButton.textContent = "กำลังบันทึกข้อมูล...";
-  try {
-    if (enrollmentSupabase) {
-      const { error } = await enrollmentSupabase
-        .from("free_resource_leads")
-        .insert(payload);
-      if (error) throw error;
-    }
-    renderFreeDownloadLinks(activeFreeResource);
-  } catch (error) {
-    showToast(`บันทึกข้อมูลไม่สำเร็จ: ${getFriendlySupabaseError(error)}`, 12000);
-  } finally {
-    submitButton.disabled = false;
-    submitButton.innerHTML = 'รับลิงก์ดาวน์โหลดฟรี <span>→</span>';
-  }
+  await submitFreeResourceLead(payload, submitButton);
 });
 
 document.querySelector(".modal-close").addEventListener("click", closeAuth);
