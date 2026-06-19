@@ -38,12 +38,41 @@ create table if not exists public.free_resource_leads (
   consent_contact boolean not null default false,
   source text,
   user_agent text,
+  follow_status text not null default 'new',
+  admin_note text,
+  follow_updated_at timestamptz,
   created_at timestamptz not null default now(),
   constraint free_resource_leads_contact_check
     check (coalesce(nullif(contact_email, ''), nullif(contact_phone, ''), nullif(line_id, '')) is not null),
   constraint free_resource_leads_consent_check
-    check (consent_contact is true)
+    check (consent_contact is true),
+  constraint free_resource_leads_follow_status_check
+    check (follow_status in ('new', 'contacted', 'interested', 'trial_booked', 'enrolled', 'not_interested'))
 );
+
+alter table public.free_resource_leads
+  add column if not exists follow_status text not null default 'new';
+
+alter table public.free_resource_leads
+  add column if not exists admin_note text;
+
+alter table public.free_resource_leads
+  add column if not exists follow_updated_at timestamptz;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from information_schema.table_constraints
+    where table_schema = 'public'
+      and table_name = 'free_resource_leads'
+      and constraint_name = 'free_resource_leads_follow_status_check'
+  ) then
+    alter table public.free_resource_leads
+      add constraint free_resource_leads_follow_status_check
+      check (follow_status in ('new', 'contacted', 'interested', 'trial_booked', 'enrolled', 'not_interested'));
+  end if;
+end $$;
 
 create index if not exists free_resources_status_created_idx
   on public.free_resources (status, created_at desc);
@@ -55,6 +84,8 @@ create index if not exists free_resource_leads_resource_idx
   on public.free_resource_leads (resource_id);
 create index if not exists free_resource_leads_location_idx
   on public.free_resource_leads (province, district);
+create index if not exists free_resource_leads_follow_status_idx
+  on public.free_resource_leads (follow_status, created_at desc);
 
 create or replace function public.set_free_resources_updated_at()
 returns trigger

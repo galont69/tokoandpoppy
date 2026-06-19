@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260618-free-leads-admin-fix">
+  <link rel="stylesheet" href="admin.css?v=20260619-free-lead-crm">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -674,16 +674,36 @@
               <p>ข้อมูลนี้มาจากฟอร์มก่อนดาวน์โหลดไฟล์ ใช้ติดตามความสนใจและส่งต่อให้สาขาใกล้เคียงได้</p>
             </div>
             <div class="panel-actions">
+              <input id="freeLeadSearchInput" type="search" placeholder="ค้นหา ชื่อ เบอร์ LINE จังหวัด อำเภอ">
               <select id="freeLeadResourceFilter">
                 <option value="">ทุกสื่อฟรี</option>
+              </select>
+              <select id="freeLeadCategoryFilter">
+                <option value="">ทุกหมวด</option>
+                <option value="thai">ภาษาไทย</option>
+                <option value="math">คณิตศาสตร์</option>
+                <option value="science">วิทยาศาสตร์รอบตัว</option>
+                <option value="art">ศิลปะ</option>
+                <option value="unplugged_coding">Unplugged Coding</option>
+              </select>
+              <select id="freeLeadStatusFilter">
+                <option value="">ทุกสถานะ</option>
+                <option value="new">ยังไม่ติดต่อ</option>
+                <option value="contacted">ติดต่อแล้ว</option>
+                <option value="interested">สนใจ</option>
+                <option value="trial_booked">นัดทดลองเรียน</option>
+                <option value="enrolled">สมัครแล้ว</option>
+                <option value="not_interested">ยังไม่สนใจ</option>
               </select>
               <button class="refresh-button" id="refreshFreeLeadsButton" type="button">↻ รีเฟรช</button>
               <button class="export-button" id="exportFreeLeadsButton" type="button">⬇ Export CSV</button>
             </div>
           </div>
-          <div class="free-lead-summary">
-            <strong id="freeLeadCount">0</strong>
-            <span>รายชื่อที่กรอกข้อมูลรับสื่อฟรีล่าสุด</span>
+          <div class="free-lead-summary-grid">
+            <article><strong id="freeLeadCount">0</strong><span>รายชื่อในตัวกรองนี้</span></article>
+            <article><strong id="freeLeadNewCount">0</strong><span>ยังไม่ติดต่อ</span></article>
+            <article><strong id="freeLeadInterestedCount">0</strong><span>สนใจ/นัดทดลอง</span></article>
+            <article><strong id="freeLeadAreaCount">0</strong><span>จังหวัดที่เข้ามา</span></article>
           </div>
           <div class="table-wrap free-leads-table-wrap">
             <table class="student-table free-leads-table">
@@ -696,11 +716,12 @@
                   <th>พื้นที่</th>
                   <th>สื่อที่รับ</th>
                   <th>สนใจหมวด</th>
+                  <th>ติดตาม</th>
                   <th>ที่มา</th>
                 </tr>
               </thead>
               <tbody id="freeLeadRows">
-                <tr><td colspan="8" class="loading-cell">กำลังโหลดรายชื่อ...</td></tr>
+                <tr><td colspan="9" class="loading-cell">กำลังโหลดรายชื่อ...</td></tr>
               </tbody>
             </table>
           </div>
@@ -824,6 +845,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js?v=20260618-free-leads-admin-fix"></script>
+  <script src="admin.js?v=20260619-free-lead-crm"></script>
 </body>
 </html>

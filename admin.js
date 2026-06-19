@@ -89,7 +89,13 @@ const freeResourceCount = document.querySelector("#freeResourceCount");
 const refreshFreeResourcesButton = document.querySelector("#refreshFreeResourcesButton");
 const freeLeadRows = document.querySelector("#freeLeadRows");
 const freeLeadCount = document.querySelector("#freeLeadCount");
+const freeLeadNewCount = document.querySelector("#freeLeadNewCount");
+const freeLeadInterestedCount = document.querySelector("#freeLeadInterestedCount");
+const freeLeadAreaCount = document.querySelector("#freeLeadAreaCount");
+const freeLeadSearchInput = document.querySelector("#freeLeadSearchInput");
 const freeLeadResourceFilter = document.querySelector("#freeLeadResourceFilter");
+const freeLeadCategoryFilter = document.querySelector("#freeLeadCategoryFilter");
+const freeLeadStatusFilter = document.querySelector("#freeLeadStatusFilter");
 const refreshFreeLeadsButton = document.querySelector("#refreshFreeLeadsButton");
 const exportFreeLeadsButton = document.querySelector("#exportFreeLeadsButton");
 
@@ -122,6 +128,15 @@ const courseLabels = {
 };
 
 const artCourseTypes = ["art", "creative_art", "water_color", "clay"];
+
+const freeLeadStatusLabels = {
+  new: "ยังไม่ติดต่อ",
+  contacted: "ติดต่อแล้ว",
+  interested: "สนใจ",
+  trial_booked: "นัดทดลองเรียน",
+  enrolled: "สมัครแล้ว",
+  not_interested: "ยังไม่สนใจ"
+};
 
 const freeResourceCategoryLabels = {
   thai: "ภาษาไทยผ่านนิทาน",
@@ -2575,11 +2590,47 @@ function getLeadResourceTitle(lead) {
   return resource.title || lead.resource_slug || "ไม่ระบุรายการ";
 }
 
+function getLeadStatus(lead) {
+  return lead.follow_status || "new";
+}
+
+function getCssSafeValue(value) {
+  return window.CSS?.escape ? CSS.escape(String(value)) : String(value).replace(/"/g, '\\"');
+}
+
+function getLeadSearchText(lead) {
+  const resource = getLeadResource(lead);
+  return [
+    lead.parent_name,
+    lead.contact_email,
+    lead.contact_phone,
+    lead.line_id,
+    lead.child_age,
+    lead.province,
+    lead.district,
+    lead.source,
+    lead.resource_slug,
+    resource.title,
+    resource.category,
+    lead.admin_note,
+    ...(lead.interested_categories || [])
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
 function getFilteredFreeResourceLeads() {
   const resourceId = freeLeadResourceFilter?.value || "";
-  return resourceId
-    ? freeResourceLeads.filter((lead) => lead.resource_id === resourceId)
-    : freeResourceLeads;
+  const category = freeLeadCategoryFilter?.value || "";
+  const status = freeLeadStatusFilter?.value || "";
+  const search = (freeLeadSearchInput?.value || "").trim().toLowerCase();
+  return freeResourceLeads.filter((lead) => {
+    const resource = getLeadResource(lead);
+    const leadCategory = resource.category || "";
+    if (resourceId && lead.resource_id !== resourceId) return false;
+    if (category && leadCategory !== category && !(lead.interested_categories || []).includes(category)) return false;
+    if (status && getLeadStatus(lead) !== status) return false;
+    if (search && !getLeadSearchText(lead).includes(search)) return false;
+    return true;
+  });
 }
 
 async function loadFreeResourceLeadsAdmin() {
@@ -2587,7 +2638,7 @@ async function loadFreeResourceLeadsAdmin() {
   if (refreshFreeLeadsButton) refreshFreeLeadsButton.disabled = true;
   if (exportFreeLeadsButton) exportFreeLeadsButton.disabled = true;
   freeLeadRows.innerHTML =
-    '<tr><td colspan="8" class="loading-cell">กำลังโหลดรายชื่อ...</td></tr>';
+    '<tr><td colspan="9" class="loading-cell">กำลังโหลดรายชื่อ...</td></tr>';
 
   try {
     const request = supabaseClient
@@ -2606,8 +2657,11 @@ async function loadFreeResourceLeadsAdmin() {
   } catch (error) {
     freeResourceLeads = [];
     if (freeLeadCount) freeLeadCount.textContent = "0";
+    if (freeLeadNewCount) freeLeadNewCount.textContent = "0";
+    if (freeLeadInterestedCount) freeLeadInterestedCount.textContent = "0";
+    if (freeLeadAreaCount) freeLeadAreaCount.textContent = "0";
     freeLeadRows.innerHTML =
-      `<tr><td colspan="8" class="loading-cell">โหลดรายชื่อไม่สำเร็จ: ${escapeHtml(error.message || "ไม่ทราบสาเหตุ")}</td></tr>`;
+      `<tr><td colspan="9" class="loading-cell">โหลดรายชื่อไม่สำเร็จ: ${escapeHtml(error.message || "ไม่ทราบสาเหตุ")}</td></tr>`;
     showToast(`โหลดรายชื่อรับสื่อฟรีไม่สำเร็จ: ${error.message || "ไม่ทราบสาเหตุ"}`, true);
   } finally {
     if (refreshFreeLeadsButton) refreshFreeLeadsButton.disabled = false;
@@ -2619,9 +2673,19 @@ function renderFreeResourceLeadsAdmin() {
   if (!freeLeadRows || !freeLeadCount) return;
   const leads = getFilteredFreeResourceLeads();
   freeLeadCount.textContent = leads.length;
+  if (freeLeadNewCount) {
+    freeLeadNewCount.textContent = leads.filter((lead) => getLeadStatus(lead) === "new").length;
+  }
+  if (freeLeadInterestedCount) {
+    freeLeadInterestedCount.textContent = leads.filter((lead) =>
+      ["interested", "trial_booked"].includes(getLeadStatus(lead))).length;
+  }
+  if (freeLeadAreaCount) {
+    freeLeadAreaCount.textContent = new Set(leads.map((lead) => lead.province).filter(Boolean)).size;
+  }
   if (!leads.length) {
     freeLeadRows.innerHTML =
-      '<tr><td colspan="8" class="loading-cell">ยังไม่มีผู้ปกครองกรอกข้อมูลในตัวกรองนี้</td></tr>';
+      '<tr><td colspan="9" class="loading-cell">ยังไม่มีผู้ปกครองกรอกข้อมูลในตัวกรองนี้</td></tr>';
     return;
   }
 
@@ -2636,9 +2700,10 @@ function renderFreeResourceLeadsAdmin() {
     const interests = (lead.interested_categories || [])
       .map(getFreeResourceCategoryLabel)
       .join(", ");
+    const status = getLeadStatus(lead);
 
     return `
-      <tr>
+      <tr data-free-lead-row="${escapeHtml(lead.id)}">
         <td class="date-cell">
           <strong>${escapeHtml(formatDate(lead.created_at).split(" เวลา ")[0])}</strong>
           <small>${escapeHtml(formatDate(lead.created_at))}</small>
@@ -2655,10 +2720,54 @@ function renderFreeResourceLeadsAdmin() {
           <small>${escapeHtml(getFreeResourceCategoryLabel(category || lead.resource_slug || ""))}</small>
         </td>
         <td><small>${escapeHtml(interests || "-")}</small></td>
+        <td class="free-lead-follow-cell">
+          <select data-free-lead-status="${escapeHtml(lead.id)}">
+            ${Object.entries(freeLeadStatusLabels).map(([value, label]) =>
+              `<option value="${escapeHtml(value)}" ${status === value ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}
+          </select>
+          <textarea data-free-lead-note="${escapeHtml(lead.id)}" rows="2" maxlength="500" placeholder="โน้ตติดตาม">${escapeHtml(lead.admin_note || "")}</textarea>
+          <button type="button" data-save-free-lead="${escapeHtml(lead.id)}">บันทึก</button>
+        </td>
         <td><small>${escapeHtml(lead.source || "website")}</small></td>
       </tr>
     `;
   }).join("");
+}
+
+async function saveFreeResourceLeadFollowup(leadId) {
+  const lead = freeResourceLeads.find((item) => item.id === leadId);
+  if (!lead) return;
+  const safeLeadId = getCssSafeValue(leadId);
+  const statusInput = freeLeadRows.querySelector(`[data-free-lead-status="${safeLeadId}"]`);
+  const noteInput = freeLeadRows.querySelector(`[data-free-lead-note="${safeLeadId}"]`);
+  const saveButton = freeLeadRows.querySelector(`[data-save-free-lead="${safeLeadId}"]`);
+  const patch = {
+    follow_status: statusInput?.value || "new",
+    admin_note: noteInput?.value?.trim() || null,
+    follow_updated_at: new Date().toISOString()
+  };
+
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = "กำลังบันทึก...";
+  }
+  try {
+    const { error } = await supabaseClient
+      .from("free_resource_leads")
+      .update(patch)
+      .eq("id", leadId);
+    if (error) throw error;
+    Object.assign(lead, patch);
+    renderFreeResourceLeadsAdmin();
+    showToast("บันทึกสถานะติดตามแล้ว");
+  } catch (error) {
+    showToast(`บันทึกสถานะไม่สำเร็จ: ${error.message || "กรุณารัน SQL สื่อฟรีเวอร์ชันล่าสุด"}`, true);
+  } finally {
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.textContent = "บันทึก";
+    }
+  }
 }
 
 function exportFreeResourceLeadsCsv() {
@@ -2679,6 +2788,8 @@ function exportFreeResourceLeadsCsv() {
     "สื่อที่รับ",
     "หมวดสื่อ",
     "หมวดที่สนใจ",
+    "สถานะติดตาม",
+    "โน้ตแอดมิน",
     "ที่มา",
     "ยินยอมให้ติดต่อ"
   ];
@@ -2698,6 +2809,8 @@ function exportFreeResourceLeadsCsv() {
         getLeadResourceTitle(lead),
         getFreeResourceCategoryLabel(resource.category || ""),
         (lead.interested_categories || []).map(getFreeResourceCategoryLabel).join(", "),
+        freeLeadStatusLabels[getLeadStatus(lead)] || getLeadStatus(lead),
+        lead.admin_note || "",
         lead.source,
         lead.consent_contact ? "ใช่" : "ไม่ใช่"
       ].map(csvCell).join(",");
@@ -2972,6 +3085,13 @@ refreshFreeResourcesButton?.addEventListener("click", loadFreeResourcesAdmin);
 refreshFreeLeadsButton?.addEventListener("click", loadFreeResourceLeadsAdmin);
 exportFreeLeadsButton?.addEventListener("click", exportFreeResourceLeadsCsv);
 freeLeadResourceFilter?.addEventListener("change", renderFreeResourceLeadsAdmin);
+freeLeadCategoryFilter?.addEventListener("change", renderFreeResourceLeadsAdmin);
+freeLeadStatusFilter?.addEventListener("change", renderFreeResourceLeadsAdmin);
+freeLeadSearchInput?.addEventListener("input", renderFreeResourceLeadsAdmin);
+freeLeadRows?.addEventListener("click", (event) => {
+  const saveButton = event.target.closest("[data-save-free-lead]");
+  if (saveButton) saveFreeResourceLeadFollowup(saveButton.dataset.saveFreeLead);
+});
 bindFreeResourceFilePreview("#freeResourceThumbnail", "#currentFreeThumbnail", "ยังไม่มีภาพหน้าปก");
 bindFreeResourceFilePreview("#freeResourceWorksheet", "#currentFreeWorksheet", "ยังไม่มีไฟล์ใบงาน");
 bindFreeResourceFilePreview("#freeResourcePowerpoint", "#currentFreePowerpoint", "ยังไม่มีไฟล์ PowerPoint");
