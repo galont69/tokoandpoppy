@@ -44,6 +44,7 @@ const freeResourceModalDescription = document.querySelector("#freeResourceModalD
 const freeResourceVideoPanel = document.querySelector("#freeResourceVideoPanel");
 const freeResourceVideoEmbed = document.querySelector("#freeResourceVideoEmbed");
 const freeResourceVideoLink = document.querySelector("#freeResourceVideoLink");
+const freeResourceLandingBody = document.querySelector("#freeResourceLandingBody");
 const freeResourceFileSummary = document.querySelector("#freeResourceFileSummary");
 const showFreeResourceLeadFormButton = document.querySelector("#showFreeResourceLeadForm");
 const freeResourceShareLink = document.querySelector("#freeResourceShareLink");
@@ -357,12 +358,132 @@ function getVideoEmbedUrl(url = "") {
   return "";
 }
 
+function getFreeResourceCourseSuggestion(category) {
+  return {
+    thai: {
+      title: "ต่อยอดด้วยบทเรียนภาษาไทยผ่านนิทาน",
+      copy: "ถ้าลูกสนุกกับการอ่านและเสียงพยัญชนะ ลองดูตัวอย่างบทเรียนที่ใช้เรื่องเล่าเป็นตัวพาเด็กฝึกอ่าน",
+      href: "#lessons",
+      label: "ดูตัวอย่างบทเรียน"
+    },
+    math: {
+      title: "ต่อยอดด้วยกิจกรรมคิดเป็นขั้นตอน",
+      copy: "ถ้าลูกชอบนับ จับคู่ และแก้ปัญหา คอร์สโค้ดดิ้งช่วยพาเด็กคิดเป็นระบบผ่านเกมและภารกิจ",
+      href: "#courses",
+      label: "ดูคอร์สที่เกี่ยวข้อง"
+    },
+    science: {
+      title: "ต่อยอดด้วยกิจกรรมลงมือทดลอง",
+      copy: "เด็กจะเข้าใจสิ่งรอบตัวได้ดีขึ้นเมื่อได้สังเกต ตั้งคำถาม และลองทำด้วยตัวเอง",
+      href: "#courses",
+      label: "ดูหลักสูตรทั้งหมด"
+    },
+    art: {
+      title: "ต่อยอดด้วยคอร์สศิลปะแสนสนุก",
+      copy: "ถ้าลูกชอบวาด ระบายสี หรือเล่างานของตัวเอง คอร์สศิลปะช่วยฝึกจินตนาการ กล้ามเนื้อมือ และความมั่นใจ",
+      href: "#courses",
+      label: "ดูคอร์สศิลปะ"
+    },
+    unplugged_coding: {
+      title: "ต่อยอดด้วยคอร์ส Robot + Coding",
+      copy: "ถ้าลูกสนุกกับภารกิจคิดเป็นขั้นตอน คอร์ส Robot + Coding จะพาไปสั่งงานหุ่นยนต์และแก้ปัญหาจริง",
+      href: "#courses",
+      label: "ดูคอร์ส Robot + Coding"
+    }
+  }[category] || {
+    title: "ต่อยอดสู่คอร์สเรียนจริง",
+    copy: "ถ้าลูกสนุกกับกิจกรรมนี้ ลองดูหลักสูตรที่ต่อเนื่องและเหมาะกับวัยของลูกได้เลย",
+    href: "#courses",
+    label: "ดูหลักสูตรทั้งหมด"
+  };
+}
+
+function getFreeResourceLearningCopy(resource) {
+  const title = resource?.title || "สื่อนี้";
+  const byCategory = {
+    thai: {
+      focus: "ฝึกภาษาไทยแบบไม่กดดัน",
+      outcomes: ["สังเกตเสียงและรูปคำ", "ฝึกอ่านผ่านภาพและนิทาน", "กล้าออกเสียงและเล่าให้ผู้ปกครองฟัง"],
+      steps: ["ดูคลิปสั้นกับลูก", "ทำใบงานทีละข้อ", "ชวนลูกอ่านหรือเล่าอีกครั้ง"]
+    },
+    math: {
+      focus: "ฝึกคิดเลขจากสิ่งใกล้ตัว",
+      outcomes: ["นับและเปรียบเทียบ", "จับคู่และจัดกลุ่ม", "ฝึกแก้ปัญหาแบบเล่นสนุก"],
+      steps: ["ดูตัวอย่างกิจกรรม", "ให้ลูกลองทำเองก่อน", "ชวนอธิบายวิธีคิดของตัวเอง"]
+    },
+    science: {
+      focus: "ฝึกสังเกตโลกใกล้ตัว",
+      outcomes: ["ตั้งคำถามจากสิ่งรอบตัว", "สังเกตความเปลี่ยนแปลง", "เชื่อมโยงคำตอบกับชีวิตประจำวัน"],
+      steps: ["ดูคลิปก่อนเริ่ม", "ลองสังเกตหรือทดลองง่าย ๆ", "ชวนลูกเล่าว่าค้นพบอะไร"]
+    },
+    art: {
+      focus: "ฝึกจินตนาการและกล้ามเนื้อมือ",
+      outcomes: ["วาดและระบายสีอย่างมั่นใจ", "เล่าไอเดียจากผลงาน", "ฝึกสมาธิผ่านการลงมือทำ"],
+      steps: ["ดูคลิปหรือภาพตัวอย่าง", "ให้ลูกเลือกสีและลงมือทำ", "ชวนลูกตั้งชื่อผลงาน"]
+    },
+    unplugged_coding: {
+      focus: "ฝึกคิดเป็นขั้นตอนแบบไม่ต้องใช้คอม",
+      outcomes: ["เรียงลำดับก่อน-หลัง", "ฝึกวางแผนและแก้ปัญหา", "เข้าใจคำสั่งแบบง่าย ๆ"],
+      steps: ["ดูภารกิจจากคลิป", "ให้ลูกลองวางแผนเส้นทาง", "ชวนแก้ไขเมื่อคำสั่งยังไม่สำเร็จ"]
+    }
+  };
+  const copy = byCategory[resource?.category] || byCategory.art;
+  return {
+    ...copy,
+    headline: `${title} ช่วยให้ลูกได้อะไร?`
+  };
+}
+
+function renderFreeResourceLanding(resource) {
+  if (!freeResourceLandingBody) return;
+  const learning = getFreeResourceLearningCopy(resource);
+  const suggestion = getFreeResourceCourseSuggestion(resource?.category);
+  freeResourceLandingBody.innerHTML = `
+    <div class="free-learning-card">
+      <span>เหมาะสำหรับ ${escapeHtml(resource?.age_group || "3-6 ปี")}</span>
+      <h3>${escapeHtml(learning.headline)}</h3>
+      <p>${escapeHtml(learning.focus)}</p>
+      <ul>
+        ${learning.outcomes.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ul>
+    </div>
+    <div class="free-use-steps">
+      <strong>วิธีใช้สื่อกับลูกที่บ้าน</strong>
+      <div>
+        ${learning.steps.map((step, index) => `
+          <article>
+            <span>${index + 1}</span>
+            <p>${escapeHtml(step)}</p>
+          </article>
+        `).join("")}
+      </div>
+    </div>
+    <div class="free-course-suggestion">
+      <span>ต่อยอดหลังลองทำ</span>
+      <strong>${escapeHtml(suggestion.title)}</strong>
+      <p>${escapeHtml(suggestion.copy)}</p>
+      <a href="${escapeHtml(suggestion.href)}" data-close-free-modal>${escapeHtml(suggestion.label)} →</a>
+    </div>
+  `;
+}
+
 function renderFreeResourceVideo(resource) {
   if (!freeResourceVideoPanel || !freeResourceVideoEmbed || !freeResourceVideoLink) return;
   freeResourceVideoEmbed.innerHTML = "";
-  if (!resource.video_url) {
+  freeResourceVideoLink.hidden = false;
+  if (!resource.video_url && !resource.thumbnail_url) {
     freeResourceVideoPanel.hidden = true;
     freeResourceVideoLink.removeAttribute("href");
+    return;
+  }
+  if (!resource.video_url && resource.thumbnail_url) {
+    freeResourceVideoEmbed.innerHTML = `
+      <div class="free-resource-thumbnail-frame">
+        <img src="${escapeHtml(resource.thumbnail_url)}" alt="${escapeHtml(resource.title || "สื่อฟรี")}" loading="lazy">
+      </div>
+    `;
+    freeResourceVideoLink.hidden = true;
+    freeResourceVideoPanel.hidden = false;
     return;
   }
   const embedUrl = getVideoEmbedUrl(resource.video_url);
@@ -481,6 +602,7 @@ function openFreeResourceModal(resource, options = {}) {
   freeResourceModalDescription.textContent =
     resource.description || "ดูวิดีโอและรายละเอียดสื่อก่อน แล้วค่อยรับไฟล์ไปลองเล่นกับลูกที่บ้าน";
   renderFreeResourceVideo(resource);
+  renderFreeResourceLanding(resource);
   renderFreeResourceFileSummary(resource);
   if (freeResourceShareLink) {
     const shareUrl = getFreeResourceShareUrl(resource);
