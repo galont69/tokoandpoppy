@@ -60,6 +60,12 @@ const partnerLeadModal = document.querySelector("#partnerLeadModal");
 const partnerLeadForm = document.querySelector("#partnerLeadForm");
 const closePartnerLeadModalButton = document.querySelector("#closePartnerLeadModal");
 const openPartnerLeadButtons = document.querySelectorAll("[data-open-partner-lead]");
+const trialLeadModal = document.querySelector("#trialLeadModal");
+const trialLeadForm = document.querySelector("#trialLeadForm");
+const closeTrialLeadModalButton = document.querySelector("#closeTrialLeadModal");
+const openTrialLeadButtons = document.querySelectorAll("[data-open-trial-lead]");
+const trialLeadCourseInput = document.querySelector("#trialLeadCourse");
+const trialLeadSummary = document.querySelector("#trialLeadSummary");
 const courseFinderForm = document.querySelector("#courseFinderForm");
 const courseFinderResult = document.querySelector("#courseFinderResult");
 const courseFinderReset = document.querySelector("#courseFinderReset");
@@ -107,6 +113,34 @@ const partnerLeadCourseLabels = {
   water_color: "สีน้ำ",
   robot: "Robot + Coding",
   free_resources: "สื่อฟรี/ใบงานดึงลูกค้า"
+};
+
+const trialCourseMap = {
+  creative_3_5: {
+    value: "creative_art",
+    label: "Creative Art Try & Play",
+    note: "ทีมงานจะช่วยดูอายุลูกและสาขาที่มีคลาสศิลปะสำหรับเด็กเล็ก"
+  },
+  creative_5_9: {
+    value: "creative_art",
+    label: "Creative Art",
+    note: "ทีมงานจะช่วยแนะนำเลเวลศิลปะที่เหมาะกับพื้นฐานและวัยของลูก"
+  },
+  clay: {
+    value: "clay",
+    label: "ปั้นดินเบาผ่านนิทาน",
+    note: "ทีมงานจะตรวจสาขาที่มีอุปกรณ์และรอบทดลองปั้นดินเบา"
+  },
+  watercolor: {
+    value: "water_color",
+    label: "สีน้ำผ่านนิทาน",
+    note: "ทีมงานจะช่วยดูว่าวัยลูกเหมาะกับรอบสีน้ำหรือควรเริ่มจากคอร์สอื่นก่อน"
+  },
+  robot: {
+    value: "robot",
+    label: "Robot + Coding",
+    note: "ทีมงานจะตรวจสาขาที่มีชุดหุ่นยนต์และรอบทดลองโค้ดดิ้ง"
+  }
 };
 
 const fallbackFreeResources = [
@@ -413,11 +447,13 @@ function renderCourseFinderResult(ranking) {
       </div>
     </div>
     <div class="finder-result-actions">
-      <button type="button" class="btn-primary" data-course-finder-register>ทดลองเรียนคอร์สนี้ <span>→</span></button>
+      <button type="button" class="btn-primary" data-course-finder-trial="${escapeHtml(best.key)}">นัดทดลองเรียนกับสาขาใกล้บ้าน <span>→</span></button>
       <a class="btn-ghost" href="${escapeHtml(best.href)}">ดูรายละเอียดคอร์ส</a>
     </div>
   `;
-  courseFinderResult.querySelector("[data-course-finder-register]")?.addEventListener("click", () => openAuth("register"));
+  courseFinderResult.querySelector("[data-course-finder-trial]")?.addEventListener("click", (event) => {
+    openTrialLeadModal(event.currentTarget.dataset.courseFinderTrial);
+  });
 }
 
 function resetCourseFinder() {
@@ -896,6 +932,107 @@ async function submitFreeResourceLead(payload, submitButton = null) {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.innerHTML = 'รับลิงก์ดาวน์โหลดฟรี <span>→</span>';
+    }
+  }
+}
+
+function getTrialCourseMeta(courseKeyOrValue = "") {
+  const direct = trialCourseMap[courseKeyOrValue];
+  if (direct) return direct;
+  const fromValue = Object.values(trialCourseMap).find((course) => course.value === courseKeyOrValue);
+  return fromValue || {
+    value: "creative_art",
+    label: "คอร์สที่เหมาะกับลูก",
+    note: "ทีมงานจะช่วยดูอายุ ความสนใจ และสาขาที่เปิดสอนใกล้พื้นที่ของคุณ"
+  };
+}
+
+function openTrialLeadModal(courseKeyOrValue = "creative_art") {
+  if (!trialLeadModal || !trialLeadForm) return;
+  const course = getTrialCourseMeta(courseKeyOrValue);
+  trialLeadForm.reset();
+  if (trialLeadCourseInput) trialLeadCourseInput.value = course.value;
+  if (trialLeadSummary) {
+    trialLeadSummary.innerHTML = `
+      <strong>${escapeHtml(course.label)}</strong>
+      <span>${escapeHtml(course.note)}</span>
+    `;
+  }
+  trialLeadModal.classList.add("open");
+  trialLeadModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  setTimeout(() => trialLeadForm.querySelector("input")?.focus(), 180);
+}
+
+function closeTrialLeadModal() {
+  if (!trialLeadModal) return;
+  trialLeadModal.classList.remove("open");
+  trialLeadModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function getTrialLeadPayload(formData) {
+  const contactPhone = String(formData.get("contactPhone") || "").trim();
+  const courseValue = String(formData.get("course") || "").trim();
+  const course = getTrialCourseMeta(courseValue);
+  return {
+    resource_id: null,
+    resource_slug: `trial-${course.value}`,
+    parent_name: String(formData.get("parentName") || "").trim(),
+    contact_email: String(formData.get("contactEmail") || "").trim() || null,
+    contact_phone: contactPhone || null,
+    line_id: contactPhone || null,
+    child_age: String(formData.get("childAge") || "").trim(),
+    province: String(formData.get("province") || "").trim(),
+    district: String(formData.get("district") || "").trim(),
+    interested_categories: [course.value, "trial_lesson"],
+    consent_contact: Boolean(formData.get("consentContact")),
+    source: `${new URLSearchParams(window.location.search).get("source") || "website"}:course-trial`,
+    user_agent: navigator.userAgent || null
+  };
+}
+
+async function submitTrialLead(event) {
+  event.preventDefault();
+  if (!trialLeadForm.checkValidity()) {
+    trialLeadForm.reportValidity();
+    return;
+  }
+
+  const payload = getTrialLeadPayload(new FormData(trialLeadForm));
+  if (!payload.contact_email && !payload.contact_phone && !payload.line_id) {
+    showToast("กรุณากรอกอีเมล หรือเบอร์โทร/LINE อย่างน้อยหนึ่งช่อง");
+    return;
+  }
+  if (!payload.consent_contact) {
+    showToast("กรุณาติ๊กยินยอมให้ทีมงานหรือสาขาใกล้บ้านติดต่อกลับ");
+    return;
+  }
+  if (!enrollmentSupabase) {
+    showToast("ยังไม่ได้เชื่อม Supabase จึงบันทึกข้อมูลนัดทดลองไม่ได้");
+    return;
+  }
+
+  const submitButton = trialLeadForm.querySelector(".trial-lead-submit");
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "กำลังส่งข้อมูล...";
+  }
+
+  try {
+    const { error } = await enrollmentSupabase
+      .from("free_resource_leads")
+      .insert(payload);
+    if (error) throw error;
+    saveFreeLeadToDevice(payload);
+    closeTrialLeadModal();
+    showToast("ส่งข้อมูลเรียบร้อยแล้ว ทีมงานจะตรวจสาขาที่เปิดสอนใกล้คุณและติดต่อกลับครับ", 9000);
+  } catch (error) {
+    showToast(`ส่งข้อมูลไม่สำเร็จ: ${getFriendlySupabaseError(error)}`, 12000);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.innerHTML = 'ส่งข้อมูลให้ทีมงาน <span>→</span>';
     }
   }
 }
@@ -1754,6 +1891,16 @@ openPartnerLeadButtons.forEach((button) => {
   button.addEventListener("click", openPartnerLeadModal);
 });
 
+openTrialLeadButtons.forEach((button) => {
+  button.addEventListener("click", () => openTrialLeadModal(button.dataset.openTrialLead || "creative_art"));
+});
+
+closeTrialLeadModalButton?.addEventListener("click", closeTrialLeadModal);
+trialLeadModal?.addEventListener("click", (event) => {
+  if (event.target === trialLeadModal) closeTrialLeadModal();
+});
+trialLeadForm?.addEventListener("submit", submitTrialLead);
+
 closePartnerLeadModalButton?.addEventListener("click", closePartnerLeadModal);
 partnerLeadModal?.addEventListener("click", (event) => {
   if (event.target === partnerLeadModal) closePartnerLeadModal();
@@ -1808,6 +1955,8 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     if (parentProfileModal?.classList.contains("open")) {
       closeParentProfile();
+    } else if (trialLeadModal?.classList.contains("open")) {
+      closeTrialLeadModal();
     } else if (partnerLeadModal?.classList.contains("open")) {
       closePartnerLeadModal();
     } else if (freeResourceModal?.classList.contains("open")) {

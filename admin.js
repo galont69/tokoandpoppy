@@ -178,7 +178,19 @@ const freeResourceCategoryLabels = {
   math: "คณิตศาสตร์",
   science: "วิทยาศาสตร์รอบตัว",
   art: "ศิลปะ",
-  unplugged_coding: "Unplugged Coding"
+  unplugged_coding: "Unplugged Coding",
+  trial_lesson: "นัดทดลองเรียน",
+  creative_art: "ศิลปะสร้างสรรค์",
+  clay: "ปั้นดินเบา",
+  water_color: "สีน้ำ",
+  robot: "Robot + Coding"
+};
+
+const trialLeadResourceLabels = {
+  "trial-creative_art": "นัดทดลอง Creative Art",
+  "trial-clay": "นัดทดลองปั้นดินเบา",
+  "trial-water_color": "นัดทดลองสีน้ำ",
+  "trial-robot": "นัดทดลอง Robot + Coding"
 };
 
 const artProgramControls = [
@@ -2624,6 +2636,9 @@ function getLeadResource(lead) {
 
 function getLeadResourceTitle(lead) {
   const resource = getLeadResource(lead);
+  if (lead.resource_slug && trialLeadResourceLabels[lead.resource_slug]) {
+    return trialLeadResourceLabels[lead.resource_slug];
+  }
   return resource.title || lead.resource_slug || "ไม่ระบุรายการ";
 }
 
