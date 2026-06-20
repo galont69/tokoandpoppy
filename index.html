@@ -22,7 +22,7 @@
       }
     };
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260619-art-learning-path">
+  <link rel="stylesheet" href="styles.css?v=20260619-art-path-flow">
 </head>
 <body class="font-thai text-[#49372d]">
   <div class="page-noise" aria-hidden="true"></div>
@@ -38,6 +38,7 @@
       </a>
       <div class="flex items-center gap-2 sm:gap-3">
         <a href="#courses" class="nav-link sale-nav hidden md:inline-flex">คอร์สของเรา</a>
+        <a href="#art-path" class="nav-link sale-nav hidden lg:inline-flex">เส้นทางศิลปะ</a>
         <a href="#free-resources" class="nav-link sale-nav hidden lg:inline-flex">สื่อฟรี</a>
         <a href="#lessons" class="nav-link sale-nav hidden lg:inline-flex">ตัวอย่างบทเรียน</a>
         <a href="#faq" class="nav-link sale-nav hidden lg:inline-flex">FAQ</a>
@@ -335,10 +336,17 @@
         <div class="course-note">
           <strong>Codekids</strong> เป็นกิจกรรมเสริมสำหรับนักเรียนที่สมัครคอร์สแล้ว เพื่อฝึกตรรกะผ่านเกมเขาวงกตของ Toko
         </div>
+        <div class="course-path-prompt">
+          <div>
+            <span>ยังเลือกไม่ถูก?</span>
+            <strong>ดูเส้นทางศิลปะของลูกก่อน แล้วค่อยเลือกคอร์สที่เหมาะกับวัย</strong>
+          </div>
+          <a href="#art-path">ดูเส้นทางศิลปะ <span>→</span></a>
+        </div>
       </div>
     </section>
 
-    <section class="age-path-section art-path-section">
+    <section id="art-path" class="age-path-section art-path-section">
       <div class="mx-auto max-w-7xl px-5 py-20 lg:px-8">
         <div class="section-heading">
           <span>Art Learning Path</span>
@@ -372,6 +380,9 @@
                 </ol>
               </div>
             </div>
+            <div class="art-path-card-action">
+              <button type="button" class="btn-primary" data-open-auth="register">ทดลองเรียนสาย Creative Art <span>→</span></button>
+            </div>
           </article>
           <article class="art-path-card clay-path">
             <span>ทุกช่วงวัย</span>
@@ -382,6 +393,9 @@
               <li>เหมาะกับเด็กที่ชอบจับและลงมือทำ</li>
               <li>ช่วยเตรียมมือก่อนงานเขียนและงานละเอียด</li>
             </ul>
+            <div class="art-path-card-action">
+              <button type="button" class="btn-ghost" data-open-auth="register">ทดลองคอร์สปั้นดินเบา <span>→</span></button>
+            </div>
           </article>
           <article class="art-path-card watercolor-path">
             <span>6-9 ปี</span>
@@ -392,6 +406,9 @@
               <li>เรียนรู้การคุมสี น้ำ และจังหวะพู่กัน</li>
               <li>เหมาะกับเด็กที่พร้อมทำงานละเอียดมากขึ้น</li>
             </ul>
+            <div class="art-path-card-action">
+              <button type="button" class="btn-ghost" data-open-auth="register">ทดลองคอร์สสีน้ำ <span>→</span></button>
+            </div>
           </article>
         </div>
         <div class="art-path-cta">

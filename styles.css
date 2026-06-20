@@ -1158,6 +1158,50 @@ body.sale-peek footer { display: block; }
   line-height: 1.7;
 }
 .course-note strong { color: #517548; }
+.course-path-prompt {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  margin: 22px auto 0;
+  max-width: 940px;
+  border: 1px solid rgba(215,168,74,.24);
+  border-radius: 26px;
+  padding: 20px 22px;
+  background: linear-gradient(135deg, #fff9eb, #f7fbf0);
+  box-shadow: 0 14px 34px rgba(92,71,49,.06);
+}
+.course-path-prompt span {
+  display: inline-flex;
+  width: max-content;
+  margin-bottom: 8px;
+  border-radius: 999px;
+  padding: 5px 10px;
+  color: #9a6b42;
+  background: #fff0cc;
+  font-size: 12px;
+  font-weight: 900;
+}
+.course-path-prompt strong {
+  display: block;
+  color: #503d31;
+  font-size: clamp(18px, 2vw, 24px);
+  line-height: 1.45;
+}
+.course-path-prompt a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 13px 18px;
+  color: white;
+  background: #5f8a50;
+  box-shadow: 0 12px 24px rgba(77,118,68,.18);
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
 .age-path-section { background: linear-gradient(180deg, #fffdf8, #f7fbf3); }
 .age-path-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .age-path-grid article { padding: 26px; }
@@ -1293,6 +1337,23 @@ body.sale-peek footer { display: block; }
 .watercolor-path > span {
   color: #3f7180;
   background: #dff0f2;
+}
+.art-path-card-action {
+  position: relative;
+  z-index: 1;
+  margin-top: 22px;
+}
+.art-path-card-action .btn-primary,
+.art-path-card-action .btn-ghost {
+  width: 100%;
+  justify-content: center;
+  padding: 13px 16px;
+  font-size: 14px;
+}
+.art-path-card-action .btn-ghost {
+  border: 1px solid rgba(103,137,79,.2);
+  color: #5f804f;
+  background: rgba(255,255,255,.72);
 }
 .art-path-cta {
   display: grid;
@@ -2274,6 +2335,7 @@ legend { font-size: 15px; }
   }
 
   .art-track-grid,
+  .course-path-prompt,
   .art-path-cta {
     grid-template-columns: 1fr;
   }
@@ -2298,6 +2360,11 @@ legend { font-size: 15px; }
   .art-path-cta .btn-primary {
     width: 100%;
     justify-content: center;
+    white-space: normal;
+  }
+
+  .course-path-prompt a {
+    width: 100%;
     white-space: normal;
   }
 
