@@ -1827,17 +1827,32 @@ body.sale-peek footer { display: block; }
   font-weight: 800;
 }
 
-.partner-course-options input,
-.consent-check input {
+.partner-course-options input {
   width: auto;
 }
 
-.consent-check {
+.partner-lead-form .consent-check {
   display: flex;
   align-items: flex-start;
   gap: 10px;
   color: #75665c;
   line-height: 1.65;
+}
+
+.partner-lead-form .consent-check input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 5px;
+  border: 0;
+  border-radius: 4px;
+  padding: 0;
+  accent-color: #5f934c;
+  box-shadow: none;
+}
+
+.partner-lead-form .consent-check span {
+  flex: 1;
 }
 
 .partner-lead-submit {
