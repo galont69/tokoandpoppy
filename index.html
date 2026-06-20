@@ -22,7 +22,7 @@
       }
     };
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260620-institute-partner">
+  <link rel="stylesheet" href="styles.css?v=20260620-partner-leads">
 </head>
 <body class="font-thai text-[#49372d]">
   <div class="page-noise" aria-hidden="true"></div>
@@ -503,7 +503,7 @@
             <h2>เปิดคอร์สเด็กเพิ่มได้ทันที โดยไม่ต้องเริ่มสร้างหลักสูตรจากศูนย์</h2>
             <p>หลักสูตร Toko & Poppy ออกแบบให้สถาบันนำไปใช้แบบ Plug & Teach มีแผนสอน สื่อ ใบงาน ตัวอย่างกิจกรรม และเว็บไซต์ช่วยดูแลการเรียนรู้</p>
           </div>
-          <a href="#partner-details" class="btn-primary">ดูแพ็กเกจสำหรับสถาบัน <span>→</span></a>
+          <button type="button" class="btn-primary" data-open-partner-lead>ขอข้อมูลหลักสูตรสถาบัน <span>→</span></button>
         </div>
 
         <div class="partner-grid" id="partner-details">
@@ -551,7 +551,7 @@
             <strong>ต้องการดูตัวอย่างหลักสูตรสำหรับสถาบัน?</strong>
             <p>ส่งรายละเอียดสถาบันมาให้ทีมงานช่วยแนะนำคอร์สที่เหมาะกับพื้นที่และกลุ่มเด็กของคุณได้ครับ</p>
           </div>
-          <button type="button" class="btn-primary" data-open-auth="register">ขอชุดตัวอย่างหลักสูตร <span>→</span></button>
+          <button type="button" class="btn-primary" data-open-partner-lead>ขอชุดตัวอย่างหลักสูตร <span>→</span></button>
         </div>
       </div>
     </section>
@@ -902,6 +902,67 @@
     </section>
   </div>
 
+  <div class="partner-lead-backdrop" id="partnerLeadModal" aria-hidden="true">
+    <section class="partner-lead-modal" role="dialog" aria-modal="true" aria-labelledby="partnerLeadTitle">
+      <button class="modal-close" id="closePartnerLeadModal" type="button" aria-label="ปิดหน้าต่าง">×</button>
+      <div class="partner-lead-head">
+        <span>สำหรับสถาบัน / โรงเรียน</span>
+        <h2 id="partnerLeadTitle">ขอข้อมูลหลักสูตร Toko & Poppy</h2>
+        <p>กรอกข้อมูลสั้น ๆ เพื่อให้ทีมงานแนะนำคอร์สที่เหมาะกับพื้นที่ กลุ่มเด็ก และรูปแบบสถาบันของคุณ</p>
+      </div>
+      <form class="partner-lead-form" id="partnerLeadForm">
+        <div class="partner-lead-grid">
+          <label>ชื่อผู้สนใจ
+            <input name="contactName" type="text" maxlength="140" required placeholder="ชื่อ-นามสกุล">
+          </label>
+          <label>เบอร์โทร / LINE
+            <input name="contactPhone" type="text" maxlength="80" required placeholder="เบอร์โทรหรือ LINE ID">
+          </label>
+        </div>
+        <div class="partner-lead-grid">
+          <label>อีเมล
+            <input name="contactEmail" type="email" maxlength="160" placeholder="ถ้ามี">
+          </label>
+          <label>ชื่อโรงเรียน / สถาบัน
+            <input name="instituteName" type="text" maxlength="180" placeholder="ถ้ายังไม่มี เว้นว่างได้">
+          </label>
+        </div>
+        <div class="partner-lead-grid">
+          <label>จังหวัด
+            <input name="province" type="text" maxlength="100" required placeholder="เช่น ชลบุรี">
+          </label>
+          <label>อำเภอ / เขต
+            <input name="district" type="text" maxlength="100" required placeholder="เช่น บางละมุง">
+          </label>
+        </div>
+        <label>มีโรงเรียนหรือสถาบันอยู่แล้วหรือไม่
+          <select name="hasInstitute" required>
+            <option value="">เลือกสถานะ</option>
+            <option value="yes">มีโรงเรียน/สถาบันอยู่แล้ว</option>
+            <option value="planning">กำลังวางแผนเปิด</option>
+            <option value="no">ยังไม่มี แต่อยากศึกษาโอกาส</option>
+          </select>
+        </label>
+        <fieldset class="partner-course-options">
+          <legend>สนใจคอร์สอะไร</legend>
+          <label><input name="interest" type="checkbox" value="creative_art"> ศิลปะสร้างสรรค์</label>
+          <label><input name="interest" type="checkbox" value="clay"> ปั้นดินเบา</label>
+          <label><input name="interest" type="checkbox" value="water_color"> สีน้ำ</label>
+          <label><input name="interest" type="checkbox" value="robot"> Robot + Coding</label>
+          <label><input name="interest" type="checkbox" value="free_resources"> สื่อฟรี/ใบงานดึงลูกค้า</label>
+        </fieldset>
+        <label>รายละเอียดเพิ่มเติม
+          <textarea name="message" rows="3" maxlength="700" placeholder="เช่น มีเด็กอายุประมาณกี่ปี มีครูกี่คน อยากเริ่มช่วงไหน"></textarea>
+        </label>
+        <label class="consent-check">
+          <input name="consentContact" type="checkbox" required>
+          <span>ขออนุญาตให้ทีมงาน Toko & Poppy ติดต่อกลับเพื่อแนะนำหลักสูตรและชุดตัวอย่าง</span>
+        </label>
+        <button class="partner-lead-submit" type="submit">ส่งข้อมูลให้ทีมงาน <span>→</span></button>
+      </form>
+    </section>
+  </div>
+
   <div class="parent-dashboard-modal" id="parentDashboardModal" aria-hidden="true">
     <div class="parent-dashboard-card" role="dialog" aria-modal="true">
       <button class="modal-close parent-close" id="closeParentDashboard" type="button" aria-label="ปิด">×</button>
@@ -976,6 +1037,6 @@
   <div class="toast" id="toast" role="status"></div>
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260607-2"></script>
-  <script src="script.js?v=20260619-free-resource-landing"></script>
+  <script src="script.js?v=20260620-partner-leads"></script>
 </body>
 </html>

@@ -56,6 +56,10 @@ const editSavedFreeLeadButton = document.querySelector("#editSavedFreeLead");
 const freeResourceDownloadResult = document.querySelector("#freeResourceDownloadResult");
 const freeResourceDownloadLinks = document.querySelector("#freeResourceDownloadLinks");
 const freeResourceNextStep = document.querySelector("#freeResourceNextStep");
+const partnerLeadModal = document.querySelector("#partnerLeadModal");
+const partnerLeadForm = document.querySelector("#partnerLeadForm");
+const closePartnerLeadModalButton = document.querySelector("#closePartnerLeadModal");
+const openPartnerLeadButtons = document.querySelectorAll("[data-open-partner-lead]");
 const headerLoginButton = document.querySelector(".btn-login[data-open-auth='login']");
 const headerNavActions = headerLoginButton?.parentElement || null;
 const loginButtonDefaultMarkup = headerLoginButton?.innerHTML || "เข้าสู่ระบบ";
@@ -92,6 +96,14 @@ const freeResourceCategoryLabels = {
   science: "วิทยาศาสตร์",
   art: "ศิลปะ",
   unplugged_coding: "Unplugged Coding"
+};
+
+const partnerLeadCourseLabels = {
+  creative_art: "ศิลปะสร้างสรรค์",
+  clay: "ปั้นดินเบา",
+  water_color: "สีน้ำ",
+  robot: "Robot + Coding",
+  free_resources: "สื่อฟรี/ใบงานดึงลูกค้า"
 };
 
 const fallbackFreeResources = [
@@ -707,6 +719,85 @@ async function submitFreeResourceLead(payload, submitButton = null) {
     if (submitButton) {
       submitButton.disabled = false;
       submitButton.innerHTML = 'รับลิงก์ดาวน์โหลดฟรี <span>→</span>';
+    }
+  }
+}
+
+function openPartnerLeadModal() {
+  if (!partnerLeadModal || !partnerLeadForm) return;
+  partnerLeadForm.reset();
+  partnerLeadModal.classList.add("open");
+  partnerLeadModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  setTimeout(() => partnerLeadForm.querySelector("input")?.focus(), 180);
+}
+
+function closePartnerLeadModal() {
+  if (!partnerLeadModal) return;
+  partnerLeadModal.classList.remove("open");
+  partnerLeadModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function getPartnerLeadPayload(formData) {
+  const contactPhone = String(formData.get("contactPhone") || "").trim();
+  return {
+    contact_name: String(formData.get("contactName") || "").trim(),
+    contact_phone: contactPhone || null,
+    line_id: contactPhone || null,
+    contact_email: String(formData.get("contactEmail") || "").trim() || null,
+    institute_name: String(formData.get("instituteName") || "").trim() || null,
+    province: String(formData.get("province") || "").trim(),
+    district: String(formData.get("district") || "").trim(),
+    has_institute: String(formData.get("hasInstitute") || ""),
+    interested_courses: formData.getAll("interest"),
+    message: String(formData.get("message") || "").trim() || null,
+    consent_contact: Boolean(formData.get("consentContact")),
+    source: new URLSearchParams(window.location.search).get("source") || document.referrer || "website",
+    user_agent: navigator.userAgent || null
+  };
+}
+
+async function submitPartnerLead(event) {
+  event.preventDefault();
+  if (!partnerLeadForm.checkValidity()) {
+    partnerLeadForm.reportValidity();
+    return;
+  }
+
+  const payload = getPartnerLeadPayload(new FormData(partnerLeadForm));
+  if (!payload.interested_courses.length) {
+    showToast("กรุณาเลือกคอร์สที่สนใจอย่างน้อย 1 รายการ");
+    return;
+  }
+  if (!payload.consent_contact) {
+    showToast("กรุณาติ๊กยินยอมให้ทีมงานติดต่อกลับ");
+    return;
+  }
+  if (!enrollmentSupabase) {
+    showToast("ยังไม่ได้เชื่อม Supabase จึงบันทึกข้อมูลสถาบันไม่ได้");
+    return;
+  }
+
+  const submitButton = partnerLeadForm.querySelector(".partner-lead-submit");
+  if (submitButton) {
+    submitButton.disabled = true;
+    submitButton.textContent = "กำลังส่งข้อมูล...";
+  }
+
+  try {
+    const { error } = await enrollmentSupabase
+      .from("partner_leads")
+      .insert(payload);
+    if (error) throw error;
+    closePartnerLeadModal();
+    showToast("ส่งข้อมูลเรียบร้อยแล้ว ทีมงานจะติดต่อกลับครับ");
+  } catch (error) {
+    showToast(`ส่งข้อมูลไม่สำเร็จ: ${getFriendlySupabaseError(error)}`, 12000);
+  } finally {
+    if (submitButton) {
+      submitButton.disabled = false;
+      submitButton.innerHTML = 'ส่งข้อมูลให้ทีมงาน <span>→</span>';
     }
   }
 }
@@ -1473,6 +1564,16 @@ freeResourceLeadForm?.addEventListener("submit", async (event) => {
   await submitFreeResourceLead(payload, submitButton);
 });
 
+openPartnerLeadButtons.forEach((button) => {
+  button.addEventListener("click", openPartnerLeadModal);
+});
+
+closePartnerLeadModalButton?.addEventListener("click", closePartnerLeadModal);
+partnerLeadModal?.addEventListener("click", (event) => {
+  if (event.target === partnerLeadModal) closePartnerLeadModal();
+});
+partnerLeadForm?.addEventListener("submit", submitPartnerLead);
+
 window.addEventListener("hashchange", () => {
   if (openFreeResourceFromHash()) return;
   if (freeResourceModal?.classList.contains("open") && !getFreeResourceSlugFromHash()) {
@@ -1521,6 +1622,8 @@ document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     if (parentProfileModal?.classList.contains("open")) {
       closeParentProfile();
+    } else if (partnerLeadModal?.classList.contains("open")) {
+      closePartnerLeadModal();
     } else if (freeResourceModal?.classList.contains("open")) {
       closeFreeResourceModal();
     } else if (parentDashboardModal?.classList.contains("open")) {

@@ -98,6 +98,16 @@ const freeLeadCategoryFilter = document.querySelector("#freeLeadCategoryFilter")
 const freeLeadStatusFilter = document.querySelector("#freeLeadStatusFilter");
 const refreshFreeLeadsButton = document.querySelector("#refreshFreeLeadsButton");
 const exportFreeLeadsButton = document.querySelector("#exportFreeLeadsButton");
+const partnerLeadRows = document.querySelector("#partnerLeadRows");
+const partnerLeadCount = document.querySelector("#partnerLeadCount");
+const partnerLeadNewCount = document.querySelector("#partnerLeadNewCount");
+const partnerLeadInterestedCount = document.querySelector("#partnerLeadInterestedCount");
+const partnerLeadAreaCount = document.querySelector("#partnerLeadAreaCount");
+const partnerLeadSearchInput = document.querySelector("#partnerLeadSearchInput");
+const partnerLeadCourseFilter = document.querySelector("#partnerLeadCourseFilter");
+const partnerLeadStatusFilter = document.querySelector("#partnerLeadStatusFilter");
+const refreshPartnerLeadsButton = document.querySelector("#refreshPartnerLeadsButton");
+const exportPartnerLeadsButton = document.querySelector("#exportPartnerLeadsButton");
 
 let applications = [];
 let activeStatus = "all";
@@ -117,6 +127,7 @@ let learningEnrollments = [];
 let activeLearningEnrollment = null;
 let freeResources = [];
 let freeResourceLeads = [];
+let partnerLeads = [];
 
 const courseLabels = {
   robot: ["โรบอท + โค้ดดิ้ง", "SPIKE Essential"],
@@ -136,6 +147,30 @@ const freeLeadStatusLabels = {
   trial_booked: "นัดทดลองเรียน",
   enrolled: "สมัครแล้ว",
   not_interested: "ยังไม่สนใจ"
+};
+
+const partnerLeadStatusLabels = {
+  new: "ยังไม่ติดต่อ",
+  contacted: "ติดต่อแล้ว",
+  interested: "สนใจ",
+  meeting_booked: "นัดคุยแล้ว",
+  sample_sent: "ส่งชุดตัวอย่างแล้ว",
+  converted: "เป็นพาร์ทเนอร์แล้ว",
+  not_fit: "ยังไม่เหมาะ"
+};
+
+const partnerLeadCourseLabels = {
+  creative_art: "ศิลปะสร้างสรรค์",
+  clay: "ปั้นดินเบา",
+  water_color: "สีน้ำ",
+  robot: "Robot + Coding",
+  free_resources: "สื่อฟรี/ใบงานดึงลูกค้า"
+};
+
+const partnerLeadInstituteLabels = {
+  yes: "มีโรงเรียน/สถาบันอยู่แล้ว",
+  planning: "กำลังวางแผนเปิด",
+  no: "ยังไม่มี แต่อยากศึกษาโอกาส"
 };
 
 const freeResourceCategoryLabels = {
@@ -511,7 +546,8 @@ function showAdminView(viewName) {
     progress: ["สมุดพัฒนาการนักเรียน", "LEARNING JOURNAL"],
     lessons: ["จัดการบทเรียนโรบอท", "ROBOT COURSE STUDIO"],
     art: ["จัดการบทเรียนศิลปะ", "ART COURSE STUDIO"],
-    freeResources: ["สื่อฟรี", "FREE LEARNING HUB"]
+    freeResources: ["สื่อฟรี", "FREE LEARNING HUB"],
+    partnerLeads: ["Lead สถาบัน", "INSTITUTE PARTNERS"]
   };
   const [title, kicker] = viewCopy[viewName] || viewCopy.applications;
   document.querySelector(".topbar h1").textContent = title;
@@ -526,6 +562,7 @@ function showAdminView(viewName) {
     loadFreeResourcesAdmin();
     loadFreeResourceLeadsAdmin();
   }
+  if (viewName === "partnerLeads") loadPartnerLeadsAdmin();
 }
 
 function getCourseEnrollmentLabel(enrollment) {
@@ -2832,6 +2869,240 @@ function exportFreeResourceLeadsCsv() {
   showToast(`Export รายชื่อรับสื่อฟรีสำเร็จ ${leads.length} รายการ`);
 }
 
+function getPartnerLeadStatus(lead) {
+  return lead.follow_status || "new";
+}
+
+function getPartnerLeadCourseText(lead) {
+  return (lead.interested_courses || [])
+    .map((course) => partnerLeadCourseLabels[course] || course)
+    .join(", ");
+}
+
+function getPartnerLeadSearchText(lead) {
+  return [
+    lead.contact_name,
+    lead.contact_email,
+    lead.contact_phone,
+    lead.line_id,
+    lead.institute_name,
+    lead.province,
+    lead.district,
+    lead.has_institute,
+    partnerLeadInstituteLabels[lead.has_institute],
+    getPartnerLeadCourseText(lead),
+    lead.message,
+    lead.admin_note,
+    lead.source,
+    ...(lead.interested_courses || [])
+  ].filter(Boolean).join(" ").toLowerCase();
+}
+
+function getFilteredPartnerLeads() {
+  const course = partnerLeadCourseFilter?.value || "";
+  const status = partnerLeadStatusFilter?.value || "";
+  const search = (partnerLeadSearchInput?.value || "").trim().toLowerCase();
+  return partnerLeads.filter((lead) => {
+    if (course && !(lead.interested_courses || []).includes(course)) return false;
+    if (status && getPartnerLeadStatus(lead) !== status) return false;
+    if (search && !getPartnerLeadSearchText(lead).includes(search)) return false;
+    return true;
+  });
+}
+
+async function loadPartnerLeadsAdmin() {
+  if (!isMainAdmin() || !partnerLeadRows) return;
+  if (refreshPartnerLeadsButton) refreshPartnerLeadsButton.disabled = true;
+  if (exportPartnerLeadsButton) exportPartnerLeadsButton.disabled = true;
+  partnerLeadRows.innerHTML =
+    '<tr><td colspan="8" class="loading-cell">กำลังโหลดรายชื่อ...</td></tr>';
+
+  try {
+    const request = supabaseClient
+      .from("partner_leads")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    const timeout = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("โหลดรายชื่อนานเกินไป กรุณาลองรีเฟรชอีกครั้ง")), 12000);
+    });
+    const { data, error } = await Promise.race([request, timeout]);
+    if (error) throw error;
+
+    partnerLeads = data || [];
+    renderPartnerLeadsAdmin();
+  } catch (error) {
+    partnerLeads = [];
+    if (partnerLeadCount) partnerLeadCount.textContent = "0";
+    if (partnerLeadNewCount) partnerLeadNewCount.textContent = "0";
+    if (partnerLeadInterestedCount) partnerLeadInterestedCount.textContent = "0";
+    if (partnerLeadAreaCount) partnerLeadAreaCount.textContent = "0";
+    partnerLeadRows.innerHTML =
+      `<tr><td colspan="8" class="loading-cell">โหลดรายชื่อไม่สำเร็จ: ${escapeHtml(error.message || "กรุณารันไฟล์ supabase-partner-leads-schema.sql ก่อน")}</td></tr>`;
+    showToast(`โหลด Lead สถาบันไม่สำเร็จ: ${error.message || "กรุณารัน SQL สถาบันก่อน"}`, true);
+  } finally {
+    if (refreshPartnerLeadsButton) refreshPartnerLeadsButton.disabled = false;
+    if (exportPartnerLeadsButton) exportPartnerLeadsButton.disabled = false;
+  }
+}
+
+function renderPartnerLeadsAdmin() {
+  if (!partnerLeadRows || !partnerLeadCount) return;
+  const leads = getFilteredPartnerLeads();
+  partnerLeadCount.textContent = leads.length;
+  if (partnerLeadNewCount) {
+    partnerLeadNewCount.textContent = leads.filter((lead) => getPartnerLeadStatus(lead) === "new").length;
+  }
+  if (partnerLeadInterestedCount) {
+    partnerLeadInterestedCount.textContent = leads.filter((lead) =>
+      ["interested", "meeting_booked", "sample_sent"].includes(getPartnerLeadStatus(lead))).length;
+  }
+  if (partnerLeadAreaCount) {
+    partnerLeadAreaCount.textContent = new Set(leads.map((lead) => lead.province).filter(Boolean)).size;
+  }
+  if (!leads.length) {
+    partnerLeadRows.innerHTML =
+      '<tr><td colspan="8" class="loading-cell">ยังไม่มี Lead สถาบันในตัวกรองนี้</td></tr>';
+    return;
+  }
+
+  partnerLeadRows.innerHTML = leads.map((lead) => {
+    const status = getPartnerLeadStatus(lead);
+    const contactLines = [
+      lead.contact_email ? `<small>${escapeHtml(lead.contact_email)}</small>` : "",
+      lead.contact_phone ? `<small>${escapeHtml(lead.contact_phone)}</small>` : "",
+      lead.line_id && lead.line_id !== lead.contact_phone ? `<small>LINE: ${escapeHtml(lead.line_id)}</small>` : ""
+    ].filter(Boolean).join("");
+    const courses = getPartnerLeadCourseText(lead);
+    return `
+      <tr data-partner-lead-row="${escapeHtml(lead.id)}">
+        <td class="date-cell">
+          <strong>${escapeHtml(formatDate(lead.created_at).split(" เวลา ")[0])}</strong>
+          <small>${escapeHtml(formatDate(lead.created_at))}</small>
+        </td>
+        <td class="student-cell">
+          <span class="student-avatar">🤝</span>
+          <div>
+            <strong>${escapeHtml(lead.contact_name || "-")}</strong>
+            <small>${escapeHtml(lead.message || "ขอข้อมูลหลักสูตรสถาบัน")}</small>
+          </div>
+        </td>
+        <td>${contactLines || "<small>-</small>"}</td>
+        <td><strong>${escapeHtml(lead.district || "-")}</strong><small>${escapeHtml(lead.province || "")}</small></td>
+        <td>
+          <strong>${escapeHtml(lead.institute_name || "-")}</strong>
+          <small>${escapeHtml(partnerLeadInstituteLabels[lead.has_institute] || lead.has_institute || "-")}</small>
+        </td>
+        <td><small>${escapeHtml(courses || "-")}</small></td>
+        <td class="free-lead-follow-cell">
+          <select data-partner-lead-status="${escapeHtml(lead.id)}">
+            ${Object.entries(partnerLeadStatusLabels).map(([value, label]) =>
+              `<option value="${escapeHtml(value)}" ${status === value ? "selected" : ""}>${escapeHtml(label)}</option>`).join("")}
+          </select>
+          <textarea data-partner-lead-note="${escapeHtml(lead.id)}" rows="2" maxlength="500" placeholder="โน้ตติดตาม">${escapeHtml(lead.admin_note || "")}</textarea>
+          <button type="button" data-save-partner-lead="${escapeHtml(lead.id)}">บันทึก</button>
+        </td>
+        <td><small>${escapeHtml(lead.source || "website")}</small></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+async function savePartnerLeadFollowup(leadId) {
+  const lead = partnerLeads.find((item) => item.id === leadId);
+  if (!lead) return;
+  const safeLeadId = getCssSafeValue(leadId);
+  const statusInput = partnerLeadRows.querySelector(`[data-partner-lead-status="${safeLeadId}"]`);
+  const noteInput = partnerLeadRows.querySelector(`[data-partner-lead-note="${safeLeadId}"]`);
+  const saveButton = partnerLeadRows.querySelector(`[data-save-partner-lead="${safeLeadId}"]`);
+  const patch = {
+    follow_status: statusInput?.value || "new",
+    admin_note: noteInput?.value?.trim() || null,
+    follow_updated_at: new Date().toISOString()
+  };
+
+  if (saveButton) {
+    saveButton.disabled = true;
+    saveButton.textContent = "กำลังบันทึก...";
+  }
+  try {
+    const { error } = await supabaseClient
+      .from("partner_leads")
+      .update(patch)
+      .eq("id", leadId);
+    if (error) throw error;
+    Object.assign(lead, patch);
+    renderPartnerLeadsAdmin();
+    showToast("บันทึกสถานะ Lead สถาบันแล้ว");
+  } catch (error) {
+    showToast(`บันทึกสถานะไม่สำเร็จ: ${error.message || "กรุณารัน SQL สถาบันเวอร์ชันล่าสุด"}`, true);
+  } finally {
+    if (saveButton) {
+      saveButton.disabled = false;
+      saveButton.textContent = "บันทึก";
+    }
+  }
+}
+
+function exportPartnerLeadsCsv() {
+  const leads = getFilteredPartnerLeads();
+  if (!leads.length) {
+    showToast("ไม่มี Lead สถาบันในตัวกรองนี้ให้ Export", true);
+    return;
+  }
+
+  const headers = [
+    "วันที่กรอก",
+    "ชื่อผู้สนใจ",
+    "อีเมล",
+    "เบอร์/LINE",
+    "ชื่อสถาบัน",
+    "สถานะสถาบัน",
+    "อำเภอ",
+    "จังหวัด",
+    "คอร์สที่สนใจ",
+    "ข้อความเพิ่มเติม",
+    "สถานะติดตาม",
+    "โน้ตแอดมิน",
+    "ที่มา",
+    "ยินยอมให้ติดต่อ"
+  ];
+
+  const lines = [
+    headers.map(csvCell).join(","),
+    ...leads.map((lead) => [
+      toLocalDateTimeValue(lead.created_at),
+      lead.contact_name,
+      lead.contact_email,
+      lead.contact_phone || lead.line_id,
+      lead.institute_name,
+      partnerLeadInstituteLabels[lead.has_institute] || lead.has_institute,
+      lead.district,
+      lead.province,
+      getPartnerLeadCourseText(lead),
+      lead.message || "",
+      partnerLeadStatusLabels[getPartnerLeadStatus(lead)] || getPartnerLeadStatus(lead),
+      lead.admin_note || "",
+      lead.source,
+      lead.consent_contact ? "ใช่" : "ไม่ใช่"
+    ].map(csvCell).join(","))
+  ];
+
+  const filenameDate = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([`\ufeff${lines.join("\n")}`], {
+    type: "text/csv;charset=utf-8"
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `toko-poppy-partner-leads-${filenameDate}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast(`Export Lead สถาบันสำเร็จ ${leads.length} รายการ`);
+}
+
 async function saveFreeResource(event) {
   event.preventDefault();
   if (!isMainAdmin()) return;
@@ -3084,13 +3355,22 @@ document.querySelector("#resetFreeResourceForm")?.addEventListener("click", rese
 refreshFreeResourcesButton?.addEventListener("click", loadFreeResourcesAdmin);
 refreshFreeLeadsButton?.addEventListener("click", loadFreeResourceLeadsAdmin);
 exportFreeLeadsButton?.addEventListener("click", exportFreeResourceLeadsCsv);
+refreshPartnerLeadsButton?.addEventListener("click", loadPartnerLeadsAdmin);
+exportPartnerLeadsButton?.addEventListener("click", exportPartnerLeadsCsv);
 freeLeadResourceFilter?.addEventListener("change", renderFreeResourceLeadsAdmin);
 freeLeadCategoryFilter?.addEventListener("change", renderFreeResourceLeadsAdmin);
 freeLeadStatusFilter?.addEventListener("change", renderFreeResourceLeadsAdmin);
 freeLeadSearchInput?.addEventListener("input", renderFreeResourceLeadsAdmin);
+partnerLeadCourseFilter?.addEventListener("change", renderPartnerLeadsAdmin);
+partnerLeadStatusFilter?.addEventListener("change", renderPartnerLeadsAdmin);
+partnerLeadSearchInput?.addEventListener("input", renderPartnerLeadsAdmin);
 freeLeadRows?.addEventListener("click", (event) => {
   const saveButton = event.target.closest("[data-save-free-lead]");
   if (saveButton) saveFreeResourceLeadFollowup(saveButton.dataset.saveFreeLead);
+});
+partnerLeadRows?.addEventListener("click", (event) => {
+  const saveButton = event.target.closest("[data-save-partner-lead]");
+  if (saveButton) savePartnerLeadFollowup(saveButton.dataset.savePartnerLead);
 });
 bindFreeResourceFilePreview("#freeResourceThumbnail", "#currentFreeThumbnail", "ยังไม่มีภาพหน้าปก");
 bindFreeResourceFilePreview("#freeResourceWorksheet", "#currentFreeWorksheet", "ยังไม่มีไฟล์ใบงาน");

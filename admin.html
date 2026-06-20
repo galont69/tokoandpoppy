@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260619-free-lead-crm">
+  <link rel="stylesheet" href="admin.css?v=20260620-partner-leads">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -85,6 +85,7 @@
         <button class="nav-item" type="button" data-admin-view="lessons" data-main-admin-only><span>📚</span> จัดการบทเรียน</button>
         <button class="nav-item" type="button" data-admin-view="art" data-main-admin-only><span>🎨</span> บทเรียนศิลปะ</button>
         <button class="nav-item" type="button" data-admin-view="freeResources" data-main-admin-only><span>🎁</span> สื่อฟรี</button>
+        <button class="nav-item" type="button" data-admin-view="partnerLeads" data-main-admin-only><span>🤝</span> Lead สถาบัน</button>
         <a class="nav-item nav-link-item" href="homeschool/admin.html" data-main-admin-only><span>🏡</span> Homeschool</a>
       </nav>
       <div class="sidebar-character">
@@ -727,6 +728,73 @@
           </div>
         </section>
       </section>
+
+      <section class="content admin-view" id="partnerLeadsView" hidden>
+        <div class="lesson-admin-hero partner-lead-hero-admin">
+          <div>
+            <span>INSTITUTE PARTNERS</span>
+            <h2>ผู้สนใจหลักสูตรสำหรับสถาบัน</h2>
+            <p>รายชื่อจากฟอร์มขอชุดตัวอย่างหลักสูตร ใช้ติดตามโรงเรียน สถาบัน และผู้สนใจเปิดคอร์ส</p>
+          </div>
+        </div>
+
+        <section class="panel free-leads-panel partner-leads-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Lead สถาบัน</h2>
+              <p>กรองตามพื้นที่ คอร์สที่สนใจ และสถานะติดตามได้</p>
+            </div>
+            <div class="panel-actions">
+              <input id="partnerLeadSearchInput" type="search" placeholder="ค้นหา ชื่อ สถาบัน เบอร์ จังหวัด อำเภอ">
+              <select id="partnerLeadCourseFilter">
+                <option value="">ทุกคอร์ส</option>
+                <option value="creative_art">ศิลปะสร้างสรรค์</option>
+                <option value="clay">ปั้นดินเบา</option>
+                <option value="water_color">สีน้ำ</option>
+                <option value="robot">Robot + Coding</option>
+                <option value="free_resources">สื่อฟรี/ใบงานดึงลูกค้า</option>
+              </select>
+              <select id="partnerLeadStatusFilter">
+                <option value="">ทุกสถานะ</option>
+                <option value="new">ยังไม่ติดต่อ</option>
+                <option value="contacted">ติดต่อแล้ว</option>
+                <option value="interested">สนใจ</option>
+                <option value="meeting_booked">นัดคุยแล้ว</option>
+                <option value="sample_sent">ส่งชุดตัวอย่างแล้ว</option>
+                <option value="converted">เป็นพาร์ทเนอร์แล้ว</option>
+                <option value="not_fit">ยังไม่เหมาะ</option>
+              </select>
+              <button class="refresh-button" id="refreshPartnerLeadsButton" type="button">↻ รีเฟรช</button>
+              <button class="export-button" id="exportPartnerLeadsButton" type="button">⬇ Export CSV</button>
+            </div>
+          </div>
+          <div class="free-lead-summary-grid">
+            <article><strong id="partnerLeadCount">0</strong><span>รายชื่อในตัวกรองนี้</span></article>
+            <article><strong id="partnerLeadNewCount">0</strong><span>ยังไม่ติดต่อ</span></article>
+            <article><strong id="partnerLeadInterestedCount">0</strong><span>สนใจ/นัดคุย</span></article>
+            <article><strong id="partnerLeadAreaCount">0</strong><span>จังหวัดที่เข้ามา</span></article>
+          </div>
+          <div class="table-wrap free-leads-table-wrap">
+            <table class="student-table free-leads-table">
+              <thead>
+                <tr>
+                  <th>วันที่</th>
+                  <th>ผู้สนใจ</th>
+                  <th>ติดต่อ</th>
+                  <th>พื้นที่</th>
+                  <th>สถาบัน</th>
+                  <th>คอร์สที่สนใจ</th>
+                  <th>ติดตาม</th>
+                  <th>ที่มา</th>
+                </tr>
+              </thead>
+              <tbody id="partnerLeadRows">
+                <tr><td colspan="8" class="loading-cell">กำลังโหลดรายชื่อ...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </section>
     </main>
   </div>
 
@@ -845,6 +913,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
-  <script src="admin.js?v=20260619-free-lead-crm"></script>
+  <script src="admin.js?v=20260620-partner-leads"></script>
 </body>
 </html>
