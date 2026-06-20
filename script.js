@@ -60,6 +60,9 @@ const partnerLeadModal = document.querySelector("#partnerLeadModal");
 const partnerLeadForm = document.querySelector("#partnerLeadForm");
 const closePartnerLeadModalButton = document.querySelector("#closePartnerLeadModal");
 const openPartnerLeadButtons = document.querySelectorAll("[data-open-partner-lead]");
+const courseFinderForm = document.querySelector("#courseFinderForm");
+const courseFinderResult = document.querySelector("#courseFinderResult");
+const courseFinderReset = document.querySelector("#courseFinderReset");
 const headerLoginButton = document.querySelector(".btn-login[data-open-auth='login']");
 const headerNavActions = headerLoginButton?.parentElement || null;
 const loginButtonDefaultMarkup = headerLoginButton?.innerHTML || "เข้าสู่ระบบ";
@@ -141,6 +144,59 @@ const fallbackFreeResources = [
     powerpoint_url: ""
   }
 ];
+
+const courseFinderRecommendations = {
+  creative_3_5: {
+    title: "Creative Art Try & Play",
+    badge: "ศิลปะสร้างสรรค์ · 3-5 ปี",
+    href: "#art-path",
+    reasons: [
+      "เริ่มจากระบายสี ตัด ปั้น แปะ และเล่นกับโจทย์ง่าย ๆ",
+      "เหมาะกับเด็กเล็กที่ยังไม่ต้องเร่งวาดให้เหมือนตัวอย่าง",
+      "ช่วยเปิดประสบการณ์ศิลปะโดยไม่ทำให้การเรียนเป็นความเครียด"
+    ]
+  },
+  creative_5_9: {
+    title: "Creative Art",
+    badge: "ศิลปะสร้างสรรค์ · 5-9 ปี",
+    href: "#art-path",
+    reasons: [
+      "ฝึกคิดจากโจทย์ ตั้งคำถาม และสร้างเรื่องราวของตัวเอง",
+      "เหมาะกับเด็กที่ชอบวาด ระบายสี และเล่าไอเดียผ่านผลงาน",
+      "มีเส้นทางหลายเลเวล ตั้งแต่มีเส้นไกด์ไปจนถึงกระดาษเปล่า"
+    ]
+  },
+  clay: {
+    title: "ปั้นดินเบาผ่านนิทาน",
+    badge: "Clay Art · ทุกวัย",
+    href: "#courses",
+    reasons: [
+      "เหมาะกับเด็กที่ชอบจับ บีบ คลึง และสร้างของที่จับต้องได้",
+      "ช่วยฝึกกล้ามเนื้อมือมัดเล็กก่อนต่อยอดสู่การเขียนและงานละเอียด",
+      "สนุกง่าย เห็นผลงานเร็ว และเข้าได้กับหลายช่วงวัย"
+    ]
+  },
+  watercolor: {
+    title: "สีน้ำผ่านนิทาน",
+    badge: "Watercolor · 6-9 ปี",
+    href: "#courses",
+    reasons: [
+      "เหมาะกับเด็กที่เริ่มนั่งทำงานละเอียดและใช้สมาธิได้นานขึ้น",
+      "ฝึกการสังเกต น้ำหนักมือ น้ำ สี และความใจเย็น",
+      "ช่วยให้เด็กผ่อนคลายผ่านงานสีที่ค่อย ๆ เห็นผล"
+    ]
+  },
+  robot: {
+    title: "โค้ดดิ้งผ่านนิทาน",
+    badge: "Robot + Coding · 4-9 ปี",
+    href: "#courses",
+    reasons: [
+      "เหมาะกับเด็กที่ชอบเกม ภารกิจ การต่อสร้าง และการทดลอง",
+      "ฝึกคิดเป็นลำดับขั้นตอน วางแผน และแก้ปัญหาเมื่อหุ่นยนต์ยังไม่สำเร็จ",
+      "ได้ลงมือจับของจริงควบคู่กับการใช้คำสั่งบนแท็บเล็ต"
+    ]
+  }
+};
 
 function canUseSupabase() {
   if (!supabaseConfigured) {
@@ -251,6 +307,127 @@ function escapeHtml(value = "") {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function getCourseFinderAnswers(form) {
+  const data = new FormData(form);
+  return {
+    age: data.get("age"),
+    interest: data.get("interest"),
+    goal: data.get("goal")
+  };
+}
+
+function addCourseScore(scores, key, amount) {
+  scores[key] = (scores[key] || 0) + amount;
+}
+
+function getCourseFinderRanking(answers) {
+  const scores = {
+    creative_3_5: 0,
+    creative_5_9: 0,
+    clay: 0,
+    watercolor: 0,
+    robot: 0
+  };
+
+  if (answers.age === "3-4") {
+    addCourseScore(scores, "creative_3_5", 4);
+    addCourseScore(scores, "clay", 2);
+    addCourseScore(scores, "robot", 1);
+  }
+  if (answers.age === "5-6") {
+    addCourseScore(scores, "creative_3_5", 2);
+    addCourseScore(scores, "creative_5_9", 3);
+    addCourseScore(scores, "clay", 2);
+    addCourseScore(scores, "robot", 2);
+    addCourseScore(scores, "watercolor", 1);
+  }
+  if (answers.age === "7-9") {
+    addCourseScore(scores, "creative_5_9", 4);
+    addCourseScore(scores, "robot", 3);
+    addCourseScore(scores, "watercolor", 3);
+    addCourseScore(scores, "clay", 1);
+  }
+
+  if (answers.interest === "art_story") {
+    addCourseScore(scores, "creative_3_5", 2);
+    addCourseScore(scores, "creative_5_9", 3);
+    addCourseScore(scores, "watercolor", 1);
+  }
+  if (answers.interest === "hands") {
+    addCourseScore(scores, "clay", 4);
+    addCourseScore(scores, "creative_3_5", 2);
+  }
+  if (answers.interest === "build_game") {
+    addCourseScore(scores, "robot", 4);
+    addCourseScore(scores, "clay", 1);
+  }
+  if (answers.interest === "calm_color") {
+    addCourseScore(scores, "watercolor", 4);
+    addCourseScore(scores, "creative_5_9", 2);
+    addCourseScore(scores, "creative_3_5", 1);
+  }
+
+  if (answers.goal === "creativity") {
+    addCourseScore(scores, "creative_3_5", 2);
+    addCourseScore(scores, "creative_5_9", 3);
+  }
+  if (answers.goal === "fine_motor") {
+    addCourseScore(scores, "clay", 4);
+    addCourseScore(scores, "creative_3_5", 2);
+  }
+  if (answers.goal === "focus") {
+    addCourseScore(scores, "watercolor", 4);
+    addCourseScore(scores, "robot", 1);
+  }
+  if (answers.goal === "logic") {
+    addCourseScore(scores, "robot", 4);
+    addCourseScore(scores, "creative_5_9", 1);
+  }
+
+  return Object.entries(scores)
+    .sort((a, b) => b[1] - a[1])
+    .map(([key, score]) => ({
+      key,
+      score,
+      ...courseFinderRecommendations[key]
+    }));
+}
+
+function renderCourseFinderResult(ranking) {
+  if (!courseFinderResult || !ranking.length) return;
+  const [best, ...alternatives] = ranking;
+  const secondary = alternatives.slice(0, 2);
+  courseFinderResult.innerHTML = `
+    <span>คอร์สที่น่าลองก่อน</span>
+    <h3>${escapeHtml(best.title)}</h3>
+    <div class="finder-result-badge">${escapeHtml(best.badge)}</div>
+    <ul class="finder-reason-list">
+      ${best.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}
+    </ul>
+    <div class="finder-secondary">
+      <strong>ตัวเลือกสำรองที่เข้ากับลูกได้เช่นกัน</strong>
+      <div>
+        ${secondary.map((item) => `<a href="${escapeHtml(item.href)}">${escapeHtml(item.title)}</a>`).join("")}
+      </div>
+    </div>
+    <div class="finder-result-actions">
+      <button type="button" class="btn-primary" data-course-finder-register>ทดลองเรียนคอร์สนี้ <span>→</span></button>
+      <a class="btn-ghost" href="${escapeHtml(best.href)}">ดูรายละเอียดคอร์ส</a>
+    </div>
+  `;
+  courseFinderResult.querySelector("[data-course-finder-register]")?.addEventListener("click", () => openAuth("register"));
+}
+
+function resetCourseFinder() {
+  courseFinderForm?.reset();
+  if (!courseFinderResult) return;
+  courseFinderResult.innerHTML = `
+    <span>ผลแนะนำจะแสดงที่นี่</span>
+    <h3>ตอบคำถาม 3 ข้อ แล้วเราจะช่วยจัดลำดับคอร์สที่น่าลอง</h3>
+    <p>เหมาะสำหรับผู้ปกครองที่ยังลังเลระหว่างศิลปะ ดินเบา สีน้ำ หรือโค้ดดิ้ง</p>
+  `;
 }
 
 function getFreeResourceCategoryLabel(category) {
@@ -1502,6 +1679,15 @@ async function uploadPaymentSlip(userId, slip) {
 document.querySelectorAll("[data-open-auth]").forEach((button) => {
   button.addEventListener("click", () => openAuth(button.dataset.openAuth));
 });
+
+courseFinderForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const answers = getCourseFinderAnswers(courseFinderForm);
+  const ranking = getCourseFinderRanking(answers);
+  renderCourseFinderResult(ranking);
+});
+
+courseFinderReset?.addEventListener("click", resetCourseFinder);
 
 freeResourceGrid?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-free-resource-id], [data-free-resource-fallback], [data-free-download-id], [data-free-download-fallback]");

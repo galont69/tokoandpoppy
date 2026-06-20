@@ -22,7 +22,7 @@
       }
     };
   </script>
-  <link rel="stylesheet" href="styles.css?v=20260620-partner-leads">
+  <link rel="stylesheet" href="styles.css?v=20260620-course-finder">
 </head>
 <body class="font-thai text-[#49372d]">
   <div class="page-noise" aria-hidden="true"></div>
@@ -38,6 +38,7 @@
       </a>
       <div class="flex items-center gap-2 sm:gap-3">
         <a href="#courses" class="nav-link sale-nav hidden md:inline-flex">คอร์สของเรา</a>
+        <a href="#course-finder" class="nav-link sale-nav hidden xl:inline-flex">ช่วยเลือกคอร์ส</a>
         <a href="#art-path" class="nav-link sale-nav hidden lg:inline-flex">เส้นทางศิลปะ</a>
         <a href="#free-resources" class="nav-link sale-nav hidden lg:inline-flex">สื่อฟรี</a>
         <a href="#partner" class="nav-link sale-nav hidden xl:inline-flex">สำหรับสถาบัน</a>
@@ -174,6 +175,92 @@
           <article><span>2</span><strong>มีส่วนร่วมมากขึ้น</strong><p>เด็กไม่ได้แค่นั่งฟัง แต่ช่วยแก้ภารกิจ วางแผน และเลือกวิธีของตัวเอง</p></article>
           <article><span>3</span><strong>ลงมือทำจริง</strong><p>วาด ปั้น ระบายสี สั่งหุ่นยนต์ ทดลอง แก้ไข และเห็นผลงานของตัวเอง</p></article>
           <article><span>4</span><strong>ฝึกหลายทักษะพร้อมกัน</strong><p>คิดเป็นระบบ จินตนาการ สมาธิ กล้ามเนื้อมือ การสังเกต และการแก้ปัญหา</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="course-finder" class="course-finder-section">
+      <div class="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+        <div class="course-finder-shell">
+          <div class="course-finder-copy">
+            <span>Course Finder</span>
+            <h2>ยังไม่แน่ใจว่าลูกควรเริ่มคอร์สไหน?</h2>
+            <p>ตอบคำถามสั้น ๆ แล้วระบบจะแนะนำคอร์สที่เหมาะกับวัย ความสนใจ และเป้าหมายของลูก เพื่อให้ผู้ปกครองเริ่มต้นได้มั่นใจขึ้น</p>
+            <div class="finder-mini-points">
+              <small>ใช้เวลาประมาณ 1 นาที</small>
+              <small>ไม่ต้องกรอกข้อมูลส่วนตัว</small>
+              <small>กดทดลองเรียนต่อได้ทันที</small>
+            </div>
+          </div>
+
+          <form class="course-finder-form" id="courseFinderForm">
+            <fieldset>
+              <legend>ลูกอายุประมาณเท่าไร?</legend>
+              <label class="finder-option">
+                <input type="radio" name="age" value="3-4" required>
+                <span>3-4 ปี</span>
+              </label>
+              <label class="finder-option">
+                <input type="radio" name="age" value="5-6">
+                <span>5-6 ปี</span>
+              </label>
+              <label class="finder-option">
+                <input type="radio" name="age" value="7-9">
+                <span>7-9 ปี</span>
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>ลูกมักสนุกกับกิจกรรมแบบไหน?</legend>
+              <label class="finder-option">
+                <input type="radio" name="interest" value="art_story" required>
+                <span>วาด ระบายสี และเล่าเรื่อง</span>
+              </label>
+              <label class="finder-option">
+                <input type="radio" name="interest" value="hands">
+                <span>จับ บีบ ปั้น ตัด แปะ</span>
+              </label>
+              <label class="finder-option">
+                <input type="radio" name="interest" value="build_game">
+                <span>เกม ภารกิจ และการต่อสร้าง</span>
+              </label>
+              <label class="finder-option">
+                <input type="radio" name="interest" value="calm_color">
+                <span>งานสีละมุน ใช้สมาธิ</span>
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>เป้าหมายหลักของผู้ปกครองคืออะไร?</legend>
+              <label class="finder-option">
+                <input type="radio" name="goal" value="creativity" required>
+                <span>ฝึกความคิดสร้างสรรค์</span>
+              </label>
+              <label class="finder-option">
+                <input type="radio" name="goal" value="fine_motor">
+                <span>ฝึกกล้ามเนื้อมือ</span>
+              </label>
+              <label class="finder-option">
+                <input type="radio" name="goal" value="focus">
+                <span>ฝึกสมาธิและความใจเย็น</span>
+              </label>
+              <label class="finder-option">
+                <input type="radio" name="goal" value="logic">
+                <span>ฝึกคิดเป็นขั้นตอน</span>
+              </label>
+            </fieldset>
+
+            <div class="course-finder-actions">
+              <button type="submit" class="btn-primary">ดูคอร์สที่เหมาะกับลูก <span>→</span></button>
+              <button type="button" class="btn-ghost" id="courseFinderReset">เริ่มใหม่</button>
+            </div>
+          </form>
+
+          <aside class="course-finder-result" id="courseFinderResult" aria-live="polite">
+            <span>ผลแนะนำจะแสดงที่นี่</span>
+            <h3>ตอบคำถาม 3 ข้อ แล้วเราจะช่วยจัดลำดับคอร์สที่น่าลอง</h3>
+            <p>เหมาะสำหรับผู้ปกครองที่ยังลังเลระหว่างศิลปะ ดินเบา สีน้ำ หรือโค้ดดิ้ง</p>
+          </aside>
         </div>
       </div>
     </section>
