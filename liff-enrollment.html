@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สมัครเรียนผ่าน LINE | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="liff-enrollment.css">
+</head>
+<body>
+  <main class="liff-shell">
+    <section class="hero-panel">
+      <div>
+        <p class="eyebrow">Toko & Poppy Branch Signup</p>
+        <h1>สมัครเรียนให้น้องผ่าน LINE</h1>
+        <p>
+          กรอกข้อมูลสั้น ๆ เพื่อให้สาขาเปิดใบสมัครและดูแลการเรียนของน้องต่อได้ทันที
+        </p>
+      </div>
+      <div class="line-card" id="lineProfileCard" hidden>
+        <img id="linePicture" alt="" src="">
+        <div>
+          <span>เชื่อมต่อ LINE แล้ว</span>
+          <strong id="lineDisplayName">-</strong>
+        </div>
+      </div>
+      <div class="line-card muted" id="lineFallbackCard">
+        <span class="line-dot"></span>
+        <div>
+          <span>เปิดผ่าน LINE OA ได้ดีที่สุด</span>
+          <strong id="lineStatus">กำลังตรวจสอบ LIFF...</strong>
+        </div>
+      </div>
+    </section>
+
+    <form class="enrollment-form" id="liffEnrollmentForm">
+      <section class="form-card">
+        <div class="section-heading">
+          <span>1</span>
+          <div>
+            <h2>ข้อมูลผู้ปกครอง</h2>
+            <p>ใช้สำหรับติดต่อกลับและผูกกับใบสมัครของน้อง</p>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <label>
+            ชื่อผู้ปกครอง
+            <input name="parentName" type="text" autocomplete="name" required placeholder="เช่น คุณแม่พลอย">
+          </label>
+          <label>
+            เบอร์โทรศัพท์
+            <input name="parentPhone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="08x-xxx-xxxx">
+          </label>
+          <label>
+            อีเมล <span>ไม่บังคับ</span>
+            <input name="parentEmail" type="email" autocomplete="email" placeholder="name@example.com">
+          </label>
+          <label>
+            ช่องทางที่สะดวกให้ติดต่อ
+            <select name="preferredContact">
+              <option value="line">LINE</option>
+              <option value="phone">โทรศัพท์</option>
+              <option value="either">LINE หรือโทรศัพท์</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-card">
+        <div class="section-heading">
+          <span>2</span>
+          <div>
+            <h2>ข้อมูลนักเรียน</h2>
+            <p>ช่วยให้ครูแนะนำคอร์สและระดับที่เหมาะกับน้อง</p>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <label>
+            ชื่อนักเรียน
+            <input name="studentName" type="text" required placeholder="ชื่อ-นามสกุลน้อง">
+          </label>
+          <label>
+            ชื่อเล่น
+            <input name="studentNickname" type="text" placeholder="เช่น น้องต้นกล้า">
+          </label>
+          <label>
+            วันเกิด <span>ถ้าทราบ</span>
+            <input name="birthDate" type="date">
+          </label>
+          <label>
+            สาขาที่สมัคร
+            <select name="branchId" id="branchSelect" required>
+              <option value="">กำลังโหลดสาขา...</option>
+            </select>
+          </label>
+        </div>
+
+        <fieldset class="choice-group">
+          <legend>คอร์สที่สมัคร</legend>
+          <label><input type="radio" name="course" value="robot" checked> Robot Coding</label>
+          <label><input type="radio" name="course" value="creative_art"> Creative Art</label>
+          <label><input type="radio" name="course" value="water_color"> สีน้ำ</label>
+          <label><input type="radio" name="course" value="clay"> ดินเบา</label>
+        </fieldset>
+      </section>
+
+      <section class="form-card">
+        <div class="section-heading">
+          <span>3</span>
+          <div>
+            <h2>หลักฐานการชำระเงิน</h2>
+            <p>แนบสลิปเพื่อให้สาขาและแอดมินหลักตรวจสอบยอดโอนก่อนเปิดคอร์ส</p>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <label>
+            ยอดโอน
+            <input name="paidAmount" type="number" inputmode="decimal" min="1" step="1" required placeholder="เช่น 3500">
+          </label>
+          <label>
+            วันที่โอน
+            <input name="paidAt" type="date" id="paidAtInput" required>
+          </label>
+        </div>
+
+        <label class="full-field">
+          แนบสลิปโอนเงิน
+          <input class="visually-hidden-file" id="slipFileInput" name="slipFile" type="file" accept="image/jpeg,image/png,image/webp" required>
+          <span class="upload-box" id="slipUploadBox">
+            <strong>เลือกภาพสลิป</strong>
+            <small>JPG, PNG หรือ WEBP · ไม่เกิน 5 MB</small>
+          </span>
+        </label>
+        <div class="file-preview" id="slipPreview" hidden>
+          <img id="slipPreviewImage" alt="ตัวอย่างสลิปที่เลือก" hidden>
+          <div>
+            <strong id="slipFileName">ยังไม่ได้เลือกสลิป</strong>
+            <span id="slipFileSize"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="form-card">
+        <div class="section-heading">
+          <span>4</span>
+          <div>
+            <h2>ข้อมูลสำหรับครู</h2>
+            <p>แจ้งข้อควรระวังหรือสิ่งที่ครูควรรู้ก่อนเริ่มเรียน</p>
+          </div>
+        </div>
+
+        <div class="field-grid">
+          <label>
+            แพ้อาหาร
+            <input name="allergyFood" type="text" placeholder="ไม่มี / ระบุอาหารที่แพ้">
+          </label>
+          <label>
+            ภูมิแพ้ / แพ้เกสร
+            <input name="allergyPollen" type="text" placeholder="ไม่มี / ระบุอาการ">
+          </label>
+        </div>
+        <label class="full-field">
+          หมายเหตุเพิ่มเติม
+          <textarea name="studentNotes" rows="4" placeholder="เช่น น้องขี้อายช่วงแรก ชอบวาดสัตว์ ชอบหุ่นยนต์"></textarea>
+        </label>
+        <label class="full-field">
+          หมายเหตุจากสาขา <span>ไม่บังคับ</span>
+          <textarea name="branchNote" rows="3" placeholder="เจ้าหน้าที่สาขาใช้บันทึกเพิ่มได้ เช่น สมัครที่หน้าสาขา / นัดชำระเงิน"></textarea>
+        </label>
+      </section>
+
+      <label class="consent-row">
+        <input name="consent" type="checkbox" required>
+        <span>ยินยอมและยอมรับเงื่อนไขการสมัครเรียน รวมถึงการเก็บ ใช้ และเปิดเผยข้อมูลส่วนบุคคลตามนโยบาย PDPA ของ Toko & Poppy และสาขาที่เลือก</span>
+      </label>
+
+      <div class="form-actions">
+        <button class="primary-button" type="submit" id="submitButton">ส่งใบสมัครให้สาขา →</button>
+        <p id="formMessage" role="status"></p>
+      </div>
+    </form>
+
+    <section class="success-panel" id="successPanel" hidden>
+      <span>ส่งข้อมูลแล้ว</span>
+      <h2>สาขาได้รับใบสมัครของน้องแล้วครับ</h2>
+      <p>ทีมงานจะตรวจสอบข้อมูลและติดต่อกลับตามช่องทางที่คุณสะดวก</p>
+      <button type="button" id="closeLiffButton">ปิดหน้านี้</button>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="liff-enrollment.js"></script>
+</body>
+</html>
