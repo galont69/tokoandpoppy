@@ -85,6 +85,18 @@ function focusMessage() {
   formMessage.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+function showElement(element) {
+  if (!element) return;
+  element.hidden = false;
+  element.classList.remove("is-hidden");
+}
+
+function hideElement(element) {
+  if (!element) return;
+  element.hidden = true;
+  element.classList.add("is-hidden");
+}
+
 async function uploadPaymentSlip(file) {
   validateSlipFile(file);
   const extension = getFileExtension(file);
@@ -175,8 +187,8 @@ async function setupLineProfile() {
     if (lineProfile.pictureUrl) {
       linePicture.src = lineProfile.pictureUrl;
     }
-    lineFallbackCard.hidden = true;
-    lineProfileCard.hidden = false;
+    hideElement(lineFallbackCard);
+    showElement(lineProfileCard);
   } catch (error) {
     console.warn("LIFF init failed", error);
     lineStatus.textContent = "เปิดเป็น browser ปกติได้ แต่จะไม่ดึงชื่อ LINE";
