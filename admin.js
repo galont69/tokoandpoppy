@@ -139,6 +139,26 @@ const courseLabels = {
 };
 
 const artCourseTypes = ["art", "creative_art", "water_color", "clay"];
+const liffCourseTypes = ["robot", "creative_art", "water_color", "clay"];
+
+function getApplicationCourseCodes(application = {}) {
+  const requestedCourses = Array.isArray(application.requested_courses)
+    ? application.requested_courses
+    : [];
+  const normalized = requestedCourses
+    .map((course) => String(course || "").trim())
+    .filter((course) => liffCourseTypes.includes(course));
+  if (normalized.length) return normalized;
+  return application.course ? [application.course] : [];
+}
+
+function getApplicationCourseText(application = {}) {
+  const courseCodes = getApplicationCourseCodes(application);
+  if (!courseCodes.length) return "-";
+  return courseCodes
+    .map((course) => courseLabels[course]?.[0] || course)
+    .join(" + ");
+}
 
 const freeLeadStatusLabels = {
   new: "ยังไม่ติดต่อ",
@@ -233,6 +253,12 @@ const paymentMethodLabels = {
 const sourceLabels = {
   online: "สมัครออนไลน์",
   branch: "ผ่านสาขา"
+};
+
+const registrationSourceLabels = {
+  web: "เว็บ",
+  line_liff: "LINE LIFF",
+  branch_staff: "เจ้าหน้าที่สาขา"
 };
 
 function showToast(message, isError = false) {
@@ -1011,9 +1037,13 @@ function getFilteredApplications() {
       application.parent_email,
       application.parent_phone,
       getBranchName(application),
+      getApplicationCourseText(application),
       application.paid_amount,
       application.payment_method,
-      application.enrollment_source
+      application.enrollment_source,
+      application.registration_source,
+      application.line_display_name,
+      application.line_user_id
     ].join(" ").toLowerCase();
     return matchesStatus &&
       matchesSource &&
@@ -1028,8 +1058,9 @@ function renderApplications() {
   const filtered = getFilteredApplications();
 
   rows.innerHTML = filtered.map((application) => {
-    const [courseName, courseDescription] =
+    const [, courseDescription] =
       courseLabels[application.course] || [application.course, ""];
+    const courseName = getApplicationCourseText(application);
     const approvedCourses = [
       application.robot_access ? "โรบอท" : "",
       application.art_access ? "ศิลปะ" : ""
@@ -1037,6 +1068,10 @@ function renderApplications() {
     const sourceText = application.enrollment_source === "branch"
       ? `${sourceLabels.branch}: ${getBranchName(application)}`
       : sourceLabels.online;
+    const registrationText =
+      registrationSourceLabels[application.registration_source] ||
+      application.registration_source ||
+      "";
     const paymentText = paymentMethodLabels[application.payment_method] || "ไม่ระบุ";
     const proofText = application.slip_path
       ? "🧾 ดูหลักฐาน"
@@ -1055,6 +1090,7 @@ function renderApplications() {
               <small>ผู้ปกครอง: ${escapeHtml(application.parent_name || "-")}</small>
               <small>${escapeHtml(application.parent_email)}</small>
               <small>${escapeHtml(application.parent_phone)}</small>
+              ${application.line_display_name ? `<small>LINE: ${escapeHtml(application.line_display_name)}</small>` : ""}
             </div>
           </div>
         </td>
@@ -1067,6 +1103,7 @@ function renderApplications() {
                 : courseDescription
             )}</small>
             <small>${escapeHtml(sourceText)}</small>
+            ${registrationText ? `<small>แหล่งที่มา: ${escapeHtml(registrationText)}</small>` : ""}
           </div>
         </td>
         <td>
@@ -1119,7 +1156,11 @@ function exportApplicationsCsv() {
     "สิทธิ์โรบอท",
     "สิทธิ์ศิลปะ",
     "ช่องทางสมัคร",
+    "แหล่งที่มา",
     "สาขา",
+    "LINE display name",
+    "LINE user id",
+    "LINE picture url",
     "วิธีชำระเงิน",
     "สถานะชำระเงิน",
     "ยอดชำระ",
@@ -1136,10 +1177,14 @@ function exportApplicationsCsv() {
   const lines = [
     headers.map(csvCell).join(","),
     ...filtered.map((application) => {
-      const [courseName] = courseLabels[application.course] || [application.course || ""];
+      const courseName = getApplicationCourseText(application);
       const sourceText = application.enrollment_source === "branch"
         ? sourceLabels.branch
         : sourceLabels.online;
+      const registrationText =
+        registrationSourceLabels[application.registration_source] ||
+        application.registration_source ||
+        "เว็บ";
 
       return [
         toLocalDateTimeValue(application.created_at),
@@ -1155,7 +1200,11 @@ function exportApplicationsCsv() {
         application.robot_access ? "ใช่" : "ไม่ใช่",
         application.art_access ? "ใช่" : "ไม่ใช่",
         sourceText,
+        registrationText,
         application.enrollment_source === "branch" ? getBranchName(application) : "ออนไลน์",
+        application.line_display_name,
+        application.line_user_id,
+        application.line_picture_url,
         paymentMethodLabels[application.payment_method] || application.payment_method,
         application.payment_status,
         application.paid_amount || 0,
@@ -1195,11 +1244,14 @@ async function openReview(applicationId) {
   document.querySelector("#reviewSubtitle").textContent =
     `สมัครเมื่อ ${formatDate(activeApplication.created_at)}`;
 
-  const [courseName] =
-    courseLabels[activeApplication.course] || [activeApplication.course];
+  const courseName = getApplicationCourseText(activeApplication);
   const sourceText = activeApplication.enrollment_source === "branch"
     ? `${sourceLabels.branch}: ${getBranchName(activeApplication)}`
     : sourceLabels.online;
+  const registrationText =
+    registrationSourceLabels[activeApplication.registration_source] ||
+    activeApplication.registration_source ||
+    "เว็บ";
   const paymentText = paymentMethodLabels[activeApplication.payment_method] || "ไม่ระบุ";
   document.querySelector("#studentDetails").innerHTML = `
     <div><dt>ชื่อเล่นนักเรียน</dt><dd>${escapeHtml(activeApplication.student_nickname || "-")}</dd></div>
@@ -1207,6 +1259,10 @@ async function openReview(applicationId) {
     <div><dt>อีเมลผู้ปกครอง</dt><dd>${escapeHtml(activeApplication.parent_email)}</dd></div>
     <div><dt>เบอร์โทรศัพท์</dt><dd>${escapeHtml(activeApplication.parent_phone)}</dd></div>
     <div><dt>ช่องทางสมัคร</dt><dd>${escapeHtml(sourceText)}</dd></div>
+    <div><dt>แหล่งที่มา</dt><dd>${escapeHtml(registrationText)}</dd></div>
+    <div><dt>ชื่อ LINE</dt><dd>${escapeHtml(activeApplication.line_display_name || "-")}</dd></div>
+    <div><dt>LINE user id</dt><dd>${escapeHtml(activeApplication.line_user_id || "-")}</dd></div>
+    <div><dt>ช่องทางติดต่อสะดวก</dt><dd>${escapeHtml(activeApplication.preferred_contact || "-")}</dd></div>
     <div><dt>คอร์สที่สมัคร</dt><dd>${escapeHtml(courseName)}</dd></div>
     <div><dt>วิธีชำระเงิน</dt><dd>${escapeHtml(paymentText)}</dd></div>
     <div><dt>ยอดชำระ</dt><dd>${formatMoney(activeApplication.paid_amount)} บาท</dd></div>
@@ -1215,21 +1271,29 @@ async function openReview(applicationId) {
     <div><dt>แพ้อาหาร</dt><dd>${escapeHtml(activeApplication.allergy_food || "-")}</dd></div>
     <div><dt>แพ้เกสร / ภูมิแพ้</dt><dd>${escapeHtml(activeApplication.allergy_pollen || "-")}</dd></div>
     <div><dt>ข้อมูลเพิ่มเติม</dt><dd>${escapeHtml(activeApplication.student_notes || "-")}</dd></div>
+    <div><dt>หมายเหตุจากสาขา</dt><dd>${escapeHtml(activeApplication.branch_note || "-")}</dd></div>
     <div><dt>หมายเหตุชำระเงิน</dt><dd>${escapeHtml(activeApplication.payment_note || "-")}</dd></div>
     <div><dt>สถานะการชำระเงิน</dt><dd>${escapeHtml(activeApplication.payment_status)}</dd></div>
   `;
 
-  robotAccess.checked = activeApplication.status === "pending"
-    ? ["robot", "both"].includes(activeApplication.course)
+  const isPendingApplication = activeApplication.status === "pending";
+  const pendingCourses = getApplicationCourseCodes(activeApplication);
+  const pendingCourse = activeApplication.course;
+  robotAccess.checked = isPendingApplication
+    ? pendingCourses.includes("robot") || pendingCourse === "both"
     : activeApplication.robot_access;
-  artAccess.checked = activeApplication.status === "pending"
-    ? ["art", "both"].includes(activeApplication.course)
+  artAccess.checked = isPendingApplication
+    ? pendingCourses.some((course) => ["art", "creative_art", "water_color", "clay"].includes(course)) ||
+      ["art", "both"].includes(pendingCourse)
     : activeApplication.art_access;
   const packages = await loadApplicationCoursePackages(activeApplication.id);
   if (robotSessionCount) robotSessionCount.value = packages.robot || 30;
   if (artSessionCount) artSessionCount.value = packages.art || 12;
+  const hasStoredArtPackage = packages.selectedArtPrograms.size > 0;
   artProgramControls.forEach((program) => {
-    const selected = packages.selectedArtPrograms.has(program.type);
+    const selected = hasStoredArtPackage
+      ? packages.selectedArtPrograms.has(program.type)
+      : pendingCourses.includes(program.type) || program.type === pendingCourse;
     if (program.checkbox) program.checkbox.checked = artAccess.checked && selected;
     if (program.input) program.input.value = packages[program.type] || program.defaultSessions;
   });

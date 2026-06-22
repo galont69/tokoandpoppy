@@ -26,6 +26,12 @@ let branches = [];
 
 const maxSlipSize = 5 * 1024 * 1024;
 const allowedSlipTypes = ["image/jpeg", "image/png", "image/webp"];
+const courseLabels = {
+  robot: "Robot Coding",
+  creative_art: "Creative Art",
+  water_color: "สีน้ำ",
+  clay: "ดินเบา"
+};
 
 function setMessage(message, isError = false) {
   formMessage.textContent = message;
@@ -67,6 +73,16 @@ function validateSlipFile(file) {
   if (file.size > maxSlipSize) {
     throw new Error("ไฟล์สลิปต้องไม่เกิน 5 MB");
   }
+}
+
+function getSelectedCourses(formData) {
+  return formData.getAll("course")
+    .map((course) => normalizeText(course))
+    .filter((course) => Object.hasOwn(courseLabels, course));
+}
+
+function focusMessage() {
+  formMessage.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 async function uploadPaymentSlip(file) {
@@ -206,7 +222,7 @@ async function loadBranches() {
   }
 }
 
-function buildPayload(formData, slipPath) {
+function buildPayload(formData, slipPath, selectedCourses) {
   const email = normalizeText(formData.get("parentEmail"));
   return {
     p_student_name: normalizeText(formData.get("studentName")),
@@ -214,7 +230,8 @@ function buildPayload(formData, slipPath) {
     p_parent_name: normalizeText(formData.get("parentName")),
     p_parent_phone: normalizeText(formData.get("parentPhone")),
     p_parent_email: email || null,
-    p_course: formData.get("course") || "robot",
+    p_course: selectedCourses[0] || "robot",
+    p_requested_courses: selectedCourses,
     p_branch_id: formData.get("branchId"),
     p_payment_method: "transfer",
     p_paid_amount: Number(formData.get("paidAmount") || 0),
@@ -245,12 +262,28 @@ async function submitEnrollment(event) {
   const formData = new FormData(form);
   if (!formData.get("consent")) {
     setMessage("กรุณายินยอมและยอมรับเงื่อนไขก่อนส่งใบสมัคร", true);
+    focusMessage();
+    return;
+  }
+
+  const birthDate = formData.get("birthDate");
+  if (!birthDate) {
+    setMessage("กรุณากรอกวันเกิดของนักเรียน เพื่อให้สาขาทราบอายุของน้อง", true);
+    focusMessage();
+    return;
+  }
+
+  const selectedCourses = getSelectedCourses(formData);
+  if (!selectedCourses.length) {
+    setMessage("กรุณาเลือกคอร์สที่สมัครอย่างน้อย 1 คอร์ส", true);
+    focusMessage();
     return;
   }
 
   const paidAmount = Number(formData.get("paidAmount") || 0);
   if (!Number.isFinite(paidAmount) || paidAmount <= 0) {
     setMessage("กรุณากรอกยอดโอนให้ถูกต้อง", true);
+    focusMessage();
     return;
   }
 
@@ -259,6 +292,7 @@ async function submitEnrollment(event) {
     validateSlipFile(slipFile);
   } catch (error) {
     setMessage(error.message, true);
+    focusMessage();
     return;
   }
 
@@ -269,17 +303,19 @@ async function submitEnrollment(event) {
   try {
     const slipPath = await uploadPaymentSlip(slipFile);
     setMessage("กำลังบันทึกข้อมูลให้สาขา...");
-    const payload = buildPayload(formData, slipPath);
+    const payload = buildPayload(formData, slipPath, selectedCourses);
     const { error } = await supabaseClient.rpc("submit_liff_enrollment", payload);
     if (error) throw error;
 
     form.hidden = true;
     successPanel.hidden = false;
-    setMessage("");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    successPanel.focus({ preventScroll: true });
+    successPanel.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
     console.error(error);
-    setMessage(error.message || "ส่งใบสมัครไม่สำเร็จ กรุณาลองใหม่", true);
+    const message = error.message || "ส่งใบสมัครไม่สำเร็จ กรุณาลองใหม่";
+    setMessage(`ส่งใบสมัครไม่สำเร็จ: ${message}`, true);
+    focusMessage();
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = "ส่งใบสมัครให้สาขา →";

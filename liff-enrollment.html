@@ -88,8 +88,8 @@
             <input name="studentNickname" type="text" placeholder="เช่น น้องต้นกล้า">
           </label>
           <label>
-            วันเกิด <span>ถ้าทราบ</span>
-            <input name="birthDate" type="date">
+            วันเกิด
+            <input name="birthDate" type="date" required>
           </label>
           <label>
             สาขาที่สมัคร
@@ -101,10 +101,10 @@
 
         <fieldset class="choice-group">
           <legend>คอร์สที่สมัคร</legend>
-          <label><input type="radio" name="course" value="robot" checked> Robot Coding</label>
-          <label><input type="radio" name="course" value="creative_art"> Creative Art</label>
-          <label><input type="radio" name="course" value="water_color"> สีน้ำ</label>
-          <label><input type="radio" name="course" value="clay"> ดินเบา</label>
+          <label><input type="checkbox" name="course" value="robot" checked> Robot Coding</label>
+          <label><input type="checkbox" name="course" value="creative_art"> Creative Art</label>
+          <label><input type="checkbox" name="course" value="water_color"> สีน้ำ</label>
+          <label><input type="checkbox" name="course" value="clay"> ดินเบา</label>
         </fieldset>
       </section>
 
@@ -185,7 +185,7 @@
       </div>
     </form>
 
-    <section class="success-panel" id="successPanel" hidden>
+    <section class="success-panel" id="successPanel" tabindex="-1" hidden>
       <span>ส่งข้อมูลแล้ว</span>
       <h2>สาขาได้รับใบสมัครของน้องแล้วครับ</h2>
       <p>ทีมงานจะตรวจสอบข้อมูลและติดต่อกลับตามช่องทางที่คุณสะดวก</p>
