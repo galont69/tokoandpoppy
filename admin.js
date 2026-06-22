@@ -1253,7 +1253,16 @@ async function openReview(applicationId) {
     activeApplication.registration_source ||
     "เว็บ";
   const paymentText = paymentMethodLabels[activeApplication.payment_method] || "ไม่ระบุ";
+  const pendingAccountNotice = !activeApplication.parent_user_id
+    ? `
+      <div class="full account-link-notice">
+        <dt>สถานะบัญชีผู้ปกครอง</dt>
+        <dd>ใบสมัครนี้ยังไม่ได้ผูกบัญชีผู้ปกครอง อนุมัติใบสมัครได้ก่อน แต่ระบบจะยังไม่เปิดสิทธิ์คอร์สจนกว่าจะผูกบัญชี</dd>
+      </div>
+    `
+    : "";
   document.querySelector("#studentDetails").innerHTML = `
+    ${pendingAccountNotice}
     <div><dt>ชื่อเล่นนักเรียน</dt><dd>${escapeHtml(activeApplication.student_nickname || "-")}</dd></div>
     <div><dt>ชื่อผู้ปกครอง</dt><dd>${escapeHtml(activeApplication.parent_name || "-")}</dd></div>
     <div><dt>อีเมลผู้ปกครอง</dt><dd>${escapeHtml(activeApplication.parent_email)}</dd></div>
@@ -1388,6 +1397,7 @@ async function reviewApplication(decision) {
 
   setBusy(true);
   try {
+    const canOpenCourseAccess = Boolean(activeApplication.parent_user_id);
     const { error } = await supabaseClient.rpc("review_enrollment", {
       p_application_id: activeApplication.id,
       p_decision: decision,
@@ -1397,7 +1407,7 @@ async function reviewApplication(decision) {
     });
     if (error) throw error;
 
-    if (decision === "approved") {
+    if (decision === "approved" && canOpenCourseAccess) {
       const { error: packageError } = await supabaseClient.rpc("set_course_enrollment_packages", {
         p_application_id: activeApplication.id,
         p_robot_sessions: robotSessions,
@@ -1415,9 +1425,12 @@ async function reviewApplication(decision) {
   }
   setBusy(false);
 
+  const approvedWithParentAccount = Boolean(activeApplication.parent_user_id);
   closeReview();
   showToast(decision === "approved"
-    ? "อนุมัติและเปิดสิทธิ์คอร์สเรียบร้อย"
+    ? approvedWithParentAccount
+      ? "อนุมัติและเปิดสิทธิ์คอร์สเรียบร้อย"
+      : "อนุมัติใบสมัครแล้ว รอผูกบัญชีผู้ปกครองก่อนเปิดสิทธิ์คอร์ส"
     : "บันทึกการไม่อนุมัติเรียบร้อย");
   await loadApplications();
 }

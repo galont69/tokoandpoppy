@@ -265,6 +265,8 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .decision-panel { padding: 25px; }
 .student-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 0 20px; }
 .student-details div { border-radius: 12px; padding: 10px 12px; background: white; border: 1px solid #ece4da; }
+.student-details div.full { grid-column: 1 / -1; }
+.student-details .account-link-notice { border-color: #e6cf91; background: #fff8df; }
 .student-details dt { color: #9e897c; font-size: 8px; }
 .student-details dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 10px; font-weight: 700; }
 .decision-panel fieldset { display: grid; gap: 8px; margin: 0; border: 0; padding: 0; }
