@@ -3,8 +3,9 @@ const teacherConfigured = teacherConfig.url &&
   teacherConfig.anonKey &&
   !teacherConfig.url.includes("YOUR_PROJECT") &&
   !teacherConfig.anonKey.includes("YOUR_SUPABASE");
+const teacherLibraryReady = Boolean(window.supabase?.createClient);
 
-const teacherSupabase = teacherConfigured
+const teacherSupabase = teacherConfigured && teacherLibraryReady
   ? window.supabase.createClient(teacherConfig.url, teacherConfig.anonKey)
   : null;
 
@@ -30,9 +31,31 @@ function fillInviteFromUrl() {
   if (invite) inviteCodeInput.value = invite;
 }
 
+function updateConnectionWarning() {
+  if (!teacherConfigWarning) return;
+
+  if (!teacherConfigured) {
+    teacherConfigWarning.hidden = false;
+    teacherConfigWarning.querySelector("strong").textContent = "ยังไม่ได้เชื่อม Supabase";
+    teacherConfigWarning.querySelector("span").innerHTML =
+      'กรุณาใส่ Project URL และ anon/public key ในไฟล์ <code>supabase-config.js</code>';
+    return;
+  }
+
+  if (!teacherLibraryReady) {
+    teacherConfigWarning.hidden = false;
+    teacherConfigWarning.querySelector("strong").textContent = "โหลด Supabase ไม่สำเร็จ";
+    teacherConfigWarning.querySelector("span").textContent =
+      "กรุณารีเฟรชหน้าอีกครั้ง หรือเปิดผ่านเครือข่ายที่โหลด cdn.jsdelivr.net ได้";
+    return;
+  }
+
+  teacherConfigWarning.hidden = true;
+}
+
 async function submitTeacherSignup(event) {
   event.preventDefault();
-  if (!teacherConfigured) {
+  if (!teacherConfigured || !teacherSupabase) {
     showTeacherToast("ยังไม่ได้ตั้งค่า Supabase", true);
     return;
   }
@@ -87,5 +110,5 @@ async function submitTeacherSignup(event) {
 }
 
 fillInviteFromUrl();
-teacherConfigWarning.hidden = Boolean(teacherConfigured);
+updateConnectionWarning();
 teacherSignupForm.addEventListener("submit", submitTeacherSignup);
