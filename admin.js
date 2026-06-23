@@ -469,8 +469,19 @@ function setAdminAuthMode(mode) {
     : "เข้าสู่ระบบผู้ดูแล";
   adminAuthCopy.textContent = isSignup
     ? "เลือกสาขาที่รับผิดชอบ แล้วรอแอดมินหลักอนุมัติก่อนใช้งาน"
-    : "ใช้บัญชีแอดมินหลัก หรือบัญชีผู้ดูแลสาขาที่ได้รับอนุมัติแล้ว";
+    : "ใช้บัญชีแอดมินหลัก ผู้ดูแลสาขา หรือครูประจำสาขาที่ได้รับอนุมัติแล้ว";
   if (isSignup) loadBranchChoicesForSignup();
+}
+
+function getAuthErrorMessage(error) {
+  const message = error?.message || "";
+  if (/invalid login credentials/i.test(message)) {
+    return "อีเมลหรือรหัสผ่านไม่ถูกต้อง ครูต้องใช้อีเมลและรหัสผ่านที่ตั้งไว้ตอนสมัครจากลิงก์เชิญครู";
+  }
+  if (/email not confirmed/i.test(message)) {
+    return "บัญชียังไม่ได้ยืนยันอีเมล กรุณาตรวจอีเมลยืนยันก่อนเข้าสู่ระบบ";
+  }
+  return message || "กรุณาลองใหม่อีกครั้ง";
 }
 
 async function verifyAdmin(user) {
@@ -3769,7 +3780,7 @@ loginForm.addEventListener("submit", async (event) => {
   button.disabled = false;
   button.innerHTML = 'เข้าสู่ระบบ <span>→</span>';
   if (error) {
-    showToast(`เข้าสู่ระบบไม่สำเร็จ: ${error.message}`, true);
+    showToast(`เข้าสู่ระบบไม่สำเร็จ: ${getAuthErrorMessage(error)}`, true);
     return;
   }
 
