@@ -134,6 +134,12 @@ button { cursor: pointer; }
   width: 100%; outline: none; border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px;
   color: var(--brown); background: #fffefa; font: inherit;
 }
+.branch-form select {
+  width: 100%; outline: none; border: 1px solid var(--line); border-radius: 13px; padding: 12px 14px;
+  color: var(--brown); background: #fffefa; font: inherit;
+}
+.form-helper { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; }
+.branch-staff-grid { align-items: start; }
 .branch-list-panel { margin-top: 0; }
 .branch-list { display: grid; gap: 10px; padding: 0 22px 22px; }
 .branch-card { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; border: 1px solid #efe7de; border-radius: 16px; padding: 14px; background: #fffefa; }
@@ -164,6 +170,33 @@ button { cursor: pointer; }
 .branch-admin-request-card h3 { margin: 9px 0 3px; font-size: 22px; }
 .branch-admin-request-card p { margin: 0; color: var(--muted); font-size: 15px; overflow-wrap: anywhere; }
 .branch-admin-request-card small { display: block; margin-top: 8px; color: #9c776c; font-size: 14px; }
+.teacher-invite-link {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  border: 1px dashed #cdbd9f;
+  border-radius: 13px;
+  padding: 10px;
+  background: rgba(255,255,255,.72);
+}
+.teacher-invite-link code {
+  min-width: 0;
+  color: #715e52;
+  font: 800 12px Nunito, sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.teacher-invite-link button {
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #4f774b;
+  background: #eaf2e2;
+  font: 800 11px Nunito, sans-serif;
+}
 .request-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .request-meta span {
   border-radius: 99px;

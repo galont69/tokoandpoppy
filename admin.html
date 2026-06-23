@@ -80,6 +80,10 @@
           <span>🧑‍🏫</span> ผู้ดูแลสาขา
           <i id="branchAdminPendingBadge">0</i>
         </button>
+        <button class="nav-item" type="button" data-admin-view="branchStaff" data-branch-staff-admin>
+          <span>👩‍🏫</span> ทีมสาขา/ครู
+          <i id="branchTeacherPendingBadge">0</i>
+        </button>
         <button class="nav-item" type="button" data-admin-view="branches" data-main-admin-only><span>🏫</span> สาขาเฟรนไชน์</button>
         <button class="nav-item" type="button" data-admin-view="progress"><span>📸</span> สมุดพัฒนาการ</button>
         <button class="nav-item" type="button" data-admin-view="lessons" data-main-admin-only><span>📚</span> จัดการบทเรียน</button>
@@ -286,6 +290,51 @@
             <div class="loading-state"><i></i><span>กำลังโหลดคำขอ...</span></div>
           </div>
         </section>
+      </section>
+
+      <section class="content admin-view" id="branchStaffView" hidden>
+        <div class="lesson-admin-hero branch-hero-admin">
+          <div>
+            <span>BRANCH TEAM</span>
+            <h2>ทีมสาขาและครูผู้สอน</h2>
+            <p>เชิญครูให้สมัครบัญชีของตัวเอง แล้วอนุมัติให้บันทึกสมุดพัฒนาการเฉพาะสาขาที่รับผิดชอบ</p>
+          </div>
+          <button class="refresh-button" id="refreshTeacherInvitesButton" type="button">↻ รีเฟรช</button>
+        </div>
+
+        <div class="branch-admin-grid branch-staff-grid">
+          <form class="branch-form" id="teacherInviteForm">
+            <h3>สร้างลิงก์เชิญครู</h3>
+            <label>สาขา
+              <select id="teacherInviteBranch" required>
+                <option value="">กำลังโหลดสาขา...</option>
+              </select>
+            </label>
+            <label>ชื่อครู
+              <input id="teacherInviteName" type="text" maxlength="150" required placeholder="เช่น ครูพลอย">
+            </label>
+            <label>อีเมลครู ถ้ามี
+              <input id="teacherInviteEmail" type="email" maxlength="180" placeholder="teacher@example.com">
+            </label>
+            <label>เบอร์โทรครู ถ้ามี
+              <input id="teacherInvitePhone" type="tel" maxlength="40" placeholder="08x-xxx-xxxx">
+            </label>
+            <button class="save-lesson-button" type="submit">สร้างลิงก์เชิญครู</button>
+            <p class="form-helper">ส่งลิงก์นี้ให้ครูสมัครบัญชี จากนั้นเจ้าของสาขาหรือแอดมินหลักค่อยกดอนุมัติ</p>
+          </form>
+
+          <section class="applications-panel branch-list-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>คำเชิญและคำขอครู</h2>
+                <p>ครูที่อนุมัติแล้วจะเห็นเฉพาะสมุดพัฒนาการของสาขาตัวเอง</p>
+              </div>
+            </div>
+            <div class="branch-admin-requests" id="teacherInviteRows">
+              <div class="loading-state"><i></i><span>กำลังโหลดทีมสาขา...</span></div>
+            </div>
+          </section>
+        </div>
       </section>
 
       <section class="content admin-view" id="branchesView" hidden>

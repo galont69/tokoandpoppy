@@ -68,6 +68,11 @@ const branchForm = document.querySelector("#branchForm");
 const branchAdminRows = document.querySelector("#branchAdminRows");
 const branchAdminPendingBadge = document.querySelector("#branchAdminPendingBadge");
 const refreshBranchAdminsButton = document.querySelector("#refreshBranchAdminsButton");
+const teacherInviteForm = document.querySelector("#teacherInviteForm");
+const teacherInviteBranch = document.querySelector("#teacherInviteBranch");
+const teacherInviteRows = document.querySelector("#teacherInviteRows");
+const refreshTeacherInvitesButton = document.querySelector("#refreshTeacherInvitesButton");
+const branchTeacherPendingBadge = document.querySelector("#branchTeacherPendingBadge");
 const learningProgressRows = document.querySelector("#learningProgressRows");
 const learningLoadingState = document.querySelector("#learningLoadingState");
 const learningEmptyState = document.querySelector("#learningEmptyState");
@@ -119,6 +124,7 @@ let activeApplication = null;
 let currentAdminProfile = null;
 let currentBranchAssignment = null;
 let branchAdminApplications = [];
+let branchTeacherInvitations = [];
 let signupBranchesLoaded = false;
 let branches = [];
 let robotLessons = [];
@@ -315,6 +321,14 @@ function isBranchAdmin() {
   return currentAdminProfile?.role === "branch_admin";
 }
 
+function isBranchTeacher() {
+  return currentAdminProfile?.role === "branch_teacher";
+}
+
+function canManageBranchStaff() {
+  return isMainAdmin() || isBranchAdmin();
+}
+
 function canManageApplication(application) {
   if (!application) return false;
   if (isMainAdmin()) return true;
@@ -497,22 +511,49 @@ async function verifyAdmin(user) {
     return;
   }
 
+  if (data?.role === "branch_teacher") {
+    const { data: assignment, error: assignmentError } = await supabaseClient
+      .from("branch_teacher_assignments")
+      .select("branch_id, is_active, display_name, branches(name, code)")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .maybeSingle();
+
+    if (assignmentError || !assignment?.branch_id) {
+      await supabaseClient.auth.signOut();
+      throw new Error("บัญชีครูนี้ยังไม่ได้รับการอนุมัติจากเจ้าของสาขา");
+    }
+
+    currentAdminProfile = { role: "branch_teacher" };
+    currentBranchAssignment = assignment;
+    return;
+  }
+
   await supabaseClient.auth.signOut();
   throw new Error("บัญชีนี้ไม่มีสิทธิ์ผู้ดูแลระบบ");
 }
 
 function applyAdminPermissions() {
   const mainAdmin = isMainAdmin();
+  const branchTeacher = isBranchTeacher();
   document.querySelectorAll("[data-main-admin-only]").forEach((element) => {
     element.hidden = !mainAdmin;
   });
+  document.querySelectorAll("[data-branch-staff-admin]").forEach((element) => {
+    element.hidden = !canManageBranchStaff();
+  });
+  document.querySelector('[data-admin-view="applications"]').hidden = branchTeacher;
   document.querySelector(".admin-profile strong").textContent = mainAdmin
     ? "ผู้ดูแลระบบ"
-    : "ผู้ดูแลสาขา";
+    : branchTeacher
+      ? "ครูประจำสาขา"
+      : "ผู้ดูแลสาขา";
   if (exportCsvButton) {
     exportCsvButton.textContent = mainAdmin ? "⬇ Export CSV" : "⬇ Export CSV สาขา";
   }
-  if (!mainAdmin) {
+  if (branchTeacher) {
+    showAdminView("progress");
+  } else if (!mainAdmin) {
     showAdminView("applications");
   }
 }
@@ -525,6 +566,10 @@ async function showDashboard(user) {
   applyAdminPermissions();
   loginView.hidden = true;
   shell.hidden = false;
+  if (isBranchTeacher()) {
+    await loadLearningProgress();
+    return;
+  }
   await loadApplications();
   if (isMainAdmin()) {
     await loadBranchAdminApplications();
@@ -532,6 +577,10 @@ async function showDashboard(user) {
 }
 
 async function loadApplications() {
+  if (isBranchTeacher()) {
+    applications = [];
+    return;
+  }
   loadingState.hidden = false;
   emptyState.hidden = true;
   rows.innerHTML = "";
@@ -570,10 +619,15 @@ function updateStats() {
 }
 
 function showAdminView(viewName) {
-  const branchAllowedViews = ["applications", "progress"];
-  if (!isMainAdmin() && !branchAllowedViews.includes(viewName)) {
+  const roleAllowedViews = isBranchTeacher()
+    ? ["progress"]
+    : isBranchAdmin()
+      ? ["applications", "progress", "branchStaff"]
+      : null;
+  if (roleAllowedViews && !roleAllowedViews.includes(viewName)) {
     viewName = "applications";
-    showToast("ผู้ดูแลสาขาดูได้เฉพาะข้อมูลนักเรียนในสาขาของตัวเอง", true);
+    if (isBranchTeacher()) viewName = "progress";
+    showToast("บัญชีนี้ดูได้เฉพาะข้อมูลที่เกี่ยวข้องกับหน้าที่ของตัวเอง", true);
   }
   document.querySelectorAll(".admin-view").forEach((view) => {
     view.hidden = view.id !== `${viewName}View`;
@@ -584,6 +638,7 @@ function showAdminView(viewName) {
   const viewCopy = {
     applications: ["ใบสมัครเรียน", "ศูนย์จัดการสมาชิก"],
     branchAdmins: ["ผู้ดูแลสาขา", "BRANCH ADMIN ACCESS"],
+    branchStaff: ["ทีมสาขา/ครู", "BRANCH TEAM"],
     branches: ["สาขาเฟรนไชน์", "FRANCHISE CENTER"],
     progress: ["สมุดพัฒนาการนักเรียน", "LEARNING JOURNAL"],
     lessons: ["จัดการบทเรียนโรบอท", "ROBOT COURSE STUDIO"],
@@ -596,6 +651,7 @@ function showAdminView(viewName) {
   document.querySelector(".page-kicker").textContent = kicker;
   document.querySelector(".sidebar").classList.remove("open");
   if (viewName === "branchAdmins") loadBranchAdminApplications();
+  if (viewName === "branchStaff") loadBranchTeacherInvitations();
   if (viewName === "branches") loadBranchesAdmin();
   if (viewName === "progress") loadLearningProgress();
   if (viewName === "lessons") loadRobotLessons();
@@ -688,16 +744,16 @@ async function loadLearningProgress() {
   learningLoadingState.hidden = false;
   learningEmptyState.hidden = true;
   learningProgressRows.innerHTML = "";
-  learningScopeText.textContent = isBranchAdmin()
+  learningScopeText.textContent = (isBranchAdmin() || isBranchTeacher())
     ? `กำลังดูเฉพาะนักเรียนใน${getCurrentBranchName()}`
-    : "แอดมินหลักเห็นทุกสาขา ผู้ดูแลสาขาเห็นเฉพาะสาขาของตัวเอง";
+    : "แอดมินหลักเห็นทุกสาขา ผู้ดูแลสาขาและครูเห็นเฉพาะสาขาของตัวเอง";
 
   let query = supabaseClient
     .from("course_enrollments")
     .select("*")
     .order("updated_at", { ascending: false });
 
-  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+  if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
     query = query.eq("branch_id", currentBranchAssignment.branch_id);
   }
 
@@ -1736,6 +1792,253 @@ async function reviewBranchAdminApplication(applicationId, decision) {
     ? "อนุมัติผู้ดูแลสาขาเรียบร้อย"
     : "บันทึกการไม่อนุมัติผู้ดูแลสาขาแล้ว");
   await loadBranchAdminApplications();
+}
+
+async function ensureBranchStaffOptions() {
+  if (!teacherInviteBranch || isBranchTeacher()) return;
+  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+    const branchName = getCurrentBranchName();
+    teacherInviteBranch.innerHTML = `
+      <option value="${currentBranchAssignment.branch_id}">${escapeHtml(branchName)}</option>
+    `;
+    teacherInviteBranch.value = currentBranchAssignment.branch_id;
+    teacherInviteBranch.disabled = true;
+    return;
+  }
+
+  if (!branches.length) {
+    const { data, error } = await supabaseClient
+      .from("branches")
+      .select("id, name, code, is_active")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
+    if (error) {
+      teacherInviteBranch.innerHTML = '<option value="">โหลดสาขาไม่สำเร็จ</option>';
+      showToast(`โหลดสาขาไม่สำเร็จ: ${error.message}`, true);
+      return;
+    }
+    branches = data || [];
+  }
+
+  const currentValue = teacherInviteBranch.value;
+  teacherInviteBranch.disabled = false;
+  teacherInviteBranch.innerHTML = [
+    '<option value="">เลือกสาขาสำหรับครู</option>',
+    ...branches
+      .filter((branch) => branch.is_active !== false)
+      .map((branch) => `
+        <option value="${branch.id}">
+          ${escapeHtml(branch.name)}${branch.code ? ` (${escapeHtml(branch.code)})` : ""}
+        </option>
+      `)
+  ].join("");
+  if ([...teacherInviteBranch.options].some((option) => option.value === currentValue)) {
+    teacherInviteBranch.value = currentValue;
+  }
+}
+
+function getTeacherInviteLink(invitation) {
+  const basePath = window.location.pathname.replace(/admin\.html$/, "teacher-signup.html");
+  return `${window.location.origin}${basePath}?invite=${encodeURIComponent(invitation.invite_code)}`;
+}
+
+function updateBranchTeacherBadge() {
+  if (!branchTeacherPendingBadge) return;
+  const pending = branchTeacherInvitations
+    .filter((invitation) => invitation.status === "pending").length;
+  branchTeacherPendingBadge.textContent = pending;
+}
+
+async function loadBranchTeacherInvitations() {
+  if (!canManageBranchStaff() || !teacherInviteRows) return;
+  await ensureBranchStaffOptions();
+  teacherInviteRows.innerHTML =
+    '<div class="loading-state"><i></i><span>กำลังโหลดทีมสาขา...</span></div>';
+
+  let query = supabaseClient
+    .from("branch_teacher_invitations")
+    .select("*, branches(name, code)")
+    .order("created_at", { ascending: false });
+
+  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+    query = query.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    branchTeacherInvitations = [];
+    updateBranchTeacherBadge();
+    teacherInviteRows.innerHTML = `
+      <div class="empty-state">
+        <div>👩‍🏫</div>
+        <h3>ยังโหลดทีมครูไม่ได้</h3>
+        <p>กรุณารันไฟล์ SQL ระบบทีมสาขาก่อน: ${escapeHtml(error.message)}</p>
+      </div>
+    `;
+    return;
+  }
+
+  branchTeacherInvitations = data || [];
+  updateBranchTeacherBadge();
+  renderBranchTeacherInvitations();
+}
+
+function renderBranchTeacherInvitations() {
+  if (!teacherInviteRows) return;
+  if (!branchTeacherInvitations.length) {
+    teacherInviteRows.innerHTML = `
+      <div class="empty-state">
+        <div>👩‍🏫</div>
+        <h3>ยังไม่มีครูในระบบ</h3>
+        <p>สร้างลิงก์เชิญครู แล้วส่งให้ครูสมัครบัญชีของตัวเอง</p>
+      </div>
+    `;
+    return;
+  }
+
+  const statusText = {
+    invited: "ส่งคำเชิญแล้ว",
+    pending: "รออนุมัติ",
+    active: "เปิดสิทธิ์แล้ว",
+    rejected: "ไม่อนุมัติ",
+    cancelled: "ยกเลิก",
+    expired: "หมดอายุ",
+    suspended: "พักสิทธิ์"
+  };
+
+  teacherInviteRows.innerHTML = branchTeacherInvitations.map((invitation) => {
+    const branchText = invitation.branches?.name
+      ? `${invitation.branches.name}${invitation.branches.code ? ` (${invitation.branches.code})` : ""}`
+      : "ไม่พบสาขา";
+    const isPending = invitation.status === "pending";
+    const isInvited = invitation.status === "invited";
+    const link = getTeacherInviteLink(invitation);
+    const cardStatus = invitation.status === "active"
+      ? "approved"
+      : invitation.status === "rejected" || invitation.status === "cancelled" || invitation.status === "suspended"
+        ? "rejected"
+        : "pending";
+    return `
+      <article class="branch-admin-request-card ${cardStatus}">
+        <div>
+          <span class="status-pill ${cardStatus}">${statusText[invitation.status] || invitation.status}</span>
+          <h3>${escapeHtml(invitation.teacher_name)}</h3>
+          <p>
+            ${escapeHtml(invitation.teacher_email || "ยังไม่ระบุอีเมล")}
+            ${invitation.teacher_phone ? ` · ${escapeHtml(invitation.teacher_phone)}` : ""}
+          </p>
+          <div class="request-meta">
+            <span>🏫 ${escapeHtml(branchText)}</span>
+            <span>สร้างเมื่อ ${formatDate(invitation.created_at)}</span>
+            ${invitation.accepted_at ? `<span>ตอบรับ ${formatDate(invitation.accepted_at)}</span>` : ""}
+          </div>
+          ${isInvited ? `
+            <div class="teacher-invite-link">
+              <code>${escapeHtml(link)}</code>
+              <button type="button" data-copy-teacher-invite="${invitation.id}">คัดลอก</button>
+            </div>
+          ` : ""}
+          ${invitation.rejection_reason ? `<small>เหตุผล: ${escapeHtml(invitation.rejection_reason)}</small>` : ""}
+        </div>
+        <div class="branch-admin-request-actions">
+          ${isPending ? `
+            <button class="reject-button" type="button"
+              data-teacher-review="${invitation.id}" data-decision="rejected">
+              ไม่อนุมัติ
+            </button>
+            <button class="approve-button" type="button"
+              data-teacher-review="${invitation.id}" data-decision="approved">
+              อนุมัติเป็นครู
+            </button>
+          ` : isInvited ? `
+            <button class="reject-button" type="button"
+              data-teacher-review="${invitation.id}" data-decision="cancelled">
+              ยกเลิกคำเชิญ
+            </button>
+          ` : `<strong>${statusText[invitation.status] || invitation.status}</strong>`}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function createTeacherInvitation(event) {
+  event.preventDefault();
+  if (!canManageBranchStaff()) return;
+  const branchId = teacherInviteBranch?.value || "";
+  const teacherName = document.querySelector("#teacherInviteName")?.value.trim() || "";
+  const teacherEmail = document.querySelector("#teacherInviteEmail")?.value.trim() || "";
+  const teacherPhone = document.querySelector("#teacherInvitePhone")?.value.trim() || "";
+  const submitButton = teacherInviteForm.querySelector("button[type=submit]");
+
+  if (!branchId || !teacherName) {
+    showToast("กรุณาเลือกสาขาและกรอกชื่อครู", true);
+    return;
+  }
+
+  submitButton.disabled = true;
+  submitButton.textContent = "กำลังสร้างลิงก์...";
+
+  const { data, error } = await supabaseClient.rpc("create_branch_teacher_invitation", {
+    p_branch_id: branchId,
+    p_teacher_name: teacherName,
+    p_teacher_email: teacherEmail || null,
+    p_teacher_phone: teacherPhone || null
+  });
+
+  submitButton.disabled = false;
+  submitButton.textContent = "สร้างลิงก์เชิญครู";
+
+  if (error) {
+    showToast(`สร้างลิงก์เชิญครูไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  teacherInviteForm.reset();
+  await ensureBranchStaffOptions();
+  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+    teacherInviteBranch.value = currentBranchAssignment.branch_id;
+  }
+  const link = getTeacherInviteLink(data);
+  showToast("สร้างลิงก์เชิญครูเรียบร้อย");
+  await loadBranchTeacherInvitations();
+  copyTextToClipboard(link, "คัดลอกลิงก์เชิญครูแล้ว");
+}
+
+async function reviewBranchTeacherInvitation(invitationId, decision) {
+  if (!canManageBranchStaff()) return;
+  let rejectionReasonText = null;
+  if (decision === "rejected") {
+    rejectionReasonText = window.prompt("ระบุเหตุผลที่ไม่อนุมัติครู") || "";
+    if (!rejectionReasonText.trim()) return;
+  }
+
+  const { error } = await supabaseClient.rpc("review_branch_teacher_application", {
+    p_invitation_id: invitationId,
+    p_decision: decision,
+    p_rejection_reason: rejectionReasonText?.trim() || null
+  });
+
+  if (error) {
+    showToast(`บันทึกสถานะครูไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  showToast(decision === "approved"
+    ? "อนุมัติครูเรียบร้อย"
+    : "บันทึกสถานะครูแล้ว");
+  await loadBranchTeacherInvitations();
+}
+
+function copyTextToClipboard(text, successMessage = "คัดลอกแล้ว") {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToast(successMessage))
+      .catch(() => window.prompt("คัดลอกลิงก์นี้", text));
+    return;
+  }
+  window.prompt("คัดลอกลิงก์นี้", text);
 }
 
 function renderRobotLessons() {
@@ -3534,6 +3837,19 @@ branchAdminRows.addEventListener("click", (event) => {
   const button = event.target.closest("[data-branch-admin-review]");
   if (!button) return;
   reviewBranchAdminApplication(button.dataset.branchAdminReview, button.dataset.decision);
+});
+teacherInviteForm?.addEventListener("submit", createTeacherInvitation);
+refreshTeacherInvitesButton?.addEventListener("click", loadBranchTeacherInvitations);
+teacherInviteRows?.addEventListener("click", (event) => {
+  const reviewButton = event.target.closest("[data-teacher-review]");
+  if (reviewButton) {
+    reviewBranchTeacherInvitation(reviewButton.dataset.teacherReview, reviewButton.dataset.decision);
+    return;
+  }
+  const copyButton = event.target.closest("[data-copy-teacher-invite]");
+  if (!copyButton) return;
+  const invitation = branchTeacherInvitations.find((item) => item.id === copyButton.dataset.copyTeacherInvite);
+  if (invitation) copyTextToClipboard(getTeacherInviteLink(invitation), "คัดลอกลิงก์เชิญครูแล้ว");
 });
 refreshLearningButton?.addEventListener("click", loadLearningProgress);
 learningSearchInput?.addEventListener("input", renderLearningProgress);

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f4ea">
+  <title>สมัครครูประจำสาขา | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="teacher-signup.css">
+</head>
+<body>
+  <div class="paper-noise" aria-hidden="true"></div>
+  <main class="teacher-page">
+    <section class="teacher-card">
+      <img src="logo.png" alt="Toko & Poppy">
+      <span class="kicker">BRANCH TEACHER</span>
+      <h1>สมัครบัญชีครูประจำสาขา</h1>
+      <p>กรอกข้อมูลตามลิงก์เชิญ เมื่อเจ้าของสาขาอนุมัติแล้ว ครูจะเข้าไปบันทึกสมุดพัฒนาการของเด็กในสาขาได้</p>
+
+      <form id="teacherSignupForm">
+        <label>รหัสคำเชิญ
+          <input name="invite_code" id="inviteCode" type="text" autocomplete="off" required placeholder="ระบบจะใส่ให้อัตโนมัติจากลิงก์">
+        </label>
+        <label>ชื่อครู
+          <input name="full_name" type="text" autocomplete="name" required placeholder="เช่น ครูพลอย">
+        </label>
+        <label>เบอร์โทร
+          <input name="phone" type="tel" autocomplete="tel" placeholder="08x-xxx-xxxx">
+        </label>
+        <label>อีเมลสำหรับเข้าระบบ
+          <input name="email" type="email" autocomplete="email" required placeholder="teacher@example.com">
+        </label>
+        <label>รหัสผ่าน
+          <input name="password" type="password" autocomplete="new-password" minlength="6" required placeholder="อย่างน้อย 6 ตัวอักษร">
+        </label>
+        <button class="primary-button" type="submit">ส่งคำขอเป็นครู <span>→</span></button>
+      </form>
+
+      <div class="success-box" id="successBox" hidden>
+        <strong>ส่งคำขอเรียบร้อย</strong>
+        <span>รอเจ้าของสาขาหรือแอดมินหลักอนุมัติ จากนั้นครูจะเข้าสู่ระบบแอดมินเพื่อบันทึกสมุดพัฒนาการได้</span>
+        <a href="admin.html">ไปหน้าเข้าสู่ระบบแอดมิน</a>
+      </div>
+
+      <div class="config-warning" id="teacherConfigWarning" hidden>
+        <strong>ยังไม่ได้เชื่อม Supabase</strong>
+        <span>กรุณาใส่ Project URL และ anon/public key ในไฟล์ <code>supabase-config.js</code></span>
+      </div>
+    </section>
+  </main>
+  <div class="toast" id="teacherToast" hidden></div>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="teacher-signup.js"></script>
+</body>
+</html>
