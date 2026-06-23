@@ -269,6 +269,108 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .student-details .account-link-notice { border-color: #e6cf91; background: #fff8df; }
 .student-details dt { color: #9e897c; font-size: 8px; }
 .student-details dd { margin: 4px 0 0; overflow-wrap: anywhere; font-size: 10px; font-weight: 700; }
+.account-link-panel {
+  display: grid;
+  gap: 12px;
+  margin: -4px 0 20px;
+  border: 1px solid #dbe9d4;
+  border-radius: 16px;
+  padding: 14px;
+  background: linear-gradient(135deg, #f6fbf2, #fffdf7);
+}
+.account-link-panel[hidden] { display: none; }
+.account-link-heading {
+  display: grid;
+  gap: 6px;
+}
+.account-link-heading div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.account-link-heading span {
+  color: #c47b68;
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.account-link-heading strong {
+  color: #55784c;
+  font-size: 12px;
+}
+.account-link-heading small {
+  color: #8f7d70;
+  font-size: 8px;
+  line-height: 1.45;
+}
+.account-link-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+.account-link-search input {
+  min-width: 0;
+  outline: none;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--brown);
+  background: white;
+  font: inherit;
+  font-size: 9px;
+}
+.account-link-search input:focus {
+  border-color: #71945f;
+  box-shadow: 0 0 0 3px rgba(113,148,95,.12);
+}
+.account-link-search button,
+.account-link-result button {
+  border: 0;
+  border-radius: 12px;
+  padding: 10px 13px;
+  color: white;
+  background: #668d55;
+  font-size: 9px;
+  font-weight: 800;
+}
+.account-link-search button:disabled,
+.account-link-result button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+.account-link-results {
+  display: grid;
+  gap: 8px;
+}
+.account-link-results p {
+  margin: 0;
+  color: #958376;
+  font-size: 8px;
+  line-height: 1.45;
+}
+.account-link-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid #e8dfd4;
+  border-radius: 13px;
+  padding: 10px;
+  background: white;
+}
+.account-link-result strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #4f3c31;
+  font-size: 10px;
+}
+.account-link-result small {
+  display: block;
+  margin-top: 3px;
+  color: #9b897d;
+  font-size: 7px;
+  line-height: 1.45;
+}
 .decision-panel fieldset { display: grid; gap: 8px; margin: 0; border: 0; padding: 0; }
 .decision-panel legend { margin-bottom: 8px; font-size: 10px; font-weight: 700; }
 .access-option { position: relative; display: flex; align-items: center; gap: 11px; border: 1.5px solid var(--line); border-radius: 14px; padding: 12px; background: white; cursor: pointer; }

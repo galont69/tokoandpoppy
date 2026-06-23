@@ -31,6 +31,10 @@ const exportCsvButton = document.querySelector("#exportCsvButton");
 const reviewModal = document.querySelector("#reviewModal");
 const slipFrame = document.querySelector("#slipFrame");
 const openSlipLink = document.querySelector("#openSlipLink");
+const accountLinkPanel = document.querySelector("#accountLinkPanel");
+const parentAccountSearch = document.querySelector("#parentAccountSearch");
+const parentAccountSearchButton = document.querySelector("#parentAccountSearchButton");
+const parentAccountResults = document.querySelector("#parentAccountResults");
 const toast = document.querySelector("#adminToast");
 const robotAccess = document.querySelector("#robotAccess");
 const artAccess = document.querySelector("#artAccess");
@@ -1284,6 +1288,7 @@ async function openReview(applicationId) {
     <div><dt>หมายเหตุชำระเงิน</dt><dd>${escapeHtml(activeApplication.payment_note || "-")}</dd></div>
     <div><dt>สถานะการชำระเงิน</dt><dd>${escapeHtml(activeApplication.payment_status)}</dd></div>
   `;
+  renderAccountLinkPanel();
 
   const isPendingApplication = activeApplication.status === "pending";
   const pendingCourses = getApplicationCourseCodes(activeApplication);
@@ -1350,6 +1355,131 @@ async function openReview(applicationId) {
   slipFrame.innerHTML =
     `<img src="${escapeHtml(data.signedUrl)}" alt="สลิปของ ${escapeHtml(activeApplication.student_name)}">`;
   openSlipLink.href = data.signedUrl;
+}
+
+function getSuggestedParentAccountQuery(application) {
+  const email = String(application?.parent_email || "").trim();
+  if (email && !email.endsWith("@line.local")) return email;
+  return String(application?.parent_phone || application?.parent_name || "").trim();
+}
+
+function renderAccountLinkPanel() {
+  if (!accountLinkPanel || !parentAccountSearch || !parentAccountResults) return;
+
+  const needsParentAccount = Boolean(activeApplication && !activeApplication.parent_user_id);
+  accountLinkPanel.hidden = !needsParentAccount;
+  if (!needsParentAccount) {
+    parentAccountSearch.value = "";
+    parentAccountResults.innerHTML = "";
+    return;
+  }
+
+  if (!parentAccountSearch.value.trim()) {
+    parentAccountSearch.value = getSuggestedParentAccountQuery(activeApplication);
+  }
+
+  parentAccountResults.innerHTML = `
+    <p>
+      ค้นหาบัญชีผู้ปกครองที่สมัครผ่านเว็บไว้แล้ว จากอีเมล เบอร์โทร หรือชื่อผู้ปกครอง
+      หากยังไม่พบ ให้ผู้ปกครองสมัคร/เข้าสู่ระบบเว็บด้วยอีเมลก่อน แล้วกลับมาผูกบัญชีอีกครั้ง
+    </p>
+  `;
+}
+
+function renderParentAccountResults(accounts) {
+  if (!parentAccountResults) return;
+  if (!accounts.length) {
+    parentAccountResults.innerHTML = `
+      <p>
+        ยังไม่พบบัญชีผู้ปกครองที่ตรงกับคำค้นนี้
+        ให้ผู้ปกครองสมัครบัญชีเว็บด้วยอีเมลก่อน แล้วค้นหาอีเมลนั้นเพื่อผูกกับใบสมัคร LINE
+      </p>
+    `;
+    return;
+  }
+
+  parentAccountResults.innerHTML = accounts.map((account) => {
+    const linkedCount = Number(account.linked_applications || 0);
+    const detail = [
+      account.parent_name || "ไม่พบชื่อจากใบสมัครเดิม",
+      account.parent_phone || "ไม่มีเบอร์จากใบสมัครเดิม",
+      `${linkedCount} ใบสมัครที่เคยผูก`
+    ].join(" · ");
+    return `
+      <div class="account-link-result">
+        <div>
+          <strong>${escapeHtml(account.email || account.parent_user_id)}</strong>
+          <small>${escapeHtml(detail)}</small>
+        </div>
+        <button type="button" data-link-parent-id="${escapeHtml(account.parent_user_id)}">ผูกบัญชีนี้</button>
+      </div>
+    `;
+  }).join("");
+}
+
+async function searchParentAccounts() {
+  if (!supabaseClient || !parentAccountSearch || !parentAccountResults) return;
+  const query = parentAccountSearch.value.trim();
+  if (query.length < 3) {
+    parentAccountResults.innerHTML = "<p>กรุณาพิมพ์อย่างน้อย 3 ตัวอักษร เช่น อีเมล เบอร์โทร หรือชื่อผู้ปกครอง</p>";
+    parentAccountSearch.focus();
+    return;
+  }
+
+  parentAccountSearchButton.disabled = true;
+  parentAccountSearchButton.textContent = "กำลังค้นหา...";
+  parentAccountResults.innerHTML = "<p>กำลังค้นหาบัญชีผู้ปกครอง...</p>";
+
+  const { data, error } = await supabaseClient.rpc("search_parent_accounts", {
+    p_query: query
+  });
+
+  parentAccountSearchButton.disabled = false;
+  parentAccountSearchButton.textContent = "ค้นหา";
+
+  if (error) {
+    parentAccountResults.innerHTML = `<p>ค้นหาไม่สำเร็จ: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+
+  renderParentAccountResults(data || []);
+}
+
+async function linkParentAccount(parentUserId) {
+  if (!activeApplication || !parentUserId) return;
+  const confirmed = window.confirm(
+    "ผูกบัญชีผู้ปกครองนี้กับใบสมัคร LINE ใช่ไหม?\nหลังผูกแล้ว ถ้าใบสมัครอนุมัติอยู่ ระบบจะเปิดสิทธิ์คอร์สให้อัตโนมัติ"
+  );
+  if (!confirmed) return;
+
+  const button = parentAccountResults?.querySelector(`[data-link-parent-id="${CSS.escape(parentUserId)}"]`);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "กำลังผูก...";
+  }
+
+  const { data, error } = await supabaseClient.rpc("link_application_parent_account", {
+    p_application_id: activeApplication.id,
+    p_parent_user_id: parentUserId
+  });
+
+  if (error) {
+    showToast(`ผูกบัญชีไม่สำเร็จ: ${error.message}`, true);
+    if (button) {
+      button.disabled = false;
+      button.textContent = "ผูกบัญชีนี้";
+    }
+    return;
+  }
+
+  showToast("ผูกบัญชีผู้ปกครองสำเร็จ และเปิดสิทธิ์คอร์สตามใบสมัครแล้ว");
+  await loadApplications();
+  const refreshed = applications.find((application) => application.id === data.id);
+  if (refreshed) {
+    await openReview(refreshed.id);
+  } else {
+    closeReview();
+  }
 }
 
 function closeReview() {
@@ -3427,6 +3557,17 @@ document.querySelector("#approveButton").addEventListener("click", () =>
   reviewApplication("approved"));
 document.querySelector("#rejectButton").addEventListener("click", () =>
   reviewApplication("rejected"));
+parentAccountSearchButton?.addEventListener("click", searchParentAccounts);
+parentAccountSearch?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    searchParentAccounts();
+  }
+});
+parentAccountResults?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-link-parent-id]");
+  if (button) linkParentAccount(button.dataset.linkParentId);
+});
 robotAccess?.addEventListener("change", updateSessionPackageFields);
 artAccess?.addEventListener("change", () => setArtProgramsEnabled(Boolean(artAccess.checked)));
 artProgramControls.forEach((program) => {
