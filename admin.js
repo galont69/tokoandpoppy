@@ -750,14 +750,55 @@ function getLearningFilteredRows() {
   });
 }
 
+function getLearningStudentKey(enrollment) {
+  if (enrollment.application_id) return `application:${enrollment.application_id}`;
+  if (enrollment.student_id) return `student:${enrollment.student_id}`;
+  return [
+    enrollment.branch_id || "no-branch",
+    enrollment.student_name || "",
+    enrollment.student_nickname || "",
+    enrollment.parent_name || "",
+    enrollment.parent_email || "",
+    enrollment.parent_phone || ""
+  ].join("|").toLowerCase();
+}
+
+function getLearningStudentGroups(rows) {
+  const groups = new Map();
+  rows.forEach((enrollment) => {
+    const key = getLearningStudentKey(enrollment);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        studentName: enrollment.student_name || "ไม่ระบุชื่อนักเรียน",
+        nickname: enrollment.student_nickname || "",
+        parentName: enrollment.parent_name || "",
+        branchName: enrollment.branch_name || "",
+        latestUpdatedAt: enrollment.updated_at || enrollment.created_at || "",
+        enrollments: []
+      });
+    }
+
+    const group = groups.get(key);
+    group.enrollments.push(enrollment);
+    const updatedAt = enrollment.updated_at || enrollment.created_at || "";
+    if (updatedAt > group.latestUpdatedAt) group.latestUpdatedAt = updatedAt;
+    if (!group.parentName && enrollment.parent_name) group.parentName = enrollment.parent_name;
+    if (!group.branchName && enrollment.branch_name) group.branchName = enrollment.branch_name;
+  });
+
+  return [...groups.values()].sort((a, b) =>
+    String(b.latestUpdatedAt).localeCompare(String(a.latestUpdatedAt)));
+}
+
 async function loadLearningProgress() {
   if (!learningProgressRows) return;
   learningLoadingState.hidden = false;
   learningEmptyState.hidden = true;
   learningProgressRows.innerHTML = "";
   learningScopeText.textContent = (isBranchAdmin() || isBranchTeacher())
-    ? `กำลังดูเฉพาะนักเรียนใน${getCurrentBranchName()}`
-    : "แอดมินหลักเห็นทุกสาขา ผู้ดูแลสาขาและครูเห็นเฉพาะสาขาของตัวเอง";
+    ? `รวมคอร์สของเด็กแต่ละคนใน${getCurrentBranchName()}ไว้ในกล่องเดียว`
+    : "รวมคอร์สของเด็กแต่ละคนไว้ในกล่องเดียว แอดมินหลักเห็นทุกสาขา";
 
   let query = supabaseClient
     .from("course_enrollments")
@@ -819,50 +860,96 @@ function renderLearningProgress() {
   const rows = getLearningFilteredRows();
   learningEmptyState.hidden = rows.length > 0;
 
-  learningProgressRows.innerHTML = rows.map((enrollment) => {
-    const completed = Number(enrollment.completed_sessions || 0);
-    const total = Number(enrollment.total_sessions || 0);
-    const remaining = Math.max(total - completed, 0);
-    const percent = total ? Math.min(100, Math.round((completed / total) * 100)) : 0;
-    const certificateText = enrollment.course_type === "robot"
-      ? completed >= 15
-        ? completed >= total ? "รับเกียรติบัตรครบคอร์สแล้ว" : "ถึงเกณฑ์รับเกียรติบัตร 15 ครั้งแล้ว"
-        : `อีก ${Math.max(15 - completed, 0)} ครั้งถึงเกียรติบัตรแรก`
-      : completed >= total
-        ? "จบแพ็กเกจนี้แล้ว พร้อมออกเกียรติบัตร"
-        : `อีก ${remaining} ครั้งจบแพ็กเกจนี้`;
-    const courseLabel = getCourseEnrollmentLabel(enrollment);
-    const learningState = getLearningEnrollmentState(enrollment);
-    const recordButtonLabel = learningState.key === "completed"
-      ? "ดู/บันทึกย้อนหลัง"
-      : "+ บันทึกครั้งเรียน";
+  const groups = getLearningStudentGroups(rows);
+  learningProgressRows.innerHTML = groups.map((group) => {
+    const completedTotal = group.enrollments.reduce(
+      (sum, enrollment) => sum + Number(enrollment.completed_sessions || 0),
+      0
+    );
+    const sessionTotal = group.enrollments.reduce(
+      (sum, enrollment) => sum + Number(enrollment.total_sessions || 0),
+      0
+    );
+    const remainingTotal = Math.max(sessionTotal - completedTotal, 0);
+    const hasAlmostDoneCourse = group.enrollments.some((enrollment) =>
+      getLearningEnrollmentState(enrollment).key === "almost_done");
+    const allCompleted = group.enrollments.every((enrollment) =>
+      getLearningEnrollmentState(enrollment).key === "completed");
+    const groupBadge = allCompleted
+      ? ["completed", "จบครบทุกคอร์ส"]
+      : hasAlmostDoneCourse
+        ? ["almost", "มีคอร์สใกล้จบ"]
+        : ["active", "กำลังเรียน"];
+    const meta = [
+      group.nickname ? `ชื่อเล่น ${group.nickname}` : "",
+      group.parentName ? `ผู้ปกครอง ${group.parentName}` : "",
+      group.branchName ? `สาขา ${group.branchName}` : ""
+    ].filter(Boolean).join(" · ");
+
+    const courseItems = group.enrollments.map((enrollment) => {
+      const completed = Number(enrollment.completed_sessions || 0);
+      const total = Number(enrollment.total_sessions || 0);
+      const remaining = Math.max(total - completed, 0);
+      const percent = total ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+      const certificateText = enrollment.course_type === "robot"
+        ? completed >= 15
+          ? completed >= total ? "รับเกียรติบัตรครบคอร์สแล้ว" : "ถึงเกณฑ์รับเกียรติบัตร 15 ครั้งแล้ว"
+          : `อีก ${Math.max(15 - completed, 0)} ครั้งถึงเกียรติบัตรแรก`
+        : completed >= total
+          ? "จบแพ็กเกจนี้แล้ว พร้อมออกเกียรติบัตร"
+          : `อีก ${remaining} ครั้งจบแพ็กเกจนี้`;
+      const courseLabel = getCourseEnrollmentLabel(enrollment);
+      const learningState = getLearningEnrollmentState(enrollment);
+      const nextSession = completed + 1;
+      const recordButtonLabel = learningState.key === "completed"
+        ? "ดู/บันทึกย้อนหลัง"
+        : `บันทึกครั้งที่ ${total ? Math.min(nextSession, total) : nextSession}`;
+
+      return `
+        <div class="learning-course-item ${learningState.key === "completed" ? "is-completed" : ""}">
+          <div class="learning-course-summary">
+            <span class="learning-course-icon">${getCourseIcon(enrollment.course_type)}</span>
+            <div>
+              <strong>${escapeHtml(courseLabel)}</strong>
+              <small>${escapeHtml(certificateText)}</small>
+            </div>
+          </div>
+          <div class="learning-course-meter">
+            <div class="learning-meter"><i style="width: ${percent}%"></i></div>
+            <small>${percent}% · ${escapeHtml(learningState.helper)}</small>
+          </div>
+          <div class="learning-mini-numbers">
+            <span><strong>${completed}</strong> เรียนแล้ว</span>
+            <span><strong>${remaining}</strong> เหลือ</span>
+            <span><strong>${total}</strong> รวม</span>
+          </div>
+          <button class="review-button learning-record-button" type="button" data-record-enrollment="${enrollment.id}">
+            ${recordButtonLabel}
+          </button>
+        </div>
+      `;
+    }).join("");
 
     return `
-      <article class="learning-progress-row ${learningState.key === "completed" ? "is-completed" : ""}">
-        <div class="learning-progress-top learning-student-cell">
-          <span class="learning-avatar">${getCourseIcon(enrollment.course_type)}</span>
-          <div>
-            <strong>${escapeHtml(enrollment.student_name)}</strong>
-            <small>${escapeHtml(enrollment.student_nickname || "ไม่มีชื่อเล่น")} · ${escapeHtml(courseLabel)}</small>
+      <article class="learning-student-card">
+        <div class="learning-student-header">
+          <div class="learning-progress-top learning-student-cell">
+            <span class="learning-avatar">${getCourseIcon(group.enrollments[0]?.course_type)}</span>
+            <div>
+              <strong>${escapeHtml(group.studentName)}</strong>
+              <small>${escapeHtml(meta || "ยังไม่มีข้อมูลผู้ปกครอง/สาขา")}</small>
+            </div>
+          </div>
+          <div class="learning-student-stats">
+            <span class="learning-status-badge ${groupBadge[0]}">${escapeHtml(groupBadge[1])}</span>
+            <span><strong>${group.enrollments.length}</strong> คอร์ส</span>
+            <span><strong>${completedTotal}/${sessionTotal}</strong> ครั้ง</span>
+            <span><strong>${remainingTotal}</strong> เหลือรวม</span>
           </div>
         </div>
-        <div class="learning-course-cell">
-          <strong>${escapeHtml(courseLabel)}</strong>
-          <small>${escapeHtml(certificateText)}</small>
-          <span class="learning-status-badge ${learningState.badgeClass}">${escapeHtml(learningState.label)}</span>
+        <div class="learning-course-list">
+          ${courseItems}
         </div>
-        <div class="learning-meter-cell">
-          <div class="learning-meter"><i style="width: ${percent}%"></i></div>
-          <small>${percent}% · ${escapeHtml(learningState.helper)}</small>
-        </div>
-        <div class="learning-numbers learning-row-numbers">
-          <span><strong>${completed}</strong> เรียนแล้ว</span>
-          <span><strong>${remaining}</strong> เหลือ</span>
-          <span><strong>${total}</strong> รวม</span>
-        </div>
-        <button class="review-button learning-record-button" type="button" data-record-enrollment="${enrollment.id}">
-          ${recordButtonLabel}
-        </button>
       </article>
     `;
   }).join("");
