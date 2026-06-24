@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260624-learning-groups">
+  <link rel="stylesheet" href="admin.css?v=20260624-branch-student-watch">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -234,6 +234,9 @@
             </div>
           </div>
 
+          <div class="learning-teacher-summary" id="learningTeacherSummary" aria-label="สรุปงานครู"></div>
+          <div class="learning-followup-queue" id="learningFollowupQueue" hidden></div>
+
           <div class="toolbar learning-toolbar">
             <label class="search-box">
               <span>⌕</span>
@@ -250,7 +253,8 @@
             </select>
             <select id="learningStatusFilter" class="soft-select">
               <option value="active">กำลังเรียน</option>
-              <option value="almost_done">ใกล้จบ</option>
+              <option value="not_started">ยังไม่เคยบันทึก</option>
+              <option value="almost_done">ใกล้หมดแพ็กเกจ</option>
               <option value="completed">จบคอร์สแล้ว</option>
               <option value="all">ทั้งหมด</option>
             </select>
@@ -856,6 +860,18 @@
         <h2 id="recordSessionTitle">เพิ่มครั้งเรียน</h2>
         <p id="recordSessionSummary">เลือกรูปผลงาน 1 รูป และเขียนคอมเมนต์สั้นๆ ให้ผู้ปกครองเห็น</p>
       </div>
+      <section class="learning-history-panel" aria-label="ประวัติครั้งเรียน">
+        <div class="learning-history-heading">
+          <div>
+            <strong>ประวัติครั้งเรียน</strong>
+            <small>ย้อนดูรูปผลงานและคอมเมนต์ที่เคยบันทึกไว้</small>
+          </div>
+          <button type="button" id="refreshSessionHistory">รีเฟรช</button>
+        </div>
+        <div class="learning-session-timeline" id="learningSessionTimeline">
+          <div class="learning-history-empty">เลือกคอร์สเพื่อดูประวัติครั้งเรียน</div>
+        </div>
+      </section>
       <form class="learning-record-form" id="recordSessionForm">
         <label>บันทึกเป็นครั้งที่
           <input id="recordSessionNumber" type="number" min="1" step="1" required>
@@ -870,6 +886,16 @@
         <label class="full">คอมเมนต์คุณครู
           <textarea id="recordTeacherComment" rows="4" placeholder="วันนี้เด็กตั้งใจมากขึ้น จับจังหวะคำสั่งได้ดี..."></textarea>
         </label>
+        <div class="learning-comment-tools full">
+          <span>แตะเพื่อเติมคอมเมนต์เร็ว</span>
+          <div id="teacherCommentTemplates">
+            <button type="button" data-comment-template="วันนี้น้องตั้งใจเรียนดี มีสมาธิกับกิจกรรมมากขึ้น">ตั้งใจดี</button>
+            <button type="button" data-comment-template="น้องกล้าลองทำด้วยตัวเองมากขึ้น และเริ่มแก้ปัญหาได้ดี">กล้าลองทำ</button>
+            <button type="button" data-comment-template="กล้ามเนื้อมือและการควบคุมอุปกรณ์ดีขึ้น เห็นพัฒนาการชัดเจน">กล้ามเนื้อมือดีขึ้น</button>
+            <button type="button" data-comment-template="วันนี้น้องเล่าเรื่องจากผลงานของตัวเองได้ดี มีจินตนาการน่าสนใจ">เล่าเรื่องดี</button>
+            <button type="button" data-comment-template="ครั้งหน้ายังอยากชวนฝึกสมาธิและการทำตามขั้นตอนต่อเนื่องอีกนิด">ฝึกต่อเนื่อง</button>
+          </div>
+        </div>
         <label class="learning-photo-drop full">
           <input id="recordSessionPhoto" type="file" accept="image/png,image/jpeg,image/webp">
           <strong>+ เลือกรูปผลงานครั้งนี้</strong>
@@ -979,6 +1005,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260624-learning-groups"></script>
+  <script src="admin.js?v=20260624-branch-student-watch"></script>
 </body>
 </html>

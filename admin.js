@@ -79,6 +79,8 @@ const learningEmptyState = document.querySelector("#learningEmptyState");
 const learningSearchInput = document.querySelector("#learningSearchInput");
 const learningCourseFilter = document.querySelector("#learningCourseFilter");
 const learningStatusFilter = document.querySelector("#learningStatusFilter");
+const learningTeacherSummary = document.querySelector("#learningTeacherSummary");
+const learningFollowupQueue = document.querySelector("#learningFollowupQueue");
 const learningScopeText = document.querySelector("#learningScopeText");
 const refreshLearningButton = document.querySelector("#refreshLearningButton");
 const recordSessionModal = document.querySelector("#recordSessionModal");
@@ -89,8 +91,11 @@ const recordSessionNumber = document.querySelector("#recordSessionNumber");
 const recordSessionDate = document.querySelector("#recordSessionDate");
 const recordLessonTitle = document.querySelector("#recordLessonTitle");
 const recordTeacherComment = document.querySelector("#recordTeacherComment");
+const teacherCommentTemplates = document.querySelector("#teacherCommentTemplates");
 const recordSessionPhoto = document.querySelector("#recordSessionPhoto");
 const recordSessionPhotoPreview = document.querySelector("#recordSessionPhotoPreview");
+const learningSessionTimeline = document.querySelector("#learningSessionTimeline");
+const refreshSessionHistory = document.querySelector("#refreshSessionHistory");
 const saveSessionButton = document.querySelector("#saveSessionButton");
 const freeResourceForm = document.querySelector("#freeResourceForm");
 const freeResourceAdminList = document.querySelector("#freeResourceAdminList");
@@ -135,6 +140,8 @@ let artLessons = [];
 let activeArtLesson = null;
 let learningEnrollments = [];
 let activeLearningEnrollment = null;
+const learningStudentTimelineGroups = new Map();
+const learningStudentTimelineCache = new Map();
 let freeResources = [];
 let freeResourceLeads = [];
 let partnerLeads = [];
@@ -301,6 +308,24 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function formatDateOnly(value) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("th-TH", {
+    dateStyle: "medium"
+  }).format(new Date(value));
+}
+
+function formatRelativeDate(value) {
+  if (!value) return "ยังไม่มีการบันทึก";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "ยังไม่มีการบันทึก";
+  const diffDays = Math.max(0, Math.floor((Date.now() - date.getTime()) / 86400000));
+  if (diffDays === 0) return "วันนี้";
+  if (diffDays === 1) return "เมื่อวาน";
+  if (diffDays < 7) return `${diffDays} วันที่แล้ว`;
+  return formatDateOnly(value);
+}
+
 function formatMoney(value) {
   const amount = Number(value || 0);
   return amount.toLocaleString("th-TH", {
@@ -391,6 +416,14 @@ function toLocalDateTimeValue(value) {
   const date = new Date(value);
   const localTime = date.getTime() - date.getTimezoneOffset() * 60000;
   return new Date(localTime).toISOString().slice(0, 16).replace("T", " ");
+}
+
+function getLearningPhotoUrl(photoPath) {
+  if (!photoPath) return "";
+  const { data } = supabaseClient.storage
+    .from("learning-session-photos")
+    .getPublicUrl(photoPath);
+  return data?.publicUrl || "";
 }
 
 function renderBranchFilterOptions() {
@@ -706,16 +739,32 @@ function getLearningEnrollmentState(enrollment) {
       key: "completed",
       label: "จบคอร์สแล้ว",
       helper: "เก็บประวัติไว้และค้นย้อนหลังได้",
-      badgeClass: "completed"
+      badgeClass: "completed",
+      remaining,
+      urgency: "completed"
     };
   }
 
-  if (total > 0 && remaining <= 2) {
+  if (completed <= 0) {
+    return {
+      key: "not_started",
+      label: "ยังไม่เคยบันทึก",
+      helper: "เหมาะสำหรับเริ่มบันทึกครั้งแรก",
+      badgeClass: "active",
+      remaining,
+      urgency: "new"
+    };
+  }
+
+  if (total > 0 && remaining <= 3) {
+    const isCritical = remaining <= 1;
     return {
       key: "almost_done",
-      label: "ใกล้จบ",
+      label: isCritical ? "เหลือ 1 ครั้ง" : "ใกล้หมดแพ็กเกจ",
       helper: `เหลือ ${remaining} ครั้ง เหมาะสำหรับติดตามต่อคอร์ส`,
-      badgeClass: "almost"
+      badgeClass: isCritical ? "critical" : "almost",
+      remaining,
+      urgency: isCritical ? "critical" : "almost"
     };
   }
 
@@ -723,7 +772,9 @@ function getLearningEnrollmentState(enrollment) {
     key: "active",
     label: "กำลังเรียน",
     helper: "ยังอยู่ในแพ็กเกจปัจจุบัน",
-    badgeClass: "active"
+    badgeClass: "active",
+    remaining,
+    urgency: "active"
   };
 }
 
@@ -773,6 +824,8 @@ function getLearningStudentGroups(rows) {
         studentName: enrollment.student_name || "ไม่ระบุชื่อนักเรียน",
         nickname: enrollment.student_nickname || "",
         parentName: enrollment.parent_name || "",
+        parentEmail: enrollment.parent_email || "",
+        parentPhone: enrollment.parent_phone || "",
         branchName: enrollment.branch_name || "",
         latestUpdatedAt: enrollment.updated_at || enrollment.created_at || "",
         enrollments: []
@@ -784,6 +837,8 @@ function getLearningStudentGroups(rows) {
     const updatedAt = enrollment.updated_at || enrollment.created_at || "";
     if (updatedAt > group.latestUpdatedAt) group.latestUpdatedAt = updatedAt;
     if (!group.parentName && enrollment.parent_name) group.parentName = enrollment.parent_name;
+    if (!group.parentEmail && enrollment.parent_email) group.parentEmail = enrollment.parent_email;
+    if (!group.parentPhone && enrollment.parent_phone) group.parentPhone = enrollment.parent_phone;
     if (!group.branchName && enrollment.branch_name) group.branchName = enrollment.branch_name;
   });
 
@@ -791,14 +846,285 @@ function getLearningStudentGroups(rows) {
     String(b.latestUpdatedAt).localeCompare(String(a.latestUpdatedAt)));
 }
 
+function renderLearningTeacherSummary() {
+  if (!learningTeacherSummary) return;
+  const managerMode = isMainAdmin() || isBranchAdmin();
+  const studentCount = getLearningStudentGroups(learningEnrollments).length;
+  const counts = learningEnrollments.reduce((summary, enrollment) => {
+    const state = getLearningEnrollmentState(enrollment);
+    if (state.key !== "completed") summary.active += 1;
+    if (state.key === "not_started") summary.not_started += 1;
+    if (state.key === "almost_done") summary.almost_done += 1;
+    if (state.urgency === "critical") summary.critical += 1;
+    return summary;
+  }, {
+    active: 0,
+    not_started: 0,
+    almost_done: 0,
+    critical: 0
+  });
+  const currentStatus = learningStatusFilter?.value || "active";
+  const items = [
+    { filter: "active", count: counts.active, label: "คอร์สกำลังเรียน" },
+    { filter: "not_started", count: counts.not_started, label: managerMode ? "ยังไม่เริ่มบันทึก" : "ยังไม่เคยบันทึก" },
+    { filter: "almost_done", count: counts.almost_done, label: counts.critical ? `ใกล้หมด (${counts.critical} ด่วน)` : "ใกล้หมดแพ็กเกจ" },
+    { filter: "all", count: studentCount, label: "เด็กทั้งหมด" }
+  ];
+
+  learningTeacherSummary.innerHTML = items.map((item) => `
+    <button type="button" class="${currentStatus === item.filter ? "active" : ""}" data-learning-summary-filter="${item.filter}">
+      <strong>${item.count}</strong>
+      <span>${escapeHtml(item.label)}</span>
+    </button>
+  `).join("");
+}
+
+function getLearningFollowupRows() {
+  const priority = {
+    critical: 0,
+    almost: 1,
+    new: 2,
+    active: 3,
+    completed: 4
+  };
+  return [...learningEnrollments]
+    .filter((enrollment) => getLearningEnrollmentState(enrollment).key !== "completed")
+    .sort((a, b) => {
+      const stateA = getLearningEnrollmentState(a);
+      const stateB = getLearningEnrollmentState(b);
+      if (priority[stateA.urgency] !== priority[stateB.urgency]) {
+        return priority[stateA.urgency] - priority[stateB.urgency];
+      }
+      if (stateA.remaining !== stateB.remaining) return stateA.remaining - stateB.remaining;
+      const completedA = Number(a.completed_sessions || 0);
+      const completedB = Number(b.completed_sessions || 0);
+      if (completedA !== completedB) return completedA - completedB;
+      return String(a.updated_at || a.created_at || "").localeCompare(String(b.updated_at || b.created_at || ""));
+    })
+    .slice(0, (isMainAdmin() || isBranchAdmin()) ? 6 : 4);
+}
+
+function getPreferredLearningEnrollment(enrollments = []) {
+  const priority = {
+    critical: 0,
+    almost: 1,
+    new: 2,
+    active: 3,
+    completed: 4
+  };
+  return [...enrollments]
+    .sort((a, b) => {
+      const stateA = getLearningEnrollmentState(a);
+      const stateB = getLearningEnrollmentState(b);
+      if (priority[stateA.urgency] !== priority[stateB.urgency]) {
+        return priority[stateA.urgency] - priority[stateB.urgency];
+      }
+      if (stateA.remaining !== stateB.remaining) return stateA.remaining - stateB.remaining;
+      const completedA = Number(a.completed_sessions || 0);
+      const completedB = Number(b.completed_sessions || 0);
+      if (completedA !== completedB) return completedA - completedB;
+      return String(a.updated_at || a.created_at || "").localeCompare(String(b.updated_at || b.created_at || ""));
+    })[0] || null;
+}
+
+function getLearningUpdatedLabel(enrollment) {
+  if (Number(enrollment?.completed_sessions || 0) <= 0) {
+    return "ยังไม่เคยบันทึก";
+  }
+  return formatRelativeDate(enrollment.updated_at || enrollment.created_at);
+}
+
+function getLearningGroupUpdatedLabel(group) {
+  const hasRecorded = group.enrollments.some((enrollment) =>
+    Number(enrollment.completed_sessions || 0) > 0);
+  if (!hasRecorded) return "ยังไม่เคยบันทึก";
+  return formatRelativeDate(group.latestUpdatedAt);
+}
+
+function getLearningTimelineEnrollment(enrollmentId) {
+  return learningEnrollments.find((enrollment) => enrollment.id === enrollmentId);
+}
+
+function renderLearningStudentTimeline(detailId, sessions = []) {
+  const timelineList = document.getElementById(`${detailId}TimelineList`);
+  if (!timelineList) return;
+
+  if (!sessions.length) {
+    timelineList.innerHTML = `
+      <div class="learning-history-empty">
+        ยังไม่มีประวัติครั้งเรียนของเด็กคนนี้
+      </div>
+    `;
+    return;
+  }
+
+  timelineList.innerHTML = sessions.map((session) => {
+    const enrollment = getLearningTimelineEnrollment(session.course_enrollment_id);
+    const photoUrl = getLearningPhotoUrl(session.photo_path);
+    const dateLabel = formatDateOnly(session.session_date || session.created_at);
+    const courseLabel = enrollment
+      ? getCourseEnrollmentLabel(enrollment)
+      : "คอร์สเรียน";
+    const sessionNumber = Number(session.session_number || 0);
+
+    return `
+      <article class="learning-student-timeline-item">
+        <span class="learning-student-timeline-icon">
+          ${getCourseIcon(enrollment?.course_type)}
+        </span>
+        <div class="learning-student-timeline-body">
+          <div class="learning-student-timeline-meta">
+            <strong>${escapeHtml(courseLabel)}</strong>
+            <span>${escapeHtml(dateLabel)}</span>
+          </div>
+          <h4>${escapeHtml(session.lesson_title || `ครั้งที่ ${sessionNumber || "-"}`)}</h4>
+          <p>${session.teacher_comment ? escapeHtml(session.teacher_comment) : "ยังไม่มีคอมเมนต์คุณครู"}</p>
+          <small>ครั้งที่ ${sessionNumber || "-"} · บันทึก ${escapeHtml(formatRelativeDate(session.created_at || session.session_date))}</small>
+        </div>
+        ${photoUrl ? `
+          <img src="${photoUrl}" alt="รูปผลงาน ${escapeHtml(courseLabel)} ครั้งที่ ${sessionNumber || ""}">
+        ` : ""}
+      </article>
+    `;
+  }).join("");
+}
+
+async function loadLearningStudentTimeline(detailId) {
+  const timelineList = document.getElementById(`${detailId}TimelineList`);
+  const enrollmentIds = learningStudentTimelineGroups.get(detailId) || [];
+  if (!timelineList || !enrollmentIds.length) return;
+
+  if (learningStudentTimelineCache.has(detailId)) {
+    renderLearningStudentTimeline(detailId, learningStudentTimelineCache.get(detailId));
+    return;
+  }
+
+  timelineList.innerHTML = `
+    <div class="learning-history-empty">
+      กำลังโหลดประวัติครั้งเรียนรวม...
+    </div>
+  `;
+
+  const { data, error } = await supabaseClient
+    .from("learning_sessions")
+    .select("id,course_enrollment_id,session_number,session_date,lesson_title,teacher_comment,photo_path,created_at")
+    .in("course_enrollment_id", enrollmentIds)
+    .order("session_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(12);
+
+  if (error) {
+    timelineList.innerHTML = `
+      <div class="learning-history-empty">
+        โหลดประวัติรวมไม่สำเร็จ ลองเปิดอีกครั้งหรือกดรีเฟรช
+      </div>
+    `;
+    showToast(`โหลดประวัติรวมไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  learningStudentTimelineCache.set(detailId, data || []);
+  renderLearningStudentTimeline(detailId, data || []);
+}
+
+function getLearningFollowupReason(enrollment) {
+  const state = getLearningEnrollmentState(enrollment);
+  const remaining = state.remaining;
+  if (state.key === "not_started") {
+    return {
+      label: "เริ่มบันทึกครั้งแรก",
+      detail: "คอร์สนี้เปิดสิทธิ์แล้ว แต่ยังไม่มีประวัติครั้งเรียน",
+      tone: "new"
+    };
+  }
+  if (state.urgency === "critical") {
+    return {
+      label: "ด่วน: เหลือ 1 ครั้ง",
+      detail: "ควรแจ้งเจ้าของสาขาหรือผู้ปกครองเพื่อวางแผนต่อคอร์ส",
+      tone: "critical"
+    };
+  }
+  if (state.key === "almost_done") {
+    return {
+      label: `เหลือ ${remaining} ครั้ง`,
+      detail: `เหลือ ${remaining} ครั้ง ควรติดตามผลงานและวางแผนต่อคอร์ส`,
+      tone: "almost"
+    };
+  }
+  return {
+    label: "ควรอัปเดตต่อเนื่อง",
+    detail: "ยังอยู่ในแพ็กเกจปัจจุบัน กดบันทึกเมื่อเด็กมาเรียน",
+    tone: "active"
+  };
+}
+
+function renderLearningFollowupQueue() {
+  if (!learningFollowupQueue) return;
+  const rows = getLearningFollowupRows();
+  const managerMode = isMainAdmin() || isBranchAdmin();
+  learningFollowupQueue.hidden = rows.length === 0;
+  if (!rows.length) {
+    learningFollowupQueue.innerHTML = "";
+    return;
+  }
+
+  const items = rows.map((enrollment) => {
+    const state = getLearningEnrollmentState(enrollment);
+    const reason = getLearningFollowupReason(enrollment);
+    const completed = Number(enrollment.completed_sessions || 0);
+    const total = Number(enrollment.total_sessions || 0);
+    const nextSession = completed + 1;
+    const studentLabel = [
+      enrollment.student_name || "ไม่ระบุชื่อนักเรียน",
+      enrollment.student_nickname ? `(${enrollment.student_nickname})` : ""
+    ].filter(Boolean).join(" ");
+    const meta = [
+      getCourseEnrollmentLabel(enrollment),
+      total ? `${completed}/${total} ครั้ง` : `${completed} ครั้ง`,
+      state.label,
+      `อัปเดต ${getLearningUpdatedLabel(enrollment)}`
+    ].filter(Boolean).join(" · ");
+
+    return `
+      <article class="learning-followup-item is-${reason.tone}">
+        <span class="learning-course-icon">${getCourseIcon(enrollment.course_type)}</span>
+        <div>
+          <em>${escapeHtml(reason.label)}</em>
+          <strong>${escapeHtml(studentLabel)}</strong>
+          <small>${escapeHtml(meta)}</small>
+          <small>${escapeHtml(reason.detail)}</small>
+        </div>
+        <button type="button" data-queue-record-enrollment="${enrollment.id}">
+          บันทึกครั้งที่ ${total ? Math.min(nextSession, total) : nextSession}
+        </button>
+      </article>
+    `;
+  }).join("");
+
+  learningFollowupQueue.innerHTML = `
+    <div class="learning-followup-heading">
+      <div>
+        <strong>${managerMode ? "เด็กที่ควรติดตามต่อคอร์ส" : "คิวที่ควรติดตาม"}</strong>
+        <span>${managerMode
+          ? "เรียงจากเด็กที่ใกล้หมดแพ็กเกจ เหลือ 1-3 ครั้ง และเด็กที่ยังไม่เริ่มบันทึก"
+          : "ระบบเรียงจากคอร์สใกล้หมดแพ็กเกจและคอร์สที่ยังไม่เคยบันทึกก่อน"}</span>
+      </div>
+      <button type="button" data-learning-summary-filter="almost_done">ดูคอร์สใกล้หมด</button>
+    </div>
+    <div class="learning-followup-list">${items}</div>
+  `;
+}
+
 async function loadLearningProgress() {
   if (!learningProgressRows) return;
   learningLoadingState.hidden = false;
   learningEmptyState.hidden = true;
   learningProgressRows.innerHTML = "";
-  learningScopeText.textContent = (isBranchAdmin() || isBranchTeacher())
-    ? `รวมคอร์สของเด็กแต่ละคนใน${getCurrentBranchName()}ไว้ในกล่องเดียว`
-    : "รวมคอร์สของเด็กแต่ละคนไว้ในกล่องเดียว แอดมินหลักเห็นทุกสาขา";
+  learningScopeText.textContent = isBranchAdmin()
+    ? `มุมมองเด็กใน${getCurrentBranchName()} พร้อมคอร์สที่เหลือ 1-3 ครั้งเพื่อช่วยติดตามต่อคอร์ส`
+    : isBranchTeacher()
+      ? `รวมคอร์สของเด็กแต่ละคนใน${getCurrentBranchName()}ไว้ในกล่องเดียว เพื่อบันทึกครั้งเรียนได้เร็วขึ้น`
+      : "รวมคอร์สของเด็กแต่ละคนไว้ในกล่องเดียว แอดมินหลักเห็นทุกสาขาและคอร์สใกล้หมดแพ็กเกจ";
 
   let query = supabaseClient
     .from("course_enrollments")
@@ -857,11 +1183,15 @@ async function loadApplicationCoursePackages(applicationId) {
 
 function renderLearningProgress() {
   if (!learningProgressRows) return;
+  renderLearningTeacherSummary();
+  renderLearningFollowupQueue();
   const rows = getLearningFilteredRows();
   learningEmptyState.hidden = rows.length > 0;
+  learningStudentTimelineGroups.clear();
 
   const groups = getLearningStudentGroups(rows);
-  learningProgressRows.innerHTML = groups.map((group) => {
+  learningProgressRows.innerHTML = groups.map((group, groupIndex) => {
+    const states = group.enrollments.map((enrollment) => getLearningEnrollmentState(enrollment));
     const completedTotal = group.enrollments.reduce(
       (sum, enrollment) => sum + Number(enrollment.completed_sessions || 0),
       0
@@ -871,20 +1201,49 @@ function renderLearningProgress() {
       0
     );
     const remainingTotal = Math.max(sessionTotal - completedTotal, 0);
-    const hasAlmostDoneCourse = group.enrollments.some((enrollment) =>
-      getLearningEnrollmentState(enrollment).key === "almost_done");
-    const allCompleted = group.enrollments.every((enrollment) =>
-      getLearningEnrollmentState(enrollment).key === "completed");
+    const hasCriticalCourse = states.some((state) => state.urgency === "critical");
+    const hasAlmostDoneCourse = states.some((state) => state.key === "almost_done");
+    const allCompleted = states.every((state) => state.key === "completed");
     const groupBadge = allCompleted
       ? ["completed", "จบครบทุกคอร์ส"]
-      : hasAlmostDoneCourse
-        ? ["almost", "มีคอร์สใกล้จบ"]
+      : hasCriticalCourse
+        ? ["critical", "เหลือ 1 ครั้ง"]
+        : hasAlmostDoneCourse
+          ? ["almost", "มีคอร์สใกล้หมด"]
         : ["active", "กำลังเรียน"];
+    const preferredEnrollment = getPreferredLearningEnrollment(group.enrollments);
+    const preferredReason = preferredEnrollment ? getLearningFollowupReason(preferredEnrollment) : null;
+    const preferredCompleted = Number(preferredEnrollment?.completed_sessions || 0);
+    const preferredTotal = Number(preferredEnrollment?.total_sessions || 0);
+    const preferredNextSession = preferredCompleted + 1;
+    const preferredButtonText = preferredEnrollment
+      ? allCompleted
+        ? "ดู/บันทึกย้อนหลัง"
+        : `บันทึกต่อ: ${getCourseIcon(preferredEnrollment.course_type)} ครั้งที่ ${preferredTotal ? Math.min(preferredNextSession, preferredTotal) : preferredNextSession}`
+      : "";
+    const latestUpdatedLabel = getLearningGroupUpdatedLabel(group);
     const meta = [
       group.nickname ? `ชื่อเล่น ${group.nickname}` : "",
       group.parentName ? `ผู้ปกครอง ${group.parentName}` : "",
       group.branchName ? `สาขา ${group.branchName}` : ""
     ].filter(Boolean).join(" · ");
+    const detailId = `learningStudentDetail-${groupIndex}`;
+    learningStudentTimelineGroups.set(detailId, group.enrollments.map((enrollment) => enrollment.id));
+    const contactText = [
+      group.parentPhone || "",
+      group.parentEmail || ""
+    ].filter(Boolean).join(" · ") || "ยังไม่มีข้อมูลติดต่อ";
+    const detailCourses = group.enrollments.map((enrollment) => {
+      const completed = Number(enrollment.completed_sessions || 0);
+      const total = Number(enrollment.total_sessions || 0);
+      const state = getLearningEnrollmentState(enrollment);
+      return `
+        <li>
+          <span>${getCourseIcon(enrollment.course_type)} ${escapeHtml(getCourseEnrollmentLabel(enrollment))}</span>
+          <strong>${completed}/${total} ครั้ง · ${escapeHtml(state.label)}</strong>
+        </li>
+      `;
+    }).join("");
 
     const courseItems = group.enrollments.map((enrollment) => {
       const completed = Number(enrollment.completed_sessions || 0);
@@ -900,10 +1259,14 @@ function renderLearningProgress() {
           : `อีก ${remaining} ครั้งจบแพ็กเกจนี้`;
       const courseLabel = getCourseEnrollmentLabel(enrollment);
       const learningState = getLearningEnrollmentState(enrollment);
+      const updatedLabel = getLearningUpdatedLabel(enrollment);
       const nextSession = completed + 1;
       const recordButtonLabel = learningState.key === "completed"
         ? "ดู/บันทึกย้อนหลัง"
         : `บันทึกครั้งที่ ${total ? Math.min(nextSession, total) : nextSession}`;
+      const packageAlert = learningState.urgency === "critical" || learningState.urgency === "almost"
+        ? `<span class="learning-package-alert is-${learningState.urgency}">${escapeHtml(learningState.label)}</span>`
+        : "";
 
       return `
         <div class="learning-course-item ${learningState.key === "completed" ? "is-completed" : ""}">
@@ -911,7 +1274,9 @@ function renderLearningProgress() {
             <span class="learning-course-icon">${getCourseIcon(enrollment.course_type)}</span>
             <div>
               <strong>${escapeHtml(courseLabel)}</strong>
+              ${packageAlert}
               <small>${escapeHtml(certificateText)}</small>
+              <small class="learning-last-updated">อัปเดตล่าสุด ${escapeHtml(updatedLabel)}</small>
             </div>
           </div>
           <div class="learning-course-meter">
@@ -938,6 +1303,7 @@ function renderLearningProgress() {
             <div>
               <strong>${escapeHtml(group.studentName)}</strong>
               <small>${escapeHtml(meta || "ยังไม่มีข้อมูลผู้ปกครอง/สาขา")}</small>
+              <small class="learning-last-updated">อัปเดตล่าสุด ${escapeHtml(latestUpdatedLabel)}</small>
             </div>
           </div>
           <div class="learning-student-stats">
@@ -945,6 +1311,47 @@ function renderLearningProgress() {
             <span><strong>${group.enrollments.length}</strong> คอร์ส</span>
             <span><strong>${completedTotal}/${sessionTotal}</strong> ครั้ง</span>
             <span><strong>${remainingTotal}</strong> เหลือรวม</span>
+            ${preferredEnrollment ? `
+              <button class="learning-student-primary-action" type="button" data-record-enrollment="${preferredEnrollment.id}" title="${escapeHtml(preferredReason?.detail || "บันทึกคอร์สที่ควรติดตาม")}">
+                ${escapeHtml(preferredButtonText)}
+              </button>
+            ` : ""}
+            <button class="learning-detail-toggle" type="button" data-student-detail="${detailId}" aria-expanded="false">
+              ดูข้อมูลเด็ก
+            </button>
+          </div>
+        </div>
+        <div class="learning-student-detail" id="${detailId}" hidden>
+          <div>
+            <small>ผู้ปกครอง</small>
+            <strong>${escapeHtml(group.parentName || "ยังไม่ระบุ")}</strong>
+            <span>${escapeHtml(contactText)}</span>
+          </div>
+          <div>
+            <small>สาขา</small>
+            <strong>${escapeHtml(group.branchName || "ยังไม่ระบุ")}</strong>
+            <span>${group.nickname ? `ชื่อเล่น ${escapeHtml(group.nickname)}` : "ยังไม่มีชื่อเล่น"}</span>
+          </div>
+          <div>
+            <small>ภาพรวม</small>
+            <strong>${completedTotal}/${sessionTotal} ครั้ง</strong>
+            <span>เหลือรวม ${remainingTotal} ครั้ง จาก ${group.enrollments.length} คอร์ส · อัปเดตล่าสุด ${escapeHtml(latestUpdatedLabel)}</span>
+          </div>
+          <div class="learning-detail-courses">
+            <small>คอร์สที่ลงเรียน</small>
+            <ul>${detailCourses}</ul>
+          </div>
+          <div class="learning-student-timeline" id="${detailId}Timeline">
+            <div class="learning-student-timeline-heading">
+              <div>
+                <small>ประวัติครั้งเรียนรวม</small>
+                <strong>ล่าสุดของเด็กคนนี้</strong>
+              </div>
+              <span>รวมทุกคอร์ส แสดง 12 รายการล่าสุด</span>
+            </div>
+            <div class="learning-student-timeline-list" id="${detailId}TimelineList">
+              <div class="learning-history-empty">เปิดข้อมูลเด็กเพื่อโหลดประวัติรวม</div>
+            </div>
           </div>
         </div>
         <div class="learning-course-list">
@@ -953,6 +1360,56 @@ function renderLearningProgress() {
       </article>
     `;
   }).join("");
+}
+
+function renderLearningSessionHistory(sessions = []) {
+  if (!learningSessionTimeline) return;
+  if (!sessions.length) {
+    learningSessionTimeline.innerHTML =
+      '<div class="learning-history-empty">ยังไม่มีประวัติครั้งเรียนของคอร์สนี้</div>';
+    return;
+  }
+
+  learningSessionTimeline.innerHTML = sessions.map((session) => {
+    const photoUrl = getLearningPhotoUrl(session.photo_path);
+    return `
+      <article class="learning-session-item">
+        <div class="learning-session-marker">
+          <strong>${Number(session.session_number || 0)}</strong>
+          <span>ครั้ง</span>
+        </div>
+        <div class="learning-session-body">
+          <div class="learning-session-meta">
+            <strong>${escapeHtml(session.lesson_title || `ครั้งที่ ${session.session_number}`)}</strong>
+            <span>${escapeHtml(formatDateOnly(session.session_date))}</span>
+          </div>
+          ${session.teacher_comment ? `<p>${escapeHtml(session.teacher_comment)}</p>` : '<p class="muted">ยังไม่มีคอมเมนต์คุณครู</p>'}
+          ${photoUrl ? `<img src="${photoUrl}" alt="รูปผลงานครั้งที่ ${escapeHtml(session.session_number)}">` : ""}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function loadLearningSessionHistory(enrollmentId) {
+  if (!learningSessionTimeline || !enrollmentId) return;
+  learningSessionTimeline.innerHTML =
+    '<div class="learning-history-empty">กำลังโหลดประวัติครั้งเรียน...</div>';
+
+  const { data, error } = await supabaseClient
+    .from("learning_sessions")
+    .select("id,session_number,session_date,lesson_title,teacher_comment,photo_path,created_at")
+    .eq("course_enrollment_id", enrollmentId)
+    .order("session_number", { ascending: false });
+
+  if (error) {
+    learningSessionTimeline.innerHTML =
+      '<div class="learning-history-empty">โหลดประวัติไม่สำเร็จ ลองกดรีเฟรชอีกครั้ง</div>';
+    showToast(`โหลดประวัติครั้งเรียนไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  renderLearningSessionHistory(data || []);
 }
 
 function openRecordSession(enrollmentId) {
@@ -979,8 +1436,13 @@ function openRecordSession(enrollmentId) {
   recordTeacherComment.value = "";
   recordSessionPhoto.value = "";
   recordSessionPhotoPreview.innerHTML = "";
+  if (learningSessionTimeline) {
+    learningSessionTimeline.innerHTML =
+      '<div class="learning-history-empty">กำลังโหลดประวัติครั้งเรียน...</div>';
+  }
   recordSessionModal.classList.add("open");
   recordSessionModal.setAttribute("aria-hidden", "false");
+  loadLearningSessionHistory(activeLearningEnrollment.id);
 }
 
 function closeRecordSession() {
@@ -1054,6 +1516,7 @@ async function saveLearningSession(event) {
     if (error) throw error;
 
     showToast("บันทึกครั้งเรียนเรียบร้อยแล้ว");
+    learningStudentTimelineCache.clear();
     closeRecordSession();
     await loadLearningProgress();
   } catch (error) {
@@ -3953,12 +4416,52 @@ refreshLearningButton?.addEventListener("click", loadLearningProgress);
 learningSearchInput?.addEventListener("input", renderLearningProgress);
 learningCourseFilter?.addEventListener("change", renderLearningProgress);
 learningStatusFilter?.addEventListener("change", renderLearningProgress);
+learningTeacherSummary?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-learning-summary-filter]");
+  if (!button || !learningStatusFilter) return;
+  learningStatusFilter.value = button.dataset.learningSummaryFilter || "active";
+  renderLearningProgress();
+});
+learningFollowupQueue?.addEventListener("click", (event) => {
+  const filterButton = event.target.closest("[data-learning-summary-filter]");
+  if (filterButton && learningStatusFilter) {
+    learningStatusFilter.value = filterButton.dataset.learningSummaryFilter || "active";
+    renderLearningProgress();
+    return;
+  }
+
+  const recordButton = event.target.closest("[data-queue-record-enrollment]");
+  if (recordButton) openRecordSession(recordButton.dataset.queueRecordEnrollment);
+});
 learningProgressRows?.addEventListener("click", (event) => {
+  const detailButton = event.target.closest("[data-student-detail]");
+  if (detailButton) {
+    const detailPanel = document.getElementById(detailButton.dataset.studentDetail);
+    if (!detailPanel) return;
+    const isOpening = detailPanel.hidden;
+    detailPanel.hidden = !isOpening;
+    detailButton.setAttribute("aria-expanded", String(isOpening));
+    detailButton.textContent = isOpening ? "ซ่อนข้อมูลเด็ก" : "ดูข้อมูลเด็ก";
+    if (isOpening) loadLearningStudentTimeline(detailButton.dataset.studentDetail);
+    return;
+  }
+
   const button = event.target.closest("[data-record-enrollment]");
   if (button) openRecordSession(button.dataset.recordEnrollment);
 });
 recordSessionForm?.addEventListener("submit", saveLearningSession);
 recordSessionPhoto?.addEventListener("change", renderLearningPhotoPreview);
+refreshSessionHistory?.addEventListener("click", () => {
+  if (activeLearningEnrollment) loadLearningSessionHistory(activeLearningEnrollment.id);
+});
+teacherCommentTemplates?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-comment-template]");
+  if (!button || !recordTeacherComment) return;
+  const template = button.dataset.commentTemplate || "";
+  const currentComment = recordTeacherComment.value.trim();
+  recordTeacherComment.value = currentComment ? `${currentComment}\n${template}` : template;
+  recordTeacherComment.focus();
+});
 document.querySelector("#closeRecordSession")?.addEventListener("click", closeRecordSession);
 recordSessionModal?.addEventListener("click", (event) => {
   if (event.target === recordSessionModal) closeRecordSession();

@@ -1553,8 +1553,10 @@ function renderParentDashboard({ applications = [], enrollments = [], sessions =
     return;
   }
 
-  parentSessionTimeline.innerHTML = sessions.map((session) => {
+  parentSessionTimeline.innerHTML = sessions.map((session, index) => {
     const enrollment = enrollmentMap.get(session.course_enrollment_id) || {};
+    const courseMeta = getLearningCourseMeta(enrollment.course_type || "art");
+    const courseLabel = getParentCourseLabel(enrollment);
     const photoUrl = getPublicLearningPhotoUrl(session.photo_path);
     const sessionDate = session.session_date
       ? new Date(session.session_date).toLocaleDateString("th-TH", {
@@ -1563,15 +1565,34 @@ function renderParentDashboard({ applications = [], enrollments = [], sessions =
           day: "numeric"
         })
       : "ยังไม่ระบุวันที่";
+    const lessonTitle = session.lesson_title || courseLabel;
+    const sessionNumber = session.session_number || "-";
     return `
-      <article class="parent-session-item">
-        ${photoUrl
-          ? `<img class="parent-session-image" src="${photoUrl}" alt="ผลงานการเรียนครั้งที่ ${session.session_number || ""}">`
-          : `<div class="parent-session-placeholder">📸</div>`}
-        <div>
-          <span>${escapeHtml(sessionDate)} · ครั้งที่ ${session.session_number || "-"}</span>
-          <strong>${escapeHtml(session.lesson_title || getParentCourseLabel(enrollment))}</strong>
-          <p>${escapeHtml(session.teacher_comment || "คุณครูยังไม่ได้เขียนคอมเมนต์สำหรับครั้งนี้")}</p>
+      <article class="parent-session-item ${index === 0 ? "is-latest" : ""}">
+        <div class="parent-session-marker">
+          <span>${escapeHtml(String(sessionNumber))}</span>
+        </div>
+        <div class="parent-session-card">
+          <div class="parent-session-media">
+            ${photoUrl
+              ? `<img class="parent-session-image" src="${photoUrl}" alt="ผลงาน ${escapeHtml(lessonTitle)}">`
+              : `<div class="parent-session-placeholder">📸</div>`}
+          </div>
+          <div class="parent-session-content">
+            <div class="parent-session-topline">
+              <span class="parent-session-course">
+                <i>${courseMeta.icon}</i>
+                ${escapeHtml(courseLabel)}
+              </span>
+              ${index === 0 ? `<span class="parent-session-latest">ล่าสุด</span>` : ""}
+            </div>
+            <strong>${escapeHtml(lessonTitle)}</strong>
+            <div class="parent-session-meta">
+              <span>${escapeHtml(sessionDate)}</span>
+              <span>ครั้งที่ ${escapeHtml(String(sessionNumber))}</span>
+            </div>
+            <p>${escapeHtml(session.teacher_comment || "คุณครูยังไม่ได้เขียนคอมเมนต์สำหรับครั้งนี้")}</p>
+          </div>
         </div>
       </article>
     `;
