@@ -1442,12 +1442,14 @@ function openRecordSession(enrollmentId) {
   }
   recordSessionModal.classList.add("open");
   recordSessionModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
   loadLearningSessionHistory(activeLearningEnrollment.id);
 }
 
 function closeRecordSession() {
   recordSessionModal.classList.remove("open");
   recordSessionModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
   activeLearningEnrollment = null;
 }
 
