@@ -1,14 +1,5 @@
--- Toko & Poppy Art Program Packages
--- Run after:
--- 1) outputs/supabase-enrollment-schema.sql
--- 2) outputs/supabase-branch-admin-schema.sql
--- 3) outputs/supabase-learning-history-schema.sql
--- 4) outputs/supabase-flexible-session-packages.sql
---
--- Adds separate art package enrollments:
--- - creative_art
--- - water_color
--- - clay
+-- Toko & Poppy: LINE LIFF course access without required web account linking
+-- Run once after the enrollment, learning-history, branch-staff, art-package, and LIFF enrollment SQL files.
 
 create schema if not exists private;
 
@@ -25,19 +16,6 @@ create index if not exists course_enrollments_line_user_id_idx
 
 create index if not exists learning_sessions_line_user_id_idx
   on public.learning_sessions(line_user_id, session_date desc);
-
-alter table public.course_enrollments
-  drop constraint if exists course_enrollments_course_type_check;
-
-alter table public.course_enrollments
-  add constraint course_enrollments_course_type_check
-  check (course_type in ('robot', 'art', 'creative_art', 'water_color', 'clay'));
-
-alter table public.course_enrollments
-  add column if not exists program_label text,
-  add column if not exists package_cycle integer not null default 1,
-  add column if not exists package_started_at date default current_date,
-  add column if not exists package_note text;
 
 create or replace function public.ensure_course_enrollments_for_application(target_application_id uuid)
 returns void
@@ -56,39 +34,19 @@ begin
     return;
   end if;
 
-  -- LINE LIFF applications can receive course access through line_user_id before a web account is linked.
   if app.parent_user_id is null and nullif(trim(coalesce(app.line_user_id, '')), '') is null then
     return;
   end if;
 
   if coalesce(app.robot_access, false) then
     insert into public.course_enrollments (
-      application_id,
-      parent_user_id,
-      line_user_id,
-      branch_id,
-      student_name,
-      student_nickname,
-      course_type,
-      level_label,
-      program_label,
-      total_sessions,
-      approved_by,
-      approved_at
+      application_id, parent_user_id, line_user_id, branch_id, student_name, student_nickname,
+      course_type, level_label, program_label, total_sessions, approved_by, approved_at
     )
     values (
-      app.id,
-      app.parent_user_id,
-      nullif(trim(coalesce(app.line_user_id, '')), ''),
-      app.branch_id,
-      app.student_name,
-      app.student_nickname,
-      'robot',
-      'โรบอท + โค้ดดิ้ง',
-      'โรบอท + โค้ดดิ้ง',
-      30,
-      app.reviewed_by,
-      app.reviewed_at
+      app.id, app.parent_user_id, nullif(trim(coalesce(app.line_user_id, '')), ''),
+      app.branch_id, app.student_name, app.student_nickname,
+      'robot', 'โรบอท + โค้ดดิ้ง', 'โรบอท + โค้ดดิ้ง', 30, app.reviewed_by, app.reviewed_at
     )
     on conflict (application_id, course_type, (coalesce(level_label, ''))) do update
       set branch_id = excluded.branch_id,
@@ -102,8 +60,7 @@ begin
           updated_at = now();
   else
     update public.course_enrollments
-    set status = 'paused',
-        updated_at = now()
+    set status = 'paused', updated_at = now()
     where application_id = app.id
       and course_type = 'robot'
       and completed_sessions > 0;
@@ -116,8 +73,7 @@ begin
 
   if not coalesce(app.art_access, false) then
     update public.course_enrollments
-    set status = 'paused',
-        updated_at = now()
+    set status = 'paused', updated_at = now()
     where application_id = app.id
       and course_type in ('art', 'creative_art', 'water_color', 'clay')
       and completed_sessions > 0;
@@ -170,7 +126,6 @@ begin
     raise exception 'Admin access is required for this application';
   end if;
 
-  -- LINE LIFF applications can open course access with line_user_id before a web account is linked.
   if app.parent_user_id is null and nullif(trim(coalesce(app.line_user_id, '')), '') is null then
     return;
   end if;
@@ -214,7 +169,8 @@ begin
     end if;
 
     if exists (
-      select 1 from public.course_enrollments
+      select 1
+      from public.course_enrollments
       where application_id = app.id
         and course_type = 'creative_art'
         and completed_sessions > p_creative_art_sessions
@@ -228,7 +184,8 @@ begin
       approved_by, approved_at, session_package_note, package_note, status
     )
     values (
-      app.id, app.parent_user_id, nullif(trim(coalesce(app.line_user_id, '')), ''), app.branch_id, app.student_name, app.student_nickname,
+      app.id, app.parent_user_id, nullif(trim(coalesce(app.line_user_id, '')), ''),
+      app.branch_id, app.student_name, app.student_nickname,
       'creative_art', 'Creative Art', 'Creative Art', p_creative_art_sessions,
       auth.uid(), now(), clean_note, clean_note, 'active'
     )
@@ -268,7 +225,8 @@ begin
     end if;
 
     if exists (
-      select 1 from public.course_enrollments
+      select 1
+      from public.course_enrollments
       where application_id = app.id
         and course_type = 'water_color'
         and completed_sessions > p_water_color_sessions
@@ -282,7 +240,8 @@ begin
       approved_by, approved_at, session_package_note, package_note, status
     )
     values (
-      app.id, app.parent_user_id, nullif(trim(coalesce(app.line_user_id, '')), ''), app.branch_id, app.student_name, app.student_nickname,
+      app.id, app.parent_user_id, nullif(trim(coalesce(app.line_user_id, '')), ''),
+      app.branch_id, app.student_name, app.student_nickname,
       'water_color', 'Water Color', 'Water Color', p_water_color_sessions,
       auth.uid(), now(), clean_note, clean_note, 'active'
     )
@@ -322,7 +281,8 @@ begin
     end if;
 
     if exists (
-      select 1 from public.course_enrollments
+      select 1
+      from public.course_enrollments
       where application_id = app.id
         and course_type = 'clay'
         and completed_sessions > p_clay_sessions
@@ -336,7 +296,8 @@ begin
       approved_by, approved_at, session_package_note, package_note, status
     )
     values (
-      app.id, app.parent_user_id, nullif(trim(coalesce(app.line_user_id, '')), ''), app.branch_id, app.student_name, app.student_nickname,
+      app.id, app.parent_user_id, nullif(trim(coalesce(app.line_user_id, '')), ''),
+      app.branch_id, app.student_name, app.student_nickname,
       'clay', 'ปั้นดินเบา (CLAY)', 'ปั้นดินเบา (CLAY)', p_clay_sessions,
       auth.uid(), now(), clean_note, clean_note, 'active'
     )
@@ -395,18 +356,117 @@ begin
 end;
 $$;
 
+create or replace function public.record_learning_session(
+  p_course_enrollment_id uuid,
+  p_session_number integer default null,
+  p_session_date date default current_date,
+  p_lesson_title text default null,
+  p_teacher_comment text default null,
+  p_photo_path text default null
+)
+returns public.learning_sessions
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+  enrollment public.course_enrollments%rowtype;
+  resolved_session_number integer;
+  new_session public.learning_sessions%rowtype;
+  completed_count integer;
+begin
+  select * into enrollment
+  from public.course_enrollments
+  where id = p_course_enrollment_id
+  for update;
+
+  if not found then
+    raise exception 'ไม่พบคอร์สของนักเรียนคนนี้';
+  end if;
+
+  if not private.can_manage_learning_branch(enrollment.branch_id) then
+    raise exception 'ไม่มีสิทธิ์บันทึกประวัติการเรียนของสาขานี้';
+  end if;
+
+  if p_session_number is null then
+    select coalesce(max(session_number), 0) + 1
+    into resolved_session_number
+    from public.learning_sessions
+    where course_enrollment_id = p_course_enrollment_id;
+  else
+    resolved_session_number := p_session_number;
+  end if;
+
+  if resolved_session_number < 1 then
+    raise exception 'ครั้งที่เรียนต้องมากกว่า 0';
+  end if;
+
+  if resolved_session_number > enrollment.total_sessions then
+    raise exception 'ครั้งที่เรียนต้องไม่เกินจำนวนครั้งของแพ็กเกจ';
+  end if;
+
+  if exists (
+    select 1
+    from public.learning_sessions
+    where course_enrollment_id = p_course_enrollment_id
+      and session_number = resolved_session_number
+  ) then
+    raise exception 'มีการบันทึกครั้งเรียนนี้แล้ว';
+  end if;
+
+  insert into public.learning_sessions (
+    course_enrollment_id, application_id, parent_user_id, line_user_id, branch_id,
+    session_number, session_date, lesson_title, teacher_comment, photo_path, recorded_by
+  )
+  values (
+    enrollment.id, enrollment.application_id, enrollment.parent_user_id, enrollment.line_user_id, enrollment.branch_id,
+    resolved_session_number, coalesce(p_session_date, current_date),
+    nullif(trim(coalesce(p_lesson_title, '')), ''),
+    nullif(trim(coalesce(p_teacher_comment, '')), ''),
+    nullif(trim(coalesce(p_photo_path, '')), ''),
+    auth.uid()
+  )
+  returning * into new_session;
+
+  select count(*) into completed_count
+  from public.learning_sessions
+  where course_enrollment_id = enrollment.id;
+
+  update public.course_enrollments
+  set completed_sessions = completed_count,
+      certificate_half_awarded = case
+        when course_type = 'robot' and completed_count >= 15 then true
+        else certificate_half_awarded
+      end,
+      certificate_full_awarded = case
+        when completed_count >= total_sessions then true
+        else certificate_full_awarded
+      end,
+      status = case when completed_count >= total_sessions then 'completed' else status end,
+      updated_at = now()
+  where id = enrollment.id;
+
+  return new_session;
+end;
+$$;
+
 grant execute on function public.ensure_course_enrollments_for_application(uuid) to authenticated;
-grant execute on function public.set_course_enrollment_packages(
-  uuid,
-  integer,
-  integer,
-  integer,
-  integer,
-  text
-) to authenticated;
-grant execute on function public.set_course_enrollment_package(
-  uuid,
-  integer,
-  integer,
-  text
-) to authenticated;
+grant execute on function public.set_course_enrollment_packages(uuid, integer, integer, integer, integer, text) to authenticated;
+grant execute on function public.set_course_enrollment_package(uuid, integer, integer, text) to authenticated;
+grant execute on function public.record_learning_session(uuid, integer, date, text, text, text) to authenticated;
+
+do $$
+declare
+  app record;
+begin
+  for app in
+    select id
+    from public.enrollment_applications
+    where status::text = 'approved'
+      and parent_user_id is null
+      and nullif(trim(coalesce(line_user_id, '')), '') is not null
+  loop
+    perform public.ensure_course_enrollments_for_application(app.id);
+  end loop;
+end;
+$$;

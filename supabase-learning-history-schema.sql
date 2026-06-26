@@ -9,7 +9,8 @@ create schema if not exists private;
 create table if not exists public.course_enrollments (
   id uuid primary key default gen_random_uuid(),
   application_id uuid not null references public.enrollment_applications(id) on delete cascade,
-  parent_user_id uuid not null references auth.users(id) on delete cascade,
+  parent_user_id uuid references auth.users(id) on delete cascade,
+  line_user_id text,
   branch_id uuid references public.branches(id) on delete set null,
   student_name text not null,
   student_nickname text,
@@ -30,6 +31,9 @@ create unique index if not exists course_enrollments_application_course_level_ui
 create index if not exists course_enrollments_parent_idx
   on public.course_enrollments(parent_user_id, created_at desc);
 
+create index if not exists course_enrollments_line_user_id_idx
+  on public.course_enrollments(line_user_id, created_at desc);
+
 create index if not exists course_enrollments_branch_idx
   on public.course_enrollments(branch_id, created_at desc);
 
@@ -37,7 +41,8 @@ create table if not exists public.learning_sessions (
   id uuid primary key default gen_random_uuid(),
   course_enrollment_id uuid not null references public.course_enrollments(id) on delete cascade,
   application_id uuid not null references public.enrollment_applications(id) on delete cascade,
-  parent_user_id uuid not null references auth.users(id) on delete cascade,
+  parent_user_id uuid references auth.users(id) on delete cascade,
+  line_user_id text,
   branch_id uuid references public.branches(id) on delete set null,
   session_number integer not null check (session_number > 0),
   session_date date not null default current_date,
@@ -54,6 +59,9 @@ create unique index if not exists learning_sessions_enrollment_number_uidx
 
 create index if not exists learning_sessions_parent_idx
   on public.learning_sessions(parent_user_id, session_date desc);
+
+create index if not exists learning_sessions_line_user_id_idx
+  on public.learning_sessions(line_user_id, session_date desc);
 
 create index if not exists learning_sessions_branch_idx
   on public.learning_sessions(branch_id, session_date desc);
@@ -94,10 +102,16 @@ begin
     return;
   end if;
 
+  -- LINE LIFF applications can receive course access through line_user_id before a web account is linked.
+  if app.parent_user_id is null and nullif(trim(coalesce(app.line_user_id, '')), '') is null then
+    return;
+  end if;
+
   if coalesce(app.robot_access, false) or app.course::text in ('robot', 'both') then
     insert into public.course_enrollments (
       application_id,
       parent_user_id,
+      line_user_id,
       branch_id,
       student_name,
       student_nickname,
@@ -108,6 +122,7 @@ begin
     values (
       app.id,
       app.parent_user_id,
+      nullif(trim(coalesce(app.line_user_id, '')), ''),
       app.branch_id,
       app.student_name,
       app.student_nickname,
@@ -117,6 +132,8 @@ begin
     )
     on conflict (application_id, course_type, (coalesce(level_label, ''))) do update
       set branch_id = excluded.branch_id,
+          parent_user_id = coalesce(excluded.parent_user_id, public.course_enrollments.parent_user_id),
+          line_user_id = coalesce(excluded.line_user_id, public.course_enrollments.line_user_id),
           student_name = excluded.student_name,
           student_nickname = excluded.student_nickname,
           updated_at = now();
@@ -126,6 +143,7 @@ begin
     insert into public.course_enrollments (
       application_id,
       parent_user_id,
+      line_user_id,
       branch_id,
       student_name,
       student_nickname,
@@ -136,6 +154,7 @@ begin
     values (
       app.id,
       app.parent_user_id,
+      nullif(trim(coalesce(app.line_user_id, '')), ''),
       app.branch_id,
       app.student_name,
       app.student_nickname,
@@ -145,6 +164,8 @@ begin
     )
     on conflict (application_id, course_type, (coalesce(level_label, ''))) do update
       set branch_id = excluded.branch_id,
+          parent_user_id = coalesce(excluded.parent_user_id, public.course_enrollments.parent_user_id),
+          line_user_id = coalesce(excluded.line_user_id, public.course_enrollments.line_user_id),
           student_name = excluded.student_name,
           student_nickname = excluded.student_nickname,
           updated_at = now();
@@ -227,6 +248,7 @@ begin
     course_enrollment_id,
     application_id,
     parent_user_id,
+    line_user_id,
     branch_id,
     session_number,
     session_date,
@@ -239,6 +261,7 @@ begin
     enrollment.id,
     enrollment.application_id,
     enrollment.parent_user_id,
+    enrollment.line_user_id,
     enrollment.branch_id,
     next_session,
     coalesce(p_session_date, current_date),

@@ -1876,11 +1876,19 @@ async function openReview(applicationId) {
     activeApplication.registration_source ||
     "เว็บ";
   const paymentText = paymentMethodLabels[activeApplication.payment_method] || "ไม่ระบุ";
+  const hasLineIdentity = Boolean(activeApplication.line_user_id);
   const pendingAccountNotice = !activeApplication.parent_user_id
-    ? `
+    ? hasLineIdentity
+      ? `
       <div class="full account-link-notice">
         <dt>สถานะบัญชีผู้ปกครอง</dt>
-        <dd>ใบสมัครนี้ยังไม่ได้ผูกบัญชีผู้ปกครอง อนุมัติใบสมัครได้ก่อน แต่ระบบจะยังไม่เปิดสิทธิ์คอร์สจนกว่าจะผูกบัญชี</dd>
+        <dd>ใบสมัครนี้มาจาก LINE อนุมัติแล้วจะเปิดสิทธิ์คอร์สให้ผู้ปกครองดูผ่าน LINE ได้ทันที การผูกบัญชีเว็บด้วยอีเมลทำภายหลังได้ถ้าต้องการเข้าเว็บปกติ</dd>
+      </div>
+    `
+      : `
+      <div class="full account-link-notice">
+        <dt>สถานะบัญชีผู้ปกครอง</dt>
+        <dd>ใบสมัครนี้ยังไม่มีบัญชีเว็บหรือ LINE ID สำหรับเปิดสิทธิ์คอร์ส กรุณาผูกบัญชีผู้ปกครองก่อนอนุมัติเปิดสิทธิ์</dd>
       </div>
     `
     : "";
@@ -1936,7 +1944,9 @@ async function openReview(applicationId) {
   rejectionReason.value = activeApplication.rejection_reason || "";
   approveButton.textContent = activeApplication.status === "approved"
     ? "✓ บันทึกสิทธิ์คอร์ส"
-    : "✓ อนุมัติและเปิดสิทธิ์";
+    : activeApplication.line_user_id && !activeApplication.parent_user_id
+      ? "✓ อนุมัติและเปิดสิทธิ์ LINE"
+      : "✓ อนุมัติและเปิดสิทธิ์";
   const canReview = canManageApplication(activeApplication);
   robotAccess.disabled = !canReview;
   artAccess.disabled = !canReview;
@@ -1985,7 +1995,11 @@ function getSuggestedParentAccountQuery(application) {
 function renderAccountLinkPanel() {
   if (!accountLinkPanel || !parentAccountSearch || !parentAccountResults) return;
 
-  const needsParentAccount = Boolean(activeApplication && !activeApplication.parent_user_id);
+  const needsParentAccount = Boolean(
+    activeApplication &&
+    !activeApplication.parent_user_id &&
+    !activeApplication.line_user_id
+  );
   accountLinkPanel.hidden = !needsParentAccount;
   if (!needsParentAccount) {
     parentAccountSearch.value = "";
@@ -2146,7 +2160,7 @@ async function reviewApplication(decision) {
 
   setBusy(true);
   try {
-    const canOpenCourseAccess = Boolean(activeApplication.parent_user_id);
+    const canOpenCourseAccess = Boolean(activeApplication.parent_user_id || activeApplication.line_user_id);
     const { error } = await supabaseClient.rpc("review_enrollment", {
       p_application_id: activeApplication.id,
       p_decision: decision,
@@ -2175,11 +2189,14 @@ async function reviewApplication(decision) {
   setBusy(false);
 
   const approvedWithParentAccount = Boolean(activeApplication.parent_user_id);
+  const approvedWithLine = Boolean(activeApplication.line_user_id);
   closeReview();
   showToast(decision === "approved"
     ? approvedWithParentAccount
       ? "อนุมัติและเปิดสิทธิ์คอร์สเรียบร้อย"
-      : "อนุมัติใบสมัครแล้ว รอผูกบัญชีผู้ปกครองก่อนเปิดสิทธิ์คอร์ส"
+      : approvedWithLine
+        ? "อนุมัติและเปิดสิทธิ์คอร์สผ่าน LINE เรียบร้อย"
+        : "อนุมัติใบสมัครแล้ว แต่ยังไม่มีบัญชีหรือ LINE ID สำหรับเปิดสิทธิ์คอร์ส"
     : "บันทึกการไม่อนุมัติเรียบร้อย");
   await loadApplications();
 }
