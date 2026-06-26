@@ -97,6 +97,11 @@ const recordSessionPhotoPreview = document.querySelector("#recordSessionPhotoPre
 const learningSessionTimeline = document.querySelector("#learningSessionTimeline");
 const refreshSessionHistory = document.querySelector("#refreshSessionHistory");
 const saveSessionButton = document.querySelector("#saveSessionButton");
+const sessionSharePanel = document.querySelector("#sessionSharePanel");
+const sessionShareCanvas = document.querySelector("#sessionShareCanvas");
+const sessionShareText = document.querySelector("#sessionShareText");
+const copySessionShareTextButton = document.querySelector("#copySessionShareTextButton");
+const downloadSessionShareCardButton = document.querySelector("#downloadSessionShareCardButton");
 const freeResourceForm = document.querySelector("#freeResourceForm");
 const freeResourceAdminList = document.querySelector("#freeResourceAdminList");
 const freeResourceCount = document.querySelector("#freeResourceCount");
@@ -140,6 +145,7 @@ let artLessons = [];
 let activeArtLesson = null;
 let learningEnrollments = [];
 let activeLearningEnrollment = null;
+let lastSessionShareData = null;
 const learningStudentTimelineGroups = new Map();
 const learningStudentTimelineCache = new Map();
 let freeResources = [];
@@ -1436,6 +1442,7 @@ function openRecordSession(enrollmentId) {
   recordTeacherComment.value = "";
   recordSessionPhoto.value = "";
   recordSessionPhotoPreview.innerHTML = "";
+  hideSessionSharePanel();
   if (learningSessionTimeline) {
     learningSessionTimeline.innerHTML =
       '<div class="learning-history-empty">กำลังโหลดประวัติครั้งเรียน...</div>';
@@ -1450,6 +1457,7 @@ function closeRecordSession() {
   recordSessionModal.classList.remove("open");
   recordSessionModal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+  hideSessionSharePanel();
   activeLearningEnrollment = null;
 }
 
@@ -1470,6 +1478,297 @@ function renderLearningPhotoPreview() {
   const imageUrl = URL.createObjectURL(file);
   recordSessionPhotoPreview.innerHTML =
     `<img src="${imageUrl}" alt="ตัวอย่างรูปผลงาน"><span>${escapeHtml(file.name)}</span>`;
+}
+
+function hideSessionSharePanel() {
+  lastSessionShareData = null;
+  if (sessionSharePanel) sessionSharePanel.hidden = true;
+  if (sessionShareText) sessionShareText.value = "";
+  if (sessionShareCanvas) {
+    const context = sessionShareCanvas.getContext("2d");
+    context?.clearRect(0, 0, sessionShareCanvas.width, sessionShareCanvas.height);
+  }
+}
+
+function getShareBranchName(enrollment = {}) {
+  return enrollment.branches?.name ||
+    enrollment.branch_name ||
+    currentBranchAssignment?.branches?.name ||
+    currentBranchAssignment?.branch_name ||
+    "";
+}
+
+function buildAfterClassShareData({
+  enrollment,
+  sessionNumber,
+  sessionDate,
+  lessonTitle,
+  teacherComment,
+  photoPath
+}) {
+  const totalSessions = Number(enrollment.total_sessions || 0);
+  const completedBefore = Number(enrollment.completed_sessions || 0);
+  const completedAfter = Math.max(completedBefore, sessionNumber);
+  const remainingAfter = totalSessions
+    ? Math.max(totalSessions - completedAfter, 0)
+    : 0;
+
+  return {
+    studentName: enrollment.student_nickname || enrollment.student_name || "น้อง",
+    courseName: getCourseEnrollmentLabel(enrollment),
+    courseIcon: getCourseIcon(enrollment.course_type),
+    branchName: getShareBranchName(enrollment),
+    sessionNumber,
+    sessionDate: sessionDate || toLocalDateInputValue(new Date()),
+    lessonTitle: lessonTitle || "",
+    teacherComment: teacherComment || "",
+    photoUrl: getLearningPhotoUrl(photoPath),
+    totalSessions,
+    completedAfter,
+    remainingAfter
+  };
+}
+
+function buildAfterClassShareText(data) {
+  const sessionText = data.totalSessions
+    ? `ครั้งที่ ${data.sessionNumber}/${data.totalSessions}`
+    : `ครั้งที่ ${data.sessionNumber}`;
+  const lines = [
+    `สรุปการเรียนวันนี้ของ ${data.studentName}`,
+    `${data.courseIcon} ${data.courseName}`,
+    `วันที่ ${formatDateOnly(data.sessionDate)} · ${sessionText}`,
+    data.lessonTitle ? `วันนี้เรียน: ${data.lessonTitle}` : "",
+    data.teacherComment ? `คอมเมนต์คุณครู: ${data.teacherComment}` : "",
+    data.totalSessions ? `คงเหลือ ${data.remainingAfter} ครั้ง` : "",
+    "ขอบคุณค่ะ/ครับ"
+  ];
+  return lines.filter(Boolean).join("\n");
+}
+
+function drawRoundedRect(context, x, y, width, height, radius) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + safeRadius, y);
+  context.lineTo(x + width - safeRadius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + safeRadius);
+  context.lineTo(x + width, y + height - safeRadius);
+  context.quadraticCurveTo(x + width, y + height, x + width - safeRadius, y + height);
+  context.lineTo(x + safeRadius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - safeRadius);
+  context.lineTo(x, y + safeRadius);
+  context.quadraticCurveTo(x, y, x + safeRadius, y);
+  context.closePath();
+}
+
+function wrapCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines = 4) {
+  const normalized = String(text || "").replace(/\s+/g, " ").trim();
+  if (!normalized) return y;
+  const words = normalized.includes(" ")
+    ? normalized.split(" ")
+    : normalized.match(/.{1,12}/g) || [normalized];
+  const lines = [];
+  let currentLine = "";
+
+  words.forEach((word) => {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (context.measureText(testLine).width <= maxWidth || !currentLine) {
+      currentLine = testLine;
+      return;
+    }
+    lines.push(currentLine);
+    currentLine = word;
+  });
+  if (currentLine) lines.push(currentLine);
+
+  const visibleLines = lines.slice(0, maxLines);
+  visibleLines.forEach((line, index) => {
+    const isLast = index === maxLines - 1 && lines.length > maxLines;
+    context.fillText(isLast ? `${line.replace(/.{3}$/, "")}...` : line, x, y + index * lineHeight);
+  });
+  return y + visibleLines.length * lineHeight;
+}
+
+function loadCanvasImage(url) {
+  if (!url) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = url;
+  });
+}
+
+function drawCoverImage(context, image, x, y, width, height, radius) {
+  const sourceRatio = image.width / image.height;
+  const targetRatio = width / height;
+  let sourceWidth = image.width;
+  let sourceHeight = image.height;
+  let sourceX = 0;
+  let sourceY = 0;
+
+  if (sourceRatio > targetRatio) {
+    sourceWidth = image.height * targetRatio;
+    sourceX = (image.width - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.width / targetRatio;
+    sourceY = (image.height - sourceHeight) / 2;
+  }
+
+  context.save();
+  drawRoundedRect(context, x, y, width, height, radius);
+  context.clip();
+  context.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+  context.restore();
+}
+
+async function renderSessionShareCard(data) {
+  if (!sessionShareCanvas) return;
+  const context = sessionShareCanvas.getContext("2d");
+  const width = sessionShareCanvas.width;
+  const height = sessionShareCanvas.height;
+  const photoImage = await loadCanvasImage(data.photoUrl);
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#fffaf1";
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = "#efdcb9";
+  for (let x = 36; x < width; x += 58) {
+    for (let y = 34; y < height; y += 58) {
+      context.fillRect(x, y, 4, 4);
+    }
+  }
+
+  const gradient = context.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "rgba(228, 245, 219, 0.9)");
+  gradient.addColorStop(0.55, "rgba(255, 250, 241, 0.92)");
+  gradient.addColorStop(1, "rgba(252, 228, 202, 0.9)");
+  context.fillStyle = gradient;
+  drawRoundedRect(context, 52, 54, width - 104, height - 108, 56);
+  context.fill();
+  context.strokeStyle = "#e4d1bd";
+  context.lineWidth = 4;
+  context.stroke();
+
+  context.fillStyle = "#5c493d";
+  context.font = "900 44px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText("Toko & Poppy", 94, 132);
+  context.font = "700 26px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillStyle = "#8b7668";
+  context.fillText("Enjoy learning with stories", 94, 170);
+
+  context.fillStyle = "#db7d68";
+  context.font = "900 30px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText("สรุปหลังเรียน", 94, 244);
+  context.fillStyle = "#49372f";
+  context.font = "900 74px 'Noto Sans Thai', 'Arial', sans-serif";
+  wrapCanvasText(context, `วันนี้ ${data.studentName} เรียนอะไรบ้าง`, 94, 328, 880, 82, 2);
+
+  const photoX = 94;
+  const photoY = 454;
+  const photoW = 892;
+  const photoH = 520;
+  context.fillStyle = "#ffffff";
+  drawRoundedRect(context, photoX - 16, photoY - 16, photoW + 32, photoH + 32, 42);
+  context.fill();
+  context.strokeStyle = "#eadccd";
+  context.lineWidth = 3;
+  context.stroke();
+
+  if (photoImage) {
+    drawCoverImage(context, photoImage, photoX, photoY, photoW, photoH, 28);
+  } else {
+    context.fillStyle = "#f5efe4";
+    drawRoundedRect(context, photoX, photoY, photoW, photoH, 28);
+    context.fill();
+    context.fillStyle = "#8b7668";
+    context.font = "900 44px 'Noto Sans Thai', 'Arial', sans-serif";
+    context.textAlign = "center";
+    context.fillText("ยังไม่ได้แนบรูปผลงาน", photoX + photoW / 2, photoY + photoH / 2);
+    context.textAlign = "start";
+  }
+
+  context.fillStyle = "#ffffff";
+  drawRoundedRect(context, 94, 1018, 420, 168, 30);
+  context.fill();
+  drawRoundedRect(context, 566, 1018, 420, 168, 30);
+  context.fill();
+
+  context.fillStyle = "#6b9658";
+  context.font = "900 28px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText(`${data.courseIcon} ${data.courseName}`, 124, 1068);
+  context.fillStyle = "#5c493d";
+  context.font = "800 34px 'Noto Sans Thai', 'Arial', sans-serif";
+  const sessionText = data.totalSessions
+    ? `ครั้งที่ ${data.sessionNumber}/${data.totalSessions}`
+    : `ครั้งที่ ${data.sessionNumber}`;
+  context.fillText(sessionText, 124, 1120);
+  context.fillStyle = "#8b7668";
+  context.font = "700 24px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText(formatDateOnly(data.sessionDate), 124, 1160);
+
+  context.fillStyle = "#db7d68";
+  context.font = "900 28px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText("คุณครูฝากถึงบ้าน", 596, 1068);
+  context.fillStyle = "#5c493d";
+  context.font = "700 27px 'Noto Sans Thai', 'Arial', sans-serif";
+  wrapCanvasText(
+    context,
+    data.teacherComment || data.lessonTitle || "วันนี้ตั้งใจเรียนดีมาก เก็บผลงานไว้เป็นกำลังใจนะคะ/ครับ",
+    596,
+    1114,
+    340,
+    38,
+    3
+  );
+
+  context.fillStyle = "#eef7e7";
+  drawRoundedRect(context, 94, 1222, 892, 74, 37);
+  context.fill();
+  context.fillStyle = "#4f7d48";
+  context.font = "900 30px 'Noto Sans Thai', 'Arial', sans-serif";
+  const footerText = data.totalSessions
+    ? `เรียนแล้ว ${data.completedAfter} ครั้ง · คงเหลือ ${data.remainingAfter} ครั้ง`
+    : data.branchName || "ขอบคุณที่เรียนกับ Toko & Poppy";
+  context.fillText(footerText, 132, 1270);
+}
+
+async function showSessionSharePanel(data) {
+  lastSessionShareData = data;
+  if (sessionShareText) sessionShareText.value = buildAfterClassShareText(data);
+  if (sessionSharePanel) sessionSharePanel.hidden = false;
+  await renderSessionShareCard(data);
+  sessionSharePanel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+async function copySessionShareText() {
+  if (!sessionShareText?.value) return;
+  try {
+    await navigator.clipboard.writeText(sessionShareText.value);
+    showToast("คัดลอกข้อความสำหรับส่งผู้ปกครองแล้ว");
+  } catch {
+    sessionShareText.select();
+    document.execCommand("copy");
+    showToast("คัดลอกข้อความสำหรับส่งผู้ปกครองแล้ว");
+  }
+}
+
+function downloadSessionShareCard() {
+  if (!sessionShareCanvas || !lastSessionShareData) return;
+  const link = document.createElement("a");
+  const safeName = String(lastSessionShareData.studentName || "student")
+    .replace(/[^\wก-๙-]+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 60);
+  link.download = `toko-poppy-session-${safeName}-${lastSessionShareData.sessionNumber}.png`;
+  try {
+    link.href = sessionShareCanvas.toDataURL("image/png");
+    link.click();
+  } catch (error) {
+    console.error(error);
+    showToast("ดาวน์โหลดภาพไม่สำเร็จ ลองเปิดใหม่หรือส่งข้อความสรุปให้ผู้ปกครองก่อน", true);
+  }
 }
 
 async function uploadLearningPhoto(enrollmentId) {
@@ -1507,6 +1806,14 @@ async function saveLearningSession(event) {
 
   try {
     const photoPath = await uploadLearningPhoto(activeLearningEnrollment.id);
+    const shareData = buildAfterClassShareData({
+      enrollment: activeLearningEnrollment,
+      sessionNumber,
+      sessionDate: recordSessionDate.value || toLocalDateInputValue(new Date()),
+      lessonTitle: recordLessonTitle.value.trim(),
+      teacherComment: recordTeacherComment.value.trim(),
+      photoPath
+    });
     const { error } = await supabaseClient.rpc("record_learning_session", {
       p_course_enrollment_id: activeLearningEnrollment.id,
       p_session_number: sessionNumber,
@@ -1519,8 +1826,13 @@ async function saveLearningSession(event) {
 
     showToast("บันทึกครั้งเรียนเรียบร้อยแล้ว");
     learningStudentTimelineCache.clear();
-    closeRecordSession();
+    await showSessionSharePanel(shareData);
+    recordSessionPhoto.value = "";
+    recordSessionPhotoPreview.innerHTML = "";
     await loadLearningProgress();
+    if (activeLearningEnrollment) {
+      await loadLearningSessionHistory(activeLearningEnrollment.id);
+    }
   } catch (error) {
     showToast(`บันทึกครั้งเรียนไม่สำเร็จ: ${error.message}`, true);
   } finally {
@@ -4470,6 +4782,8 @@ learningProgressRows?.addEventListener("click", (event) => {
 });
 recordSessionForm?.addEventListener("submit", saveLearningSession);
 recordSessionPhoto?.addEventListener("change", renderLearningPhotoPreview);
+copySessionShareTextButton?.addEventListener("click", copySessionShareText);
+downloadSessionShareCardButton?.addEventListener("click", downloadSessionShareCard);
 refreshSessionHistory?.addEventListener("click", () => {
   if (activeLearningEnrollment) loadLearningSessionHistory(activeLearningEnrollment.id);
 });

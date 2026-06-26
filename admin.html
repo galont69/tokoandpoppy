@@ -904,6 +904,25 @@
         </label>
         <button class="save-lesson-button full" id="saveSessionButton" type="submit">บันทึกครั้งเรียน</button>
       </form>
+      <section class="learning-share-panel" id="sessionSharePanel" hidden>
+        <div class="learning-share-heading">
+          <div>
+            <span>ส่งให้ผู้ปกครองทาง LINE</span>
+            <strong>ภาพสรุปหลังเรียน + ข้อความพร้อมคัดลอก</strong>
+          </div>
+          <div class="learning-share-actions">
+            <button type="button" id="copySessionShareTextButton">คัดลอกข้อความ</button>
+            <button type="button" id="downloadSessionShareCardButton">ดาวน์โหลดภาพ</button>
+          </div>
+        </div>
+        <div class="learning-share-preview">
+          <canvas id="sessionShareCanvas" width="1080" height="1350" aria-label="ภาพสรุปหลังเรียน"></canvas>
+        </div>
+        <label class="learning-share-text">
+          ข้อความส่งผู้ปกครอง
+          <textarea id="sessionShareText" rows="7" readonly></textarea>
+        </label>
+      </section>
     </div>
   </div>
 
@@ -1005,6 +1024,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260625-record-modal-scroll"></script>
+  <script src="admin.js?v=20260626-session-share-card"></script>
 </body>
 </html>
