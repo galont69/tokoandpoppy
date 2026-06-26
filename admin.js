@@ -1429,7 +1429,7 @@ function openRecordSession(enrollmentId) {
     ? Math.min(nextSession, totalSessions)
     : nextSession;
   recordSessionTitle.textContent =
-    `บันทึกครั้งเรียน: ${activeLearningEnrollment.student_nickname || activeLearningEnrollment.student_name}`;
+    `บันทึกครั้งเรียน: ${getLearningStudentDisplayName(activeLearningEnrollment)}`;
   recordSessionSummary.textContent =
     `${getCourseEnrollmentLabel(activeLearningEnrollment)} · เรียนแล้ว ${completedSessions}/${totalSessions} ครั้ง · เลือกเลขครั้งเรียนย้อนหลังได้`;
   if (recordSessionNumber) {
@@ -1498,6 +1498,16 @@ function getShareBranchName(enrollment = {}) {
     "";
 }
 
+function getLearningStudentDisplayName(enrollment = {}) {
+  const studentName = String(enrollment.student_name || "").trim();
+  const nickname = String(enrollment.student_nickname || "").trim();
+  const parentName = String(enrollment.parent_name || "").trim();
+
+  if (studentName && studentName !== parentName) return studentName;
+  if (nickname && nickname !== parentName) return nickname;
+  return studentName || nickname || "น้อง";
+}
+
 function buildAfterClassShareData({
   enrollment,
   sessionNumber,
@@ -1514,7 +1524,7 @@ function buildAfterClassShareData({
     : 0;
 
   return {
-    studentName: enrollment.student_nickname || enrollment.student_name || "น้อง",
+    studentName: getLearningStudentDisplayName(enrollment),
     courseName: getCourseEnrollmentLabel(enrollment),
     courseIcon: getCourseIcon(enrollment.course_type),
     branchName: getShareBranchName(enrollment),
