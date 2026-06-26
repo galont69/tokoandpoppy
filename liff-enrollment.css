@@ -384,8 +384,23 @@ textarea:focus {
   font-size: 2rem;
 }
 
-.success-panel button {
+.success-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
   margin-top: 18px;
+}
+
+.success-actions button {
+  min-width: min(100%, 220px);
+}
+
+.success-panel .secondary-button {
+  color: var(--green-dark);
+  background: #fff;
+  border: 1px solid #d6e7cf;
+  box-shadow: none;
 }
 
 @media (max-width: 760px) {

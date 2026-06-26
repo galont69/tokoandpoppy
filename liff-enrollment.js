@@ -6,6 +6,8 @@ const branchSelect = document.querySelector("#branchSelect");
 const submitButton = document.querySelector("#submitButton");
 const formMessage = document.querySelector("#formMessage");
 const successPanel = document.querySelector("#successPanel");
+const successMessage = document.querySelector("#successMessage");
+const addAnotherStudentButton = document.querySelector("#addAnotherStudentButton");
 const closeLiffButton = document.querySelector("#closeLiffButton");
 const lineProfileCard = document.querySelector("#lineProfileCard");
 const lineFallbackCard = document.querySelector("#lineFallbackCard");
@@ -25,6 +27,7 @@ let lineContext = {};
 let branches = [];
 
 const maxSlipSize = 5 * 1024 * 1024;
+const savedParentStorageKey = "toko-liff-enrollment-parent";
 const allowedSlipTypes = ["image/jpeg", "image/png", "image/webp"];
 const courseLabels = {
   robot: "Robot Coding",
@@ -91,6 +94,89 @@ function showElement(element) {
   element.classList.remove("is-hidden");
 }
 
+function readSavedParentDraft() {
+  try {
+    return JSON.parse(localStorage.getItem(savedParentStorageKey) || "{}");
+  } catch (error) {
+    return {};
+  }
+}
+
+function getParentDraftFromForm() {
+  const formData = new FormData(form);
+  return {
+    parentName: normalizeText(formData.get("parentName")),
+    parentPhone: normalizeText(formData.get("parentPhone")),
+    parentEmail: normalizeText(formData.get("parentEmail")),
+    preferredContact: formData.get("preferredContact") || "line",
+    branchId: formData.get("branchId") || "",
+    consent: Boolean(formData.get("consent"))
+  };
+}
+
+function saveParentDraft() {
+  try {
+    localStorage.setItem(savedParentStorageKey, JSON.stringify(getParentDraftFromForm()));
+  } catch (error) {
+    console.warn("Could not save parent draft", error);
+  }
+}
+
+function setFieldValue(name, value) {
+  const field = form.elements[name];
+  if (!field || value === undefined || value === null || value === "") return;
+  field.value = value;
+}
+
+function applyParentDraft(draft = readSavedParentDraft()) {
+  if (!draft || typeof draft !== "object") return;
+  setFieldValue("parentName", draft.parentName);
+  setFieldValue("parentPhone", draft.parentPhone);
+  setFieldValue("parentEmail", draft.parentEmail);
+  setFieldValue("preferredContact", draft.preferredContact);
+
+  if (draft.branchId && [...branchSelect.options].some((option) => option.value === draft.branchId)) {
+    branchSelect.value = draft.branchId;
+  }
+
+  if (draft.consent && form.elements.consent) {
+    form.elements.consent.checked = true;
+  }
+}
+
+function resetCourseSelection() {
+  const courseInputs = [...form.querySelectorAll('input[name="course"]')];
+  courseInputs.forEach((input, index) => {
+    input.checked = index === 0;
+  });
+}
+
+function resetStudentApplicationFields() {
+  [
+    "studentName",
+    "studentNickname",
+    "birthDate",
+    "paidAmount",
+    "paidAt",
+    "allergyFood",
+    "allergyPollen",
+    "studentNotes",
+    "branchNote"
+  ].forEach((name) => {
+    const field = form.elements[name];
+    if (field) field.value = "";
+  });
+
+  if (slipFileInput) {
+    slipFileInput.value = "";
+  }
+
+  resetCourseSelection();
+  setDefaultPaidDate();
+  renderSlipPreview();
+  setMessage("");
+}
+
 function hideElement(element) {
   if (!element) return;
   element.hidden = true;
@@ -127,6 +213,8 @@ function renderSlipPreview() {
     slipPreviewImage.removeAttribute("src");
     slipFileName.textContent = "ยังไม่ได้เลือกสลิป";
     slipFileSize.textContent = "";
+    slipUploadBox.querySelector("strong").textContent = "เลือกภาพสลิป";
+    slipUploadBox.querySelector("small").textContent = "JPG, PNG หรือ WEBP · ไม่เกิน 5 MB";
     return;
   }
 
@@ -232,6 +320,8 @@ async function loadBranches() {
   if (matchedBranch) {
     branchSelect.value = matchedBranch.id;
   }
+
+  applyParentDraft();
 }
 
 function buildPayload(formData, slipPath, selectedCourses) {
@@ -319,6 +409,9 @@ async function submitEnrollment(event) {
     const { error } = await supabaseClient.rpc("submit_liff_enrollment", payload);
     if (error) throw error;
 
+    saveParentDraft();
+    const studentName = normalizeText(formData.get("studentNickname")) || normalizeText(formData.get("studentName")) || "น้อง";
+    successMessage.textContent = `ส่งใบสมัครของ ${studentName} เรียบร้อยแล้ว ทีมงานจะตรวจสอบข้อมูลและติดต่อกลับตามช่องทางที่คุณสะดวก หากต้องการสมัครให้พี่น้องอีกคน กดปุ่มด้านล่างได้เลย`;
     form.hidden = true;
     successPanel.hidden = false;
     successPanel.focus({ preventScroll: true });
@@ -334,6 +427,16 @@ async function submitEnrollment(event) {
   }
 }
 
+function startAnotherStudentApplication() {
+  const draft = readSavedParentDraft();
+  successPanel.hidden = true;
+  form.hidden = false;
+  applyParentDraft(draft);
+  resetStudentApplicationFields();
+  form.querySelector('input[name="studentName"]')?.focus({ preventScroll: true });
+  form.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function closeLiff() {
   if (window.liff?.isInClient?.()) {
     window.liff.closeWindow();
@@ -343,9 +446,11 @@ function closeLiff() {
 }
 
 form.addEventListener("submit", submitEnrollment);
+addAnotherStudentButton.addEventListener("click", startAnotherStudentApplication);
 closeLiffButton.addEventListener("click", closeLiff);
 slipFileInput?.addEventListener("change", renderSlipPreview);
 
 setDefaultPaidDate();
+applyParentDraft();
 setupLineProfile();
 loadBranches();
