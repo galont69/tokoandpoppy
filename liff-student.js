@@ -18,6 +18,19 @@ const applicationList = document.querySelector("#applicationList");
 const studentNotes = document.querySelector("#studentNotes");
 const courseList = document.querySelector("#courseList");
 const timelineList = document.querySelector("#timelineList");
+const editStudentButton = document.querySelector("#editStudentButton");
+const editProfilePanel = document.querySelector("#editProfilePanel");
+const editProfileForm = document.querySelector("#editProfileForm");
+const closeEditProfileButton = document.querySelector("#closeEditProfileButton");
+const cancelEditProfileButton = document.querySelector("#cancelEditProfileButton");
+const saveEditProfileButton = document.querySelector("#saveEditProfileButton");
+const editBirthDate = document.querySelector("#editBirthDate");
+const editNickname = document.querySelector("#editNickname");
+const editParentName = document.querySelector("#editParentName");
+const editParentPhone = document.querySelector("#editParentPhone");
+const editAllergyFood = document.querySelector("#editAllergyFood");
+const editAllergyPollen = document.querySelector("#editAllergyPollen");
+const editStudentNotes = document.querySelector("#editStudentNotes");
 
 const courseMeta = {
   robot: { label: "Robot Coding", icon: "🤖" },
@@ -90,6 +103,16 @@ function formatDate(value) {
     month: "short",
     day: "numeric"
   });
+}
+
+function formatDateInput(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function calculateAge(birthDate, fallbackAge) {
@@ -200,6 +223,15 @@ function groupStudents(payload) {
   });
 }
 
+function getCurrentStudent() {
+  return students[selectedStudentIndex] || null;
+}
+
+function getEditableApplication(student) {
+  if (!student || !lineUserId) return null;
+  return student.applications.find((app) => normalizeText(app.line_user_id) === lineUserId) || null;
+}
+
 function renderStudentSwitcher() {
   if (students.length <= 1) {
     studentSwitcher.innerHTML = "";
@@ -233,7 +265,15 @@ function renderApplications(student) {
 }
 
 function renderNotes(student) {
-  const app = student.applications[0] || {};
+  const editableApp = getEditableApplication(student);
+  const app = editableApp || student.applications[0] || {};
+
+  if (editStudentButton) {
+    editStudentButton.disabled = !editableApp;
+    editStudentButton.textContent = editableApp ? "แก้ไขข้อมูล" : "ให้สาขาแก้ไข";
+    editStudentButton.title = editableApp ? "" : "ข้อมูลนี้ไม่ได้สมัครผ่าน LINE นี้";
+  }
+
   const notes = [
     ["วันเกิด", app.birth_date ? `${formatDate(app.birth_date)} (${calculateAge(app.birth_date, app.age_years)})` : "ยังไม่ระบุ"],
     ["ชื่อเล่น", app.student_nickname || "ยังไม่ระบุ"],
@@ -362,6 +402,82 @@ function renderSelectedStudent() {
   showElement(dashboard);
 }
 
+function openEditProfile() {
+  const student = getCurrentStudent();
+  const app = getEditableApplication(student);
+  if (!app) {
+    setMessage("ข้อมูลชุดนี้ไม่ได้สมัครผ่าน LINE นี้ กรุณาให้สาขาแก้ไขให้ครับ");
+    return;
+  }
+
+  editBirthDate.value = formatDateInput(app.birth_date);
+  editNickname.value = app.student_nickname || "";
+  editParentName.value = app.parent_name || "";
+  editParentPhone.value = app.parent_phone || "";
+  editAllergyFood.value = app.allergy_food || "";
+  editAllergyPollen.value = app.allergy_pollen || "";
+  editStudentNotes.value = app.student_notes || "";
+
+  showElement(editProfilePanel);
+  document.body.classList.add("has-modal");
+  editBirthDate.focus();
+}
+
+function closeEditProfile() {
+  hideElement(editProfilePanel);
+  document.body.classList.remove("has-modal");
+}
+
+async function saveStudentProfile(event) {
+  event.preventDefault();
+
+  const student = getCurrentStudent();
+  const app = getEditableApplication(student);
+  if (!app) {
+    setMessage("ไม่พบใบสมัครที่แก้ไขได้จาก LINE นี้");
+    closeEditProfile();
+    return;
+  }
+
+  if (!editBirthDate.value) {
+    setMessage("กรุณาระบุวันเกิดของน้อง");
+    return;
+  }
+
+  if (!normalizeText(editParentName.value) || !normalizeText(editParentPhone.value)) {
+    setMessage("กรุณาระบุชื่อผู้ปกครองและเบอร์ติดต่อ");
+    return;
+  }
+
+  saveEditProfileButton.disabled = true;
+  saveEditProfileButton.textContent = "กำลังบันทึก...";
+
+  const { error } = await supabaseClient.rpc("update_liff_student_basic_info", {
+    p_line_user_id: lineUserId,
+    p_application_id: app.id,
+    p_birth_date: editBirthDate.value,
+    p_student_nickname: normalizeText(editNickname.value) || null,
+    p_parent_name: normalizeText(editParentName.value),
+    p_parent_phone: normalizeText(editParentPhone.value),
+    p_allergy_food: normalizeText(editAllergyFood.value) || null,
+    p_allergy_pollen: normalizeText(editAllergyPollen.value) || null,
+    p_student_notes: normalizeText(editStudentNotes.value) || null
+  });
+
+  saveEditProfileButton.disabled = false;
+  saveEditProfileButton.textContent = "บันทึกข้อมูล";
+
+  if (error) {
+    console.error(error);
+    setMessage(`บันทึกไม่สำเร็จ: ${error.message}`);
+    return;
+  }
+
+  closeEditProfile();
+  setMessage("บันทึกข้อมูลน้องเรียบร้อยแล้ว", "success");
+  await loadDashboard({ preferredApplicationId: app.id });
+}
+
 async function setupLineProfile() {
   const browserLineId = getQueryValue("line_user_id", "lineUserId", "line");
   const browserDisplayName = getQueryValue("display_name", "displayName", "name");
@@ -408,7 +524,7 @@ async function setupLineProfile() {
   }
 }
 
-async function loadDashboard() {
+async function loadDashboard(options = {}) {
   if (!supabaseClient) {
     setMessage("ยังไม่ได้เชื่อม Supabase กรุณาใส่ Project URL และ anon/public key ในไฟล์ supabase-config.js");
     return;
@@ -431,7 +547,14 @@ async function loadDashboard() {
   }
 
   students = groupStudents(data);
-  selectedStudentIndex = 0;
+  if (options.preferredApplicationId) {
+    const nextIndex = students.findIndex((student) => {
+      return student.applications.some((application) => application.id === options.preferredApplicationId);
+    });
+    selectedStudentIndex = nextIndex >= 0 ? nextIndex : 0;
+  } else {
+    selectedStudentIndex = 0;
+  }
 
   if (!students.length) {
     setMessage("ยังไม่พบใบสมัครหรือคอร์สที่ผูกกับ LINE นี้ หากเพิ่งสมัครเรียนให้รอสาขาตรวจสอบและอนุมัติก่อน", "success");
@@ -446,6 +569,19 @@ studentSwitcher?.addEventListener("click", (event) => {
   if (!button) return;
   selectedStudentIndex = Number(button.dataset.studentIndex || 0);
   renderSelectedStudent();
+});
+
+editStudentButton?.addEventListener("click", openEditProfile);
+closeEditProfileButton?.addEventListener("click", closeEditProfile);
+cancelEditProfileButton?.addEventListener("click", closeEditProfile);
+editProfilePanel?.addEventListener("click", (event) => {
+  if (event.target === editProfilePanel) closeEditProfile();
+});
+editProfileForm?.addEventListener("submit", saveStudentProfile);
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !editProfilePanel?.classList.contains("is-hidden")) {
+    closeEditProfile();
+  }
 });
 
 async function init() {

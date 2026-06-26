@@ -50,6 +50,7 @@ begin
     select
       ea.id,
       ea.parent_user_id,
+      ea.line_user_id,
       ea.student_name,
       ea.student_nickname,
       ea.parent_name,
@@ -167,3 +168,83 @@ $$;
 
 revoke all on function public.get_liff_student_dashboard(text) from public;
 grant execute on function public.get_liff_student_dashboard(text) to anon, authenticated;
+
+drop function if exists public.update_liff_student_basic_info(text, uuid, date, text, text, text, text, text, text);
+
+create or replace function public.update_liff_student_basic_info(
+  p_line_user_id text,
+  p_application_id uuid,
+  p_birth_date date,
+  p_student_nickname text default null,
+  p_parent_name text default null,
+  p_parent_phone text default null,
+  p_allergy_food text default null,
+  p_allergy_pollen text default null,
+  p_student_notes text default null
+)
+returns public.enrollment_applications
+language plpgsql
+security definer
+set search_path = public, private
+as $$
+declare
+  clean_line_user_id text := nullif(trim(coalesce(p_line_user_id, '')), '');
+  updated_application public.enrollment_applications;
+begin
+  if clean_line_user_id is null then
+    raise exception 'LINE user id is required';
+  end if;
+
+  if p_application_id is null then
+    raise exception 'Application id is required';
+  end if;
+
+  if p_birth_date is null then
+    raise exception 'กรุณาระบุวันเกิด';
+  end if;
+
+  if p_birth_date > current_date or p_birth_date < current_date - interval '18 years' then
+    raise exception 'วันเกิดไม่ถูกต้อง';
+  end if;
+
+  if nullif(trim(coalesce(p_parent_name, '')), '') is null then
+    raise exception 'กรุณาระบุชื่อผู้ปกครอง';
+  end if;
+
+  if nullif(trim(coalesce(p_parent_phone, '')), '') is null
+     or char_length(regexp_replace(p_parent_phone, '[^0-9]+', '', 'g')) < 8 then
+    raise exception 'กรุณาระบุเบอร์ติดต่อให้ถูกต้อง';
+  end if;
+
+  update public.enrollment_applications
+  set
+    birth_date = p_birth_date,
+    age_years = extract(year from age(current_date, p_birth_date))::integer,
+    student_nickname = nullif(trim(coalesce(p_student_nickname, '')), ''),
+    parent_name = nullif(trim(coalesce(p_parent_name, '')), ''),
+    parent_phone = trim(p_parent_phone),
+    allergy_food = nullif(trim(coalesce(p_allergy_food, '')), ''),
+    allergy_pollen = nullif(trim(coalesce(p_allergy_pollen, '')), ''),
+    student_notes = nullif(trim(coalesce(p_student_notes, '')), ''),
+    updated_at = now()
+  where id = p_application_id
+    and line_user_id = clean_line_user_id
+  returning * into updated_application;
+
+  if updated_application.id is null then
+    raise exception 'ไม่พบใบสมัครที่ผูกกับ LINE นี้';
+  end if;
+
+  update public.course_enrollments
+  set
+    student_nickname = updated_application.student_nickname,
+    student_name = updated_application.student_name,
+    updated_at = now()
+  where application_id = updated_application.id;
+
+  return updated_application;
+end;
+$$;
+
+revoke all on function public.update_liff_student_basic_info(text, uuid, date, text, text, text, text, text, text) from public;
+grant execute on function public.update_liff_student_basic_info(text, uuid, date, text, text, text, text, text, text) to anon, authenticated;

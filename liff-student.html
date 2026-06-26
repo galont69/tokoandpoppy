@@ -68,7 +68,10 @@
           <div id="applicationList" class="stack-list"></div>
         </article>
         <article class="info-card">
-          <h3>ข้อมูลที่สาขาควรรู้</h3>
+          <div class="card-heading-row">
+            <h3>ข้อมูลที่สาขาควรรู้</h3>
+            <button id="editStudentButton" class="ghost-button" type="button">แก้ไขข้อมูล</button>
+          </div>
           <div id="studentNotes" class="note-list"></div>
         </article>
       </section>
@@ -90,6 +93,51 @@
       </section>
     </section>
   </main>
+
+  <section id="editProfilePanel" class="edit-panel is-hidden" aria-modal="true" role="dialog" aria-labelledby="editProfileTitle">
+    <div class="edit-sheet">
+      <button id="closeEditProfileButton" class="close-button" type="button" aria-label="ปิด">×</button>
+      <p class="eyebrow">แก้ไขข้อมูลพื้นฐาน</p>
+      <h2 id="editProfileTitle">ข้อมูลลูกของฉัน</h2>
+      <p class="muted">แก้ไขข้อมูลที่อาจกรอกผิดได้ เช่น วันเกิด ชื่อเล่น เบอร์ และหมายเหตุ ส่วนคอร์ส จำนวนครั้งเรียน และสถานะใบสมัครให้สาขาเป็นผู้ดูแลครับ</p>
+
+      <form id="editProfileForm" class="edit-form">
+        <label>
+          วันเกิด
+          <input id="editBirthDate" name="birth_date" type="date" required />
+        </label>
+        <label>
+          ชื่อเล่น
+          <input id="editNickname" name="student_nickname" type="text" autocomplete="off" />
+        </label>
+        <label>
+          ชื่อผู้ปกครอง
+          <input id="editParentName" name="parent_name" type="text" required autocomplete="name" />
+        </label>
+        <label>
+          เบอร์ติดต่อ
+          <input id="editParentPhone" name="parent_phone" type="tel" required autocomplete="tel" />
+        </label>
+        <label>
+          อาการแพ้อาหาร
+          <input id="editAllergyFood" name="allergy_food" type="text" />
+        </label>
+        <label>
+          แพ้เกสร / ฝุ่น / อื่น ๆ
+          <input id="editAllergyPollen" name="allergy_pollen" type="text" />
+        </label>
+        <label class="full">
+          หมายเหตุเพิ่มเติม
+          <textarea id="editStudentNotes" name="student_notes" rows="4"></textarea>
+        </label>
+
+        <div class="form-actions">
+          <button id="cancelEditProfileButton" class="secondary-button" type="button">ยกเลิก</button>
+          <button id="saveEditProfileButton" class="primary-button" type="submit">บันทึกข้อมูล</button>
+        </div>
+      </form>
+    </div>
+  </section>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
