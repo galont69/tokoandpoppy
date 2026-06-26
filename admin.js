@@ -1503,9 +1503,14 @@ function getLearningStudentDisplayName(enrollment = {}) {
   const nickname = String(enrollment.student_nickname || "").trim();
   const parentName = String(enrollment.parent_name || "").trim();
 
-  if (studentName && studentName !== parentName) return studentName;
   if (nickname && nickname !== parentName) return nickname;
+  if (studentName && studentName !== parentName) return studentName;
   return studentName || nickname || "น้อง";
+}
+
+function getShareChildLabel(name = "") {
+  const cleanName = String(name || "").trim() || "น้อง";
+  return cleanName.startsWith("น้อง") ? cleanName : `น้อง${cleanName}`;
 }
 
 function buildAfterClassShareData({
@@ -1543,11 +1548,13 @@ function buildAfterClassShareText(data) {
   const sessionText = data.totalSessions
     ? `ครั้งที่ ${data.sessionNumber}/${data.totalSessions}`
     : `ครั้งที่ ${data.sessionNumber}`;
+  const childLabel = getShareChildLabel(data.studentName);
   const lines = [
-    `สรุปการเรียนวันนี้ของ ${data.studentName}`,
+    `สรุปการเรียนวันนี้ของ${childLabel}`,
+    data.branchName ? `สาขา: ${data.branchName}` : "",
     `${data.courseIcon} ${data.courseName}`,
     `วันที่ ${formatDateOnly(data.sessionDate)} · ${sessionText}`,
-    data.lessonTitle ? `วันนี้เรียน: ${data.lessonTitle}` : "",
+    data.lessonTitle ? `บทที่เรียนวันนี้: ${data.lessonTitle}` : "",
     data.teacherComment ? `คอมเมนต์คุณครู: ${data.teacherComment}` : "",
     data.totalSessions ? `คงเหลือ ${data.remainingAfter} ครั้ง` : "",
     "ขอบคุณค่ะ/ครับ"
@@ -1638,6 +1645,8 @@ async function renderSessionShareCard(data) {
   const width = sessionShareCanvas.width;
   const height = sessionShareCanvas.height;
   const photoImage = await loadCanvasImage(data.photoUrl);
+  const childLabel = getShareChildLabel(data.studentName);
+  const lessonTitle = data.lessonTitle || "กิจกรรมสร้างสรรค์ของวันนี้";
 
   context.clearRect(0, 0, width, height);
   context.fillStyle = "#fffaf1";
@@ -1668,17 +1677,41 @@ async function renderSessionShareCard(data) {
   context.fillStyle = "#8b7668";
   context.fillText("Enjoy learning with stories", 94, 170);
 
+  if (data.branchName) {
+    const branchText = `สาขา ${data.branchName}`;
+    context.font = "800 24px 'Noto Sans Thai', 'Arial', sans-serif";
+    const branchW = Math.min(context.measureText(branchText).width + 52, 330);
+    context.fillStyle = "#ffffff";
+    drawRoundedRect(context, width - 94 - branchW, 104, branchW, 52, 26);
+    context.fill();
+    context.strokeStyle = "#dfd0bf";
+    context.lineWidth = 2;
+    context.stroke();
+    context.fillStyle = "#6b9658";
+    context.fillText(branchText, width - 94 - branchW + 26, 138);
+  }
+
   context.fillStyle = "#db7d68";
   context.font = "900 30px 'Noto Sans Thai', 'Arial', sans-serif";
   context.fillText("สรุปหลังเรียน", 94, 244);
   context.fillStyle = "#49372f";
-  context.font = "900 74px 'Noto Sans Thai', 'Arial', sans-serif";
-  wrapCanvasText(context, `วันนี้ ${data.studentName} เรียนอะไรบ้าง`, 94, 328, 880, 82, 2);
+  context.font = "900 62px 'Noto Sans Thai', 'Arial', sans-serif";
+  wrapCanvasText(context, `วันนี้${childLabel}ได้เรียนรู้อะไรบ้าง?`, 94, 314, 880, 70, 2);
+
+  context.fillStyle = "#fff6e6";
+  drawRoundedRect(context, 94, 424, 892, 58, 29);
+  context.fill();
+  context.fillStyle = "#6b9658";
+  context.font = "900 24px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText("บทที่เรียนวันนี้", 124, 462);
+  context.fillStyle = "#5c493d";
+  context.font = "800 25px 'Noto Sans Thai', 'Arial', sans-serif";
+  wrapCanvasText(context, lessonTitle, 316, 462, 610, 32, 1);
 
   const photoX = 94;
-  const photoY = 454;
+  const photoY = 510;
   const photoW = 892;
-  const photoH = 520;
+  const photoH = 464;
   context.fillStyle = "#ffffff";
   drawRoundedRect(context, photoX - 16, photoY - 16, photoW + 32, photoH + 32, 42);
   context.fill();
@@ -1698,6 +1731,13 @@ async function renderSessionShareCard(data) {
     context.fillText("ยังไม่ได้แนบรูปผลงาน", photoX + photoW / 2, photoY + photoH / 2);
     context.textAlign = "start";
   }
+
+  context.fillStyle = "rgba(255, 255, 255, 0.92)";
+  drawRoundedRect(context, photoX + 22, photoY + 22, 238, 50, 25);
+  context.fill();
+  context.fillStyle = "#6b9658";
+  context.font = "900 23px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText("ผลงาน / กิจกรรมวันนี้", photoX + 44, photoY + 55);
 
   context.fillStyle = "#ffffff";
   drawRoundedRect(context, 94, 1018, 420, 168, 30);
@@ -1720,12 +1760,12 @@ async function renderSessionShareCard(data) {
 
   context.fillStyle = "#db7d68";
   context.font = "900 28px 'Noto Sans Thai', 'Arial', sans-serif";
-  context.fillText("คุณครูฝากถึงบ้าน", 596, 1068);
+  context.fillText("ข้อความจากคุณครู", 596, 1068);
   context.fillStyle = "#5c493d";
   context.font = "700 27px 'Noto Sans Thai', 'Arial', sans-serif";
   wrapCanvasText(
     context,
-    data.teacherComment || data.lessonTitle || "วันนี้ตั้งใจเรียนดีมาก เก็บผลงานไว้เป็นกำลังใจนะคะ/ครับ",
+    data.teacherComment || lessonTitle || "วันนี้ตั้งใจเรียนดีมาก เก็บผลงานไว้เป็นกำลังใจนะคะ/ครับ",
     596,
     1114,
     340,
