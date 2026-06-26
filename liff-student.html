@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ข้อมูลลูกของฉัน | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="liff-student.css" />
+</head>
+<body>
+  <main class="liff-page">
+    <section class="hero-card">
+      <div>
+        <p class="eyebrow">Toko & Poppy Family</p>
+        <h1>ข้อมูลลูกของฉัน</h1>
+        <p class="hero-copy">ดูใบสมัคร คอร์สที่เปิดสิทธิ จำนวนครั้งคงเหลือ และสมุดพัฒนาการของน้องจาก LINE ได้เลย</p>
+      </div>
+
+      <div class="line-card line-card--loading" id="lineFallbackCard">
+        <span class="line-dot"></span>
+        <div>
+          <p class="muted">เปิดผ่าน LINE OA ได้ดีที่สุด</p>
+          <strong id="lineStatus">กำลังตรวจสอบ LINE...</strong>
+        </div>
+      </div>
+
+      <div class="line-card line-card--profile is-hidden" id="lineProfileCard">
+        <img id="linePicture" alt="" />
+        <div>
+          <p class="muted">เชื่อมต่อ LINE แล้ว</p>
+          <strong id="lineDisplayName">LINE user</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="status-card is-hidden" id="messageCard"></section>
+
+    <section class="dashboard is-hidden" id="dashboard">
+      <div class="student-switcher" id="studentSwitcher"></div>
+
+      <section class="summary-card">
+        <div>
+          <p class="eyebrow">ข้อมูลนักเรียน</p>
+          <h2 id="studentName">-</h2>
+          <p id="studentMeta" class="muted"></p>
+        </div>
+        <div class="summary-grid">
+          <div>
+            <strong id="activeCourseCount">0</strong>
+            <span>คอร์สที่เรียน</span>
+          </div>
+          <div>
+            <strong id="remainingCount">0</strong>
+            <span>ครั้งคงเหลือ</span>
+          </div>
+          <div>
+            <strong id="sessionCount">0</strong>
+            <span>บันทึกล่าสุด</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-grid">
+        <article class="info-card">
+          <h3>สถานะใบสมัคร</h3>
+          <div id="applicationList" class="stack-list"></div>
+        </article>
+        <article class="info-card">
+          <h3>ข้อมูลที่สาขาควรรู้</h3>
+          <div id="studentNotes" class="note-list"></div>
+        </article>
+      </section>
+
+      <section class="section-block">
+        <div class="section-heading">
+          <p class="eyebrow">คอร์สของน้อง</p>
+          <h2>จำนวนครั้งเรียน</h2>
+        </div>
+        <div id="courseList" class="course-list"></div>
+      </section>
+
+      <section class="section-block">
+        <div class="section-heading">
+          <p class="eyebrow">สมุดพัฒนาการ</p>
+          <h2>Timeline การเรียน</h2>
+        </div>
+        <div id="timelineList" class="timeline-list"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="supabase-config.js"></script>
+  <script src="liff-student.js"></script>
+</body>
+</html>
