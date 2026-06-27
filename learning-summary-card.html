@@ -72,7 +72,10 @@
 
         <section class="summary-title">
           <img src="assets/card/deco_sun_rays_yellow.png" alt="">
-          <h2>วันนี้ <span>น้อง<span data-field="studentName">โลมา</span></span> เรียนอะไรบ้าง?</h2>
+          <div>
+            <h2>วันนี้ <span>น้อง<span data-field="studentName">โลมา</span></span> เรียนอะไรบ้าง?</h2>
+            <p data-field="classDate">27 มิ.ย. 2569</p>
+          </div>
         </section>
 
         <section class="main-photo-card">
@@ -81,17 +84,12 @@
         </section>
 
         <section class="info-row">
-          <div class="info-cell course-cell">
+          <div class="info-cell course-icon-cell">
             <img data-field="courseIcon" src="assets/card/icon_clay.png" alt="">
-            <strong data-field="courseName">ปั้นดินเบา (CLAY)</strong>
           </div>
           <div class="info-cell">
             <img src="assets/card/icon_book.png" alt="">
             <div><strong>บทที่ <span data-field="lessonNumber">2</span></strong><span data-field="lessonTitle">ปั้นผลไม้</span></div>
-          </div>
-          <div class="info-cell">
-            <img src="assets/card/icon_calendar.png" alt="">
-            <strong data-field="classDate">27 มิ.ย. 2569</strong>
           </div>
           <div class="info-cell session-cell">
             <span>ครั้งที่</span>
@@ -114,7 +112,10 @@
             <strong>เรียนแล้ว <span data-field="sessionNumber">2</span> ครั้ง</strong>
             <span>เก่งขึ้นทุกครั้งเลยนะ!</span>
           </div>
-          <div class="progress-dots" data-field="progressDots" aria-label="ความคืบหน้า"></div>
+          <div class="progress-meter" aria-label="ความคืบหน้า">
+            <span data-field="progressFill"></span>
+            <em data-field="progressText">2/4</em>
+          </div>
           <strong class="remaining-copy">คงเหลือ <span data-field="remainingSessions">2</span> ครั้ง</strong>
           <img class="progress-sparkle" src="assets/card/doodle_sparkle_yellow.png" alt="">
         </section>

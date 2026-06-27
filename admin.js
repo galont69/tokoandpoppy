@@ -1737,12 +1737,21 @@ function drawSummaryCardTitle(context, childLabel) {
   context.fillText(" เรียนอะไรบ้าง?", startX + firstWidth + childWidth, y);
 }
 
-function drawSummaryInfoColumn(context, { icon, title, subtitle, accent, big }, x, y, width, height) {
-  const iconSize = big ? 0 : 48;
-  if (icon) drawCardImage(context, icon, x + 26, y + 38, iconSize, iconSize);
-  const textX = icon ? x + 88 : x + 24;
+function drawSummaryDateLabel(context, sessionDate) {
+  const dateText = formatDateOnly(sessionDate);
+  if (!dateText) return;
+  context.fillStyle = "#876F5F";
+  context.font = "700 24px Kanit, 'Noto Sans Thai', sans-serif";
+  context.fillText(dateText, 304, 248);
+}
+
+function drawSummaryInfoColumn(context, { icon, title, subtitle, accent, big, iconSize = 46, titleFont, subtitleFont }, x, y, width, height) {
+  const safeIconSize = big ? 0 : iconSize;
+  if (icon) drawCardImage(context, icon, x + 24, y + (height - safeIconSize) / 2, safeIconSize, safeIconSize);
+  const textX = icon ? x + safeIconSize + 40 : x + 24;
+  const textWidth = width - (icon ? safeIconSize + 54 : 44);
   context.fillStyle = accent || "#4A372E";
-  context.font = big ? "900 44px Kanit, 'Noto Sans Thai', sans-serif" : "800 25px Kanit, 'Noto Sans Thai', sans-serif";
+  context.font = big ? "900 44px Kanit, 'Noto Sans Thai', sans-serif" : (titleFont || "800 24px Kanit, 'Noto Sans Thai', sans-serif");
   if (big) {
     context.fillStyle = "#4A372E";
     context.font = "800 22px Kanit, 'Noto Sans Thai', sans-serif";
@@ -1752,10 +1761,14 @@ function drawSummaryInfoColumn(context, { icon, title, subtitle, accent, big }, 
     context.fillText(subtitle, x + 30, y + 88);
     return;
   }
-  wrapCanvasText(context, title, textX, y + 54, width - (icon ? 104 : 44), 28, 1);
+  if (!subtitle) {
+    wrapCanvasText(context, title, textX, y + 73, textWidth, 28, 1);
+    return;
+  }
+  wrapCanvasText(context, title, textX, y + 50, textWidth, 28, 1);
   context.fillStyle = "#4A372E";
-  context.font = "700 22px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, subtitle, textX, y + 86, width - (icon ? 104 : 44), 26, 1);
+  context.font = subtitleFont || "700 21px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasText(context, subtitle, textX, y + 82, textWidth, 25, 1);
 }
 
 function drawProgressDots(context, completed, total, x, y) {
@@ -1782,6 +1795,28 @@ function drawProgressDots(context, completed, total, x, y) {
       context.stroke();
     }
   }
+}
+
+function drawProgressBar(context, completed, total, x, y, width, height) {
+  const safeTotal = Math.max(Number(total || 0), 1);
+  const safeCompleted = Math.max(Math.min(Number(completed || 0), safeTotal), 0);
+  const ratio = safeCompleted / safeTotal;
+  drawRoundedRect(context, x, y, width, height, height / 2);
+  context.fillStyle = "#DDEED2";
+  context.fill();
+  context.strokeStyle = "#9BBE86";
+  context.lineWidth = 2;
+  context.stroke();
+  if (ratio > 0) {
+    drawRoundedRect(context, x, y, Math.max(width * ratio, height), height, height / 2);
+    context.fillStyle = "#6EA154";
+    context.fill();
+  }
+  context.fillStyle = "#4A372E";
+  context.font = "800 20px Kanit, 'Noto Sans Thai', sans-serif";
+  context.textAlign = "center";
+  context.fillText(`${safeCompleted}/${safeTotal}`, x + width / 2, y + height + 25);
+  context.textAlign = "start";
 }
 
 function drawCoverImage(context, image, x, y, width, height, radius) {
@@ -1822,7 +1857,6 @@ async function renderSessionShareCard(data) {
     heartImage,
     trophyImage,
     bookImage,
-    calendarImage,
     courseImage
   ] = await Promise.all([
     loadSummaryCardImage(data.photoUrl),
@@ -1834,7 +1868,6 @@ async function renderSessionShareCard(data) {
     loadSummaryCardImage(summaryCardAssets.heart),
     loadSummaryCardImage(summaryCardAssets.trophy),
     loadSummaryCardImage(summaryCardAssets.book),
-    loadSummaryCardImage(summaryCardAssets.calendar),
     loadSummaryCardImage(summaryCardAssets.course[data.courseType] || summaryCardAssets.course.creative_art)
   ]);
   const childLabel = getShareCardChildLabel(data.studentName).slice(0, 14);
@@ -1885,6 +1918,7 @@ async function renderSessionShareCard(data) {
 
   drawCardImage(context, sunImage, 42, 136, 78, 78);
   drawSummaryCardTitle(context, `น้อง${childLabel.replace(/^น้อง/, "")}`);
+  drawSummaryDateLabel(context, data.sessionDate);
 
   const photoX = 48;
   const photoY = 270;
@@ -1913,7 +1947,7 @@ async function renderSessionShareCard(data) {
 
   const infoY = 895;
   drawCardShadow(context, 48, infoY, 984, 126, 26, "#FFFFFF", "#F1DEC8");
-  [404, 620, 838].forEach((x) => {
+  [224, 770].forEach((x) => {
     context.strokeStyle = "#D7B99C";
     context.setLineDash([4, 4]);
     context.beginPath();
@@ -1922,29 +1956,21 @@ async function renderSessionShareCard(data) {
     context.stroke();
     context.setLineDash([]);
   });
-  drawSummaryInfoColumn(context, {
-    icon: courseImage,
-    title: data.courseName || "คอร์สเรียน",
-    subtitle: "",
-    accent: "#4F8B37"
-  }, 64, infoY, 330, 126);
+  drawCardImage(context, courseImage, 110, infoY + 31, 64, 64);
   drawSummaryInfoColumn(context, {
     icon: bookImage,
     title: `บทที่ ${sessionNumber || "-"}`,
     subtitle: lessonTitle,
-    accent: "#4A372E"
-  }, 430, infoY, 190, 126);
-  drawSummaryInfoColumn(context, {
-    icon: calendarImage,
-    title: formatDateOnly(data.sessionDate),
-    subtitle: "",
-    accent: "#4A372E"
-  }, 650, infoY, 180, 126);
+    accent: "#4A372E",
+    iconSize: 54,
+    titleFont: "800 32px Kanit, 'Noto Sans Thai', sans-serif",
+    subtitleFont: "700 27px Kanit, 'Noto Sans Thai', sans-serif"
+  }, 252, infoY, 490, 126);
   drawSummaryInfoColumn(context, {
     title: "ครั้งที่",
     subtitle: totalSessions ? `${sessionNumber}/${totalSessions}` : String(sessionNumber || "-"),
     big: true
-  }, 864, infoY, 150, 126);
+  }, 820, infoY, 176, 126);
 
   const noteY = 1044;
   drawCardShadow(context, 48, noteY, 984, 174, 26, "#FFFFFF", "#F1DEC8");
@@ -1967,7 +1993,7 @@ async function renderSessionShareCard(data) {
   context.fillStyle = "#4A372E";
   context.font = "500 20px Kanit, 'Noto Sans Thai', sans-serif";
   context.fillText("เก่งขึ้นทุกครั้งเลยนะ!", 178, progressY + 78);
-  drawProgressDots(context, completed || sessionNumber, displayTotal, 430, progressY + 54);
+  drawProgressBar(context, completed || sessionNumber, displayTotal, 430, progressY + 34, 300, 28);
   context.fillStyle = "#4A372E";
   context.font = "900 27px Kanit, 'Noto Sans Thai', sans-serif";
   context.fillText("คงเหลือ", 786, progressY + 60);

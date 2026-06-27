@@ -183,6 +183,14 @@ body {
 
 .summary-title h2 span { color: var(--hot); }
 
+.summary-title p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+}
+
 .main-photo-card {
   position: absolute;
   left: 48px;
@@ -241,7 +249,7 @@ body {
   top: 895px;
   height: 126px;
   display: grid;
-  grid-template-columns: 36% 22% 22% 20%;
+  grid-template-columns: 18% 56% 26%;
   align-items: center;
 }
 
@@ -249,17 +257,24 @@ body {
   height: 76px;
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 0 22px;
+  gap: 12px;
+  padding: 0 18px;
   border-right: 2px dashed #d7b99c;
 }
 
 .info-cell:last-child { border-right: 0; }
-.info-cell img { width: 52px; height: 52px; object-fit: contain; flex: none; }
+.info-cell img { width: 46px; height: 46px; object-fit: contain; flex: none; }
+.course-icon-cell {
+  justify-content: center;
+}
+.course-icon-cell img {
+  width: 64px;
+  height: 64px;
+}
 .course-cell strong { color: #4f8b37; }
 .info-cell strong {
   display: block;
-  font-size: 25px;
+  font-size: 32px;
   font-weight: 800;
   line-height: 1.25;
 }
@@ -270,7 +285,7 @@ body {
 }
 .info-cell span {
   display: block;
-  font-size: 21px;
+  font-size: 27px;
   font-weight: 700;
   line-height: 1.25;
 }
@@ -344,22 +359,30 @@ body {
   font-size: 20px;
   font-weight: 500;
 }
-.progress-dots {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 22px;
+.progress-meter {
+  position: relative;
+  height: 30px;
+  overflow: visible;
+  border: 2px solid #9bbe86;
+  border-radius: 999px;
+  background: #ddeed2;
 }
-.progress-dots i {
-  width: 36px;
-  height: 36px;
-  border: 3px solid var(--green);
-  border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 2px rgba(255,255,255,.7);
-}
-.progress-dots i.is-done {
+.progress-meter span {
+  display: block;
+  height: 100%;
+  min-width: 30px;
+  border-radius: 999px;
   background: var(--green);
+}
+.progress-meter em {
+  position: absolute;
+  left: 50%;
+  top: 36px;
+  transform: translateX(-50%);
+  color: var(--brown);
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 800;
 }
 .remaining-copy {
   font-size: 28px;

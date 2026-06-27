@@ -37,13 +37,12 @@ function formatThaiDate(value) {
   }).replace(/\s+/g, " ");
 }
 
-function updateProgressDots(sessionNumber, totalSessions) {
-  const dots = card.querySelector('[data-field="progressDots"]');
+function updateProgressBar(sessionNumber, totalSessions) {
   const total = Math.max(Number(totalSessions || 0), 1);
   const completed = Math.max(Math.min(Number(sessionNumber || 0), total), 0);
-  dots.innerHTML = Array.from({ length: total }, (_, index) =>
-    `<i class="${index < completed ? "is-done" : ""}"></i>`
-  ).join("");
+  const percent = Math.max((completed / total) * 100, completed ? 8 : 0);
+  card.querySelector('[data-field="progressFill"]').style.width = `${percent}%`;
+  card.querySelector('[data-field="progressText"]').textContent = `${completed}/${total}`;
 }
 
 function updateCard() {
@@ -53,7 +52,6 @@ function updateCard() {
   const course = courseMeta[data.get("courseType")] || courseMeta.clay;
   setField("studentName", String(data.get("studentName") || "โลมา").trim().slice(0, 12));
   setField("branchName", String(data.get("branchName") || "ชลบุรี").trim());
-  setField("courseName", course.name);
   setField("lessonNumber", String(data.get("lessonNumber") || "1"));
   setField("lessonTitle", String(data.get("lessonTitle") || "กิจกรรมสร้างสรรค์").trim().slice(0, 28));
   setField("classDate", formatThaiDate(data.get("classDate")));
@@ -62,7 +60,7 @@ function updateCard() {
   setField("remainingSessions", String(Math.max((totalSessions || 0) - (sessionNumber || 0), 0)));
   setField("teacherNote", String(data.get("teacherNote") || "").trim().slice(0, 140));
   card.querySelector('[data-field="courseIcon"]').src = course.icon;
-  updateProgressDots(sessionNumber, totalSessions);
+  updateProgressBar(sessionNumber, totalSessions);
 }
 
 async function fileToDataUrl(file) {
@@ -164,23 +162,30 @@ function wrapCanvasText(context, text, x, y, maxWidth, lineHeight, maxLines) {
   });
 }
 
-function drawExportDots(context, completed, total) {
-  const safeTotal = Math.max(Math.min(Number(total || 0), 12), 1);
+function drawExportProgressBar(context, completed, total) {
+  const safeTotal = Math.max(Number(total || 0), 1);
   const safeCompleted = Math.max(Math.min(Number(completed || 0), safeTotal), 0);
-  const radius = safeTotal > 8 ? 13 : 18;
-  const gap = safeTotal > 8 ? 38 : 56;
-  const startX = 430;
-  const y = 1292;
-  for (let index = 0; index < safeTotal; index += 1) {
-    const dotX = startX + index * gap;
-    context.beginPath();
-    context.arc(dotX, y, radius, 0, Math.PI * 2);
-    context.fillStyle = index < safeCompleted ? "#6EA154" : "#FFFFFF";
+  const x = 430;
+  const y = 1272;
+  const width = 300;
+  const height = 28;
+  const ratio = safeCompleted / safeTotal;
+  drawRoundedRect(context, x, y, width, height, height / 2);
+  context.fillStyle = "#DDEED2";
+  context.fill();
+  context.strokeStyle = "#9BBE86";
+  context.lineWidth = 2;
+  context.stroke();
+  if (ratio > 0) {
+    drawRoundedRect(context, x, y, Math.max(width * ratio, height), height, height / 2);
+    context.fillStyle = "#6EA154";
     context.fill();
-    context.strokeStyle = "#6EA154";
-    context.lineWidth = 3;
-    context.stroke();
   }
+  context.fillStyle = "#4A372E";
+  context.font = "800 20px Kanit, sans-serif";
+  context.textAlign = "center";
+  context.fillText(`${safeCompleted}/${safeTotal}`, x + width / 2, y + height + 25);
+  context.textAlign = "start";
 }
 
 async function exportSummaryCard() {
@@ -194,14 +199,13 @@ async function exportSummaryCard() {
     const totalSessions = Number(data.get("totalSessions") || 1);
     const remaining = Math.max(totalSessions - sessionNumber, 0);
     const studentName = String(data.get("studentName") || "โลมา").trim().slice(0, 12);
-    const [logo, location, sun, photo, courseIcon, book, calendar, noteHeart, heart, trophy, sparkle] = await Promise.all([
+    const [logo, location, sun, photo, courseIcon, book, noteHeart, heart, trophy, sparkle] = await Promise.all([
       loadExportImage("assets/card/01_logo_short.png"),
       loadExportImage("assets/card/icon_location.png"),
       loadExportImage("assets/card/deco_sun_rays_yellow.png"),
       loadExportImage(card.querySelector('[data-field="photo"]').src),
       loadExportImage(course.icon),
       loadExportImage("assets/card/icon_book.png"),
-      loadExportImage("assets/card/icon_calendar.png"),
       loadExportImage("assets/card/icon_teacher_note_heart.png"),
       loadExportImage("assets/card/icon_heart.png"),
       loadExportImage("assets/card/icon_trophy.png"),
@@ -234,6 +238,9 @@ async function exportSummaryCard() {
     const titleMid = titleStart + context.measureText(`น้อง${studentName.replace(/^น้อง/, "")}`).width;
     context.fillStyle = "#4A372E";
     context.fillText(" เรียนอะไรบ้าง?", titleMid, 210);
+    context.fillStyle = "#876F5F";
+    context.font = "700 24px Kanit, sans-serif";
+    context.fillText(formatThaiDate(data.get("classDate")), 304, 248);
     drawCardBox(context, 48, 270, 984, 594, 38, "#FFFFFF", "#F1DEC8");
     drawCoverImage(context, photo, 62, 284, 956, 566, 26);
     context.fillStyle = "#62A742";
@@ -243,24 +250,27 @@ async function exportSummaryCard() {
     context.font = "900 25px Kanit, sans-serif";
     context.fillText("★  ผลงานวันนี้", 96, 339);
     drawCardBox(context, 48, 895, 984, 126, 26, "#FFFFFF", "#F1DEC8");
-    context.drawImage(courseIcon, 86, 931, 56, 56);
-    context.fillStyle = "#4F8B37";
-    context.font = "800 25px Kanit, sans-serif";
-    wrapCanvasText(context, course.name, 158, 955, 225, 28, 2);
-    context.drawImage(book, 438, 931, 52, 52);
+    [224, 770].forEach((x) => {
+      context.strokeStyle = "#D7B99C";
+      context.setLineDash([4, 4]);
+      context.beginPath();
+      context.moveTo(x, 921);
+      context.lineTo(x, 997);
+      context.stroke();
+      context.setLineDash([]);
+    });
+    context.drawImage(courseIcon, 110, 926, 64, 64);
+    context.drawImage(book, 278, 931, 54, 54);
     context.fillStyle = "#4A372E";
-    context.font = "800 25px Kanit, sans-serif";
-    context.fillText(`บทที่ ${data.get("lessonNumber") || "1"}`, 504, 952);
-    context.font = "700 22px Kanit, sans-serif";
-    context.fillText(String(data.get("lessonTitle") || ""), 504, 984);
-    context.drawImage(calendar, 662, 931, 52, 52);
-    context.font = "800 24px Kanit, sans-serif";
-    context.fillText(formatThaiDate(data.get("classDate")), 724, 968);
+    context.font = "800 32px Kanit, sans-serif";
+    context.fillText(`บทที่ ${data.get("lessonNumber") || "1"}`, 352, 952);
+    context.font = "700 27px Kanit, sans-serif";
+    wrapCanvasText(context, String(data.get("lessonTitle") || ""), 352, 990, 360, 30, 1);
     context.font = "800 22px Kanit, sans-serif";
-    context.fillText("ครั้งที่", 896, 940);
+    context.fillText("ครั้งที่", 846, 940);
     context.fillStyle = "#F05B3E";
     context.font = "900 45px Kanit, sans-serif";
-    context.fillText(`${sessionNumber}/${totalSessions}`, 884, 988);
+    context.fillText(`${sessionNumber}/${totalSessions}`, 830, 988);
     drawCardBox(context, 48, 1044, 984, 174, 26, "#FFFFFF", "#F1DEC8");
     context.drawImage(noteHeart, 72, 1088, 88, 88);
     context.globalAlpha = .36;
@@ -279,7 +289,7 @@ async function exportSummaryCard() {
     context.fillText(`เรียนแล้ว ${sessionNumber} ครั้ง`, 178, 1284);
     context.font = "500 20px Kanit, sans-serif";
     context.fillText("เก่งขึ้นทุกครั้งเลยนะ!", 178, 1316);
-    drawExportDots(context, sessionNumber, totalSessions);
+    drawExportProgressBar(context, sessionNumber, totalSessions);
     context.font = "900 27px Kanit, sans-serif";
     context.fillText("คงเหลือ", 786, 1298);
     context.fillStyle = "#18743D";
