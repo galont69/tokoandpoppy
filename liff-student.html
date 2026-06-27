@@ -99,7 +99,7 @@
       <button id="closeEditProfileButton" class="close-button" type="button" aria-label="ปิด">×</button>
       <p class="eyebrow">แก้ไขข้อมูลพื้นฐาน</p>
       <h2 id="editProfileTitle">ข้อมูลลูกของฉัน</h2>
-      <p class="muted">แก้ไขข้อมูลที่อาจกรอกผิดได้ เช่น วันเกิด ชื่อเล่น เบอร์ และหมายเหตุ ส่วนคอร์ส จำนวนครั้งเรียน และสถานะใบสมัครให้สาขาเป็นผู้ดูแลครับ</p>
+      <p class="muted">แก้ไขข้อมูลที่อาจกรอกผิดได้ เช่น วันเกิด ชื่อจริงสำหรับใบประกาศ ชื่อเล่น เบอร์ และหมายเหตุ ส่วนคอร์ส จำนวนครั้งเรียน และสถานะใบสมัครให้สาขาเป็นผู้ดูแลครับ</p>
 
       <form id="editProfileForm" class="edit-form">
         <label>
@@ -107,7 +107,11 @@
           <input id="editBirthDate" name="birth_date" type="date" required />
         </label>
         <label>
-          ชื่อเล่น
+          ชื่อ - นามสกุลนักเรียน
+          <input id="editStudentName" name="student_name" type="text" required autocomplete="name" />
+        </label>
+        <label>
+          ชื่อเล่นนักเรียน
           <input id="editNickname" name="student_nickname" type="text" autocomplete="off" />
         </label>
         <label>
@@ -139,7 +143,7 @@
     </div>
   </section>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js"></script>
   <script src="liff-student.js"></script>
