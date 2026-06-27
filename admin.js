@@ -102,6 +102,9 @@ const sessionShareCanvas = document.querySelector("#sessionShareCanvas");
 const sessionShareText = document.querySelector("#sessionShareText");
 const copySessionShareTextButton = document.querySelector("#copySessionShareTextButton");
 const downloadSessionShareCardButton = document.querySelector("#downloadSessionShareCardButton");
+const confirmSaveSessionButton = document.querySelector("#confirmSaveSessionButton");
+const sessionShareStepLabel = document.querySelector("#sessionShareStepLabel");
+const sessionShareHeadingText = document.querySelector("#sessionShareHeadingText");
 const freeResourceForm = document.querySelector("#freeResourceForm");
 const freeResourceAdminList = document.querySelector("#freeResourceAdminList");
 const freeResourceCount = document.querySelector("#freeResourceCount");
@@ -146,6 +149,9 @@ let activeArtLesson = null;
 let learningEnrollments = [];
 let activeLearningEnrollment = null;
 let lastSessionShareData = null;
+let pendingSessionShareData = null;
+let pendingSessionObjectUrl = "";
+let sessionShareIsSaved = false;
 const learningStudentTimelineGroups = new Map();
 const learningStudentTimelineCache = new Map();
 let freeResources = [];
@@ -1463,6 +1469,10 @@ function openRecordSession(enrollmentId) {
   recordSessionPhoto.value = "";
   recordSessionPhotoPreview.innerHTML = "";
   hideSessionSharePanel();
+  if (saveSessionButton) {
+    saveSessionButton.disabled = false;
+    saveSessionButton.textContent = "ดูตัวอย่างการ์ดก่อนบันทึก";
+  }
   if (learningSessionTimeline) {
     learningSessionTimeline.innerHTML =
       '<div class="learning-history-empty">กำลังโหลดประวัติครั้งเรียน...</div>';
@@ -1502,11 +1512,76 @@ function renderLearningPhotoPreview() {
 
 function hideSessionSharePanel() {
   lastSessionShareData = null;
+  pendingSessionShareData = null;
+  sessionShareIsSaved = false;
+  if (pendingSessionObjectUrl) {
+    URL.revokeObjectURL(pendingSessionObjectUrl);
+    pendingSessionObjectUrl = "";
+  }
   if (sessionSharePanel) sessionSharePanel.hidden = true;
   if (sessionShareText) sessionShareText.value = "";
+  if (confirmSaveSessionButton) confirmSaveSessionButton.hidden = false;
+  if (copySessionShareTextButton) copySessionShareTextButton.hidden = true;
+  if (downloadSessionShareCardButton) downloadSessionShareCardButton.hidden = true;
+  if (sessionShareStepLabel) sessionShareStepLabel.textContent = "ตรวจทานก่อนบันทึกจริง";
+  if (sessionShareHeadingText) sessionShareHeadingText.textContent = "Preview การ์ดสรุปหลังเรียน";
   if (sessionShareCanvas) {
     const context = sessionShareCanvas.getContext("2d");
     context?.clearRect(0, 0, sessionShareCanvas.width, sessionShareCanvas.height);
+  }
+}
+
+function validateLearningSessionForm() {
+  if (!activeLearningEnrollment) return null;
+  const totalSessions = Number(activeLearningEnrollment.total_sessions || 0);
+  const sessionNumber = Number.parseInt(recordSessionNumber?.value || "", 10);
+  if (!Number.isInteger(sessionNumber) || sessionNumber < 1) {
+    showToast("กรุณาระบุครั้งที่เรียนเป็นตัวเลขอย่างน้อย 1", true);
+    recordSessionNumber?.focus();
+    return null;
+  }
+  if (totalSessions && sessionNumber > totalSessions) {
+    showToast(`ครั้งที่เรียนต้องไม่เกินแพ็กเกจ ${totalSessions} ครั้ง`, true);
+    recordSessionNumber?.focus();
+    return null;
+  }
+  return {
+    sessionNumber,
+    sessionDate: recordSessionDate.value || toLocalDateInputValue(new Date()),
+    lessonTitle: recordLessonTitle.value.trim(),
+    teacherComment: recordTeacherComment.value.trim()
+  };
+}
+
+function getDraftLearningPhotoUrl() {
+  const file = recordSessionPhoto.files?.[0];
+  if (!file) return "";
+  if (pendingSessionObjectUrl) URL.revokeObjectURL(pendingSessionObjectUrl);
+  pendingSessionObjectUrl = URL.createObjectURL(file);
+  return pendingSessionObjectUrl;
+}
+
+function buildDraftAfterClassShareData(sessionInput) {
+  const data = buildAfterClassShareData({
+    enrollment: activeLearningEnrollment,
+    sessionNumber: sessionInput.sessionNumber,
+    sessionDate: sessionInput.sessionDate,
+    lessonTitle: sessionInput.lessonTitle,
+    teacherComment: sessionInput.teacherComment,
+    photoPath: null
+  });
+  data.photoUrl = getDraftLearningPhotoUrl();
+  return data;
+}
+
+function markSessionPreviewDirty() {
+  if (!sessionSharePanel || sessionSharePanel.hidden || sessionShareIsSaved) return;
+  pendingSessionShareData = null;
+  if (confirmSaveSessionButton) confirmSaveSessionButton.hidden = true;
+  if (copySessionShareTextButton) copySessionShareTextButton.hidden = true;
+  if (downloadSessionShareCardButton) downloadSessionShareCardButton.hidden = true;
+  if (sessionShareHeadingText) {
+    sessionShareHeadingText.textContent = "ข้อมูลถูกแก้ไข กดอัปเดต Preview อีกครั้ง";
   }
 }
 
@@ -2008,10 +2083,24 @@ async function renderSessionShareCard(data) {
 
 window.renderSessionShareCard = renderSessionShareCard;
 
-async function showSessionSharePanel(data) {
+async function showSessionSharePanel(data, { saved = false } = {}) {
   lastSessionShareData = data;
+  sessionShareIsSaved = saved;
   if (sessionShareText) sessionShareText.value = buildAfterClassShareText(data);
   if (sessionSharePanel) sessionSharePanel.hidden = false;
+  if (confirmSaveSessionButton) confirmSaveSessionButton.hidden = saved;
+  if (copySessionShareTextButton) copySessionShareTextButton.hidden = !saved;
+  if (downloadSessionShareCardButton) downloadSessionShareCardButton.hidden = !saved;
+  if (sessionShareStepLabel) {
+    sessionShareStepLabel.textContent = saved
+      ? "ส่งให้ผู้ปกครองทาง LINE"
+      : "ตรวจทานก่อนบันทึกจริง";
+  }
+  if (sessionShareHeadingText) {
+    sessionShareHeadingText.textContent = saved
+      ? "ภาพสรุปหลังเรียน + ข้อความพร้อมคัดลอก"
+      : "Preview การ์ดสรุปหลังเรียน";
+  }
   await renderSessionShareCard(data);
   sessionSharePanel?.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
@@ -2058,49 +2147,62 @@ async function uploadLearningPhoto(enrollmentId) {
   return path;
 }
 
-async function saveLearningSession(event) {
+async function previewLearningSession(event) {
   event.preventDefault();
-  if (!activeLearningEnrollment) return;
-
-  const totalSessions = Number(activeLearningEnrollment.total_sessions || 0);
-  const sessionNumber = Number.parseInt(recordSessionNumber?.value || "", 10);
-  if (!Number.isInteger(sessionNumber) || sessionNumber < 1) {
-    showToast("กรุณาระบุครั้งที่เรียนเป็นตัวเลขอย่างน้อย 1", true);
-    recordSessionNumber?.focus();
-    return;
-  }
-  if (totalSessions && sessionNumber > totalSessions) {
-    showToast(`ครั้งที่เรียนต้องไม่เกินแพ็กเกจ ${totalSessions} ครั้ง`, true);
-    recordSessionNumber?.focus();
-    return;
-  }
+  const sessionInput = validateLearningSessionForm();
+  if (!sessionInput) return;
 
   saveSessionButton.disabled = true;
-  saveSessionButton.textContent = "กำลังบันทึก...";
+  saveSessionButton.textContent = "กำลังสร้าง Preview...";
+
+  try {
+    pendingSessionShareData = buildDraftAfterClassShareData(sessionInput);
+    await showSessionSharePanel(pendingSessionShareData, { saved: false });
+    showToast("ตรวจทานการ์ดก่อนบันทึกจริงได้เลย");
+  } catch (error) {
+    showToast(`สร้าง Preview ไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    saveSessionButton.disabled = false;
+    saveSessionButton.textContent = "อัปเดต Preview การ์ด";
+  }
+}
+
+async function confirmSaveLearningSession() {
+  const sessionInput = validateLearningSessionForm();
+  if (!sessionInput || !activeLearningEnrollment) return;
+
+  confirmSaveSessionButton.disabled = true;
+  confirmSaveSessionButton.textContent = "กำลังบันทึกจริง...";
+  saveSessionButton.disabled = true;
 
   try {
     const photoPath = await uploadLearningPhoto(activeLearningEnrollment.id);
     const shareData = buildAfterClassShareData({
       enrollment: activeLearningEnrollment,
-      sessionNumber,
-      sessionDate: recordSessionDate.value || toLocalDateInputValue(new Date()),
-      lessonTitle: recordLessonTitle.value.trim(),
-      teacherComment: recordTeacherComment.value.trim(),
+      sessionNumber: sessionInput.sessionNumber,
+      sessionDate: sessionInput.sessionDate,
+      lessonTitle: sessionInput.lessonTitle,
+      teacherComment: sessionInput.teacherComment,
       photoPath
     });
     const { error } = await supabaseClient.rpc("record_learning_session", {
       p_course_enrollment_id: activeLearningEnrollment.id,
-      p_session_number: sessionNumber,
+      p_session_number: sessionInput.sessionNumber,
       p_session_date: recordSessionDate.value || null,
-      p_lesson_title: recordLessonTitle.value || null,
-      p_teacher_comment: recordTeacherComment.value || null,
+      p_lesson_title: sessionInput.lessonTitle || null,
+      p_teacher_comment: sessionInput.teacherComment || null,
       p_photo_path: photoPath
     });
     if (error) throw error;
 
     showToast("บันทึกครั้งเรียนเรียบร้อยแล้ว");
     learningStudentTimelineCache.clear();
-    await showSessionSharePanel(shareData);
+    pendingSessionShareData = null;
+    if (pendingSessionObjectUrl) {
+      URL.revokeObjectURL(pendingSessionObjectUrl);
+      pendingSessionObjectUrl = "";
+    }
+    await showSessionSharePanel(shareData, { saved: true });
     recordSessionPhoto.value = "";
     recordSessionPhotoPreview.innerHTML = "";
     await loadLearningProgress();
@@ -2110,8 +2212,10 @@ async function saveLearningSession(event) {
   } catch (error) {
     showToast(`บันทึกครั้งเรียนไม่สำเร็จ: ${error.message}`, true);
   } finally {
+    confirmSaveSessionButton.disabled = false;
+    confirmSaveSessionButton.textContent = "ยืนยันบันทึกจริง";
     saveSessionButton.disabled = false;
-    saveSessionButton.textContent = "บันทึกครั้งเรียน";
+    saveSessionButton.textContent = "อัปเดต Preview การ์ด";
   }
 }
 
@@ -5055,10 +5159,23 @@ learningProgressRows?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-record-enrollment]");
   if (button) openRecordSession(button.dataset.recordEnrollment);
 });
-recordSessionForm?.addEventListener("submit", saveLearningSession);
-recordSessionPhoto?.addEventListener("change", renderLearningPhotoPreview);
+recordSessionForm?.addEventListener("submit", previewLearningSession);
+recordSessionPhoto?.addEventListener("change", () => {
+  renderLearningPhotoPreview();
+  markSessionPreviewDirty();
+});
+confirmSaveSessionButton?.addEventListener("click", confirmSaveLearningSession);
 copySessionShareTextButton?.addEventListener("click", copySessionShareText);
 downloadSessionShareCardButton?.addEventListener("click", downloadSessionShareCard);
+[
+  recordSessionNumber,
+  recordSessionDate,
+  recordLessonTitle,
+  recordTeacherComment,
+  recordSessionPhoto
+].forEach((field) => {
+  field?.addEventListener("input", markSessionPreviewDirty);
+});
 refreshSessionHistory?.addEventListener("click", () => {
   if (activeLearningEnrollment) loadLearningSessionHistory(activeLearningEnrollment.id);
 });
@@ -5068,6 +5185,7 @@ teacherCommentTemplates?.addEventListener("click", (event) => {
   const template = button.dataset.commentTemplate || "";
   const currentComment = recordTeacherComment.value.trim();
   recordTeacherComment.value = currentComment ? `${currentComment}\n${template}` : template;
+  markSessionPreviewDirty();
   recordTeacherComment.focus();
 });
 document.querySelector("#closeRecordSession")?.addEventListener("click", closeRecordSession);
