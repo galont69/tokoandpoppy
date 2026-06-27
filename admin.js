@@ -2270,7 +2270,7 @@ async function openReview(applicationId) {
   if (!activeApplication) return;
 
   document.querySelector("#reviewTitle").textContent =
-    activeApplication.student_name;
+    activeApplication.student_name || activeApplication.student_nickname || "ใบสมัครเรียน";
   document.querySelector("#reviewSubtitle").textContent =
     `สมัครเมื่อ ${formatDate(activeApplication.created_at)}`;
 
@@ -2301,6 +2301,7 @@ async function openReview(applicationId) {
     : "";
   document.querySelector("#studentDetails").innerHTML = `
     ${pendingAccountNotice}
+    <div><dt>ชื่อจริงสำหรับใบประกาศ</dt><dd>${escapeHtml(activeApplication.student_name || "-")}</dd></div>
     <div><dt>ชื่อเล่นนักเรียน</dt><dd>${escapeHtml(activeApplication.student_nickname || "-")}</dd></div>
     <div><dt>ชื่อผู้ปกครอง</dt><dd>${escapeHtml(activeApplication.parent_name || "-")}</dd></div>
     <div><dt>อีเมลผู้ปกครอง</dt><dd>${escapeHtml(activeApplication.parent_email)}</dd></div>

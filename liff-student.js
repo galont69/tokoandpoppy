@@ -25,6 +25,7 @@ const closeEditProfileButton = document.querySelector("#closeEditProfileButton")
 const cancelEditProfileButton = document.querySelector("#cancelEditProfileButton");
 const saveEditProfileButton = document.querySelector("#saveEditProfileButton");
 const editBirthDate = document.querySelector("#editBirthDate");
+const editStudentName = document.querySelector("#editStudentName");
 const editNickname = document.querySelector("#editNickname");
 const editParentName = document.querySelector("#editParentName");
 const editParentPhone = document.querySelector("#editParentPhone");
@@ -276,6 +277,7 @@ function renderNotes(student) {
 
   const notes = [
     ["วันเกิด", app.birth_date ? `${formatDate(app.birth_date)} (${calculateAge(app.birth_date, app.age_years)})` : "ยังไม่ระบุ"],
+    ["ชื่อจริงสำหรับใบประกาศ", app.student_name || "ยังไม่ระบุ"],
     ["ชื่อเล่น", app.student_nickname || "ยังไม่ระบุ"],
     ["ผู้ปกครอง", app.parent_name || "ยังไม่ระบุ"],
     ["เบอร์ติดต่อ", app.parent_phone || "ยังไม่ระบุ"],
@@ -411,6 +413,7 @@ function openEditProfile() {
   }
 
   editBirthDate.value = formatDateInput(app.birth_date);
+  editStudentName.value = app.student_name || "";
   editNickname.value = app.student_nickname || "";
   editParentName.value = app.parent_name || "";
   editParentPhone.value = app.parent_phone || "";
@@ -420,7 +423,7 @@ function openEditProfile() {
 
   showElement(editProfilePanel);
   document.body.classList.add("has-modal");
-  editBirthDate.focus();
+  editStudentName.focus();
 }
 
 function closeEditProfile() {
@@ -444,6 +447,11 @@ async function saveStudentProfile(event) {
     return;
   }
 
+  if (!normalizeText(editStudentName.value)) {
+    setMessage("กรุณาระบุชื่อ - นามสกุลนักเรียนสำหรับใบประกาศ");
+    return;
+  }
+
   if (!normalizeText(editParentName.value) || !normalizeText(editParentPhone.value)) {
     setMessage("กรุณาระบุชื่อผู้ปกครองและเบอร์ติดต่อ");
     return;
@@ -456,6 +464,7 @@ async function saveStudentProfile(event) {
     p_line_user_id: lineUserId,
     p_application_id: app.id,
     p_birth_date: editBirthDate.value,
+    p_student_name: normalizeText(editStudentName.value),
     p_student_nickname: normalizeText(editNickname.value) || null,
     p_parent_name: normalizeText(editParentName.value),
     p_parent_phone: normalizeText(editParentPhone.value),
