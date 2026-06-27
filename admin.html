@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260627-course-schedule">
+  <link rel="stylesheet" href="admin.css?v=20260627-class-reminders">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -79,6 +79,10 @@
         <button class="nav-item" type="button" data-admin-view="students">
           <span>🧒</span> นักเรียน
           <i id="studentBadge">0</i>
+        </button>
+        <button class="nav-item" type="button" data-admin-view="classReminders">
+          <span>🔔</span> แจ้งเตือนเรียน
+          <i id="classReminderBadge">0</i>
         </button>
         <button class="nav-item" type="button" data-admin-view="branchAdmins" data-main-admin-only>
           <span>🧑‍🏫</span> ผู้ดูแลสาขา
@@ -271,6 +275,38 @@
           </div>
           <div class="loading-state" id="studentManagementLoadingState" hidden>
             <i></i><span>กำลังโหลดรายชื่อนักเรียน...</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="content admin-view" id="classRemindersView" hidden>
+        <div class="lesson-admin-hero reminders-hero">
+          <div>
+            <span>CLASS REMINDERS</span>
+            <h2>แจ้งเตือนก่อนวันเรียน</h2>
+            <p id="classReminderHeroText">ดูว่าเด็กคนไหนมีเรียนพรุ่งนี้ สร้างการ์ดและข้อความส่งผู้ปกครอง แล้ว mark ว่าแจ้งแล้ว</p>
+          </div>
+          <button class="refresh-button" id="refreshClassRemindersButton" type="button">↻ รีเฟรช</button>
+        </div>
+
+        <section class="applications-panel class-reminder-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>คิวแจ้งเตือนพรุ่งนี้</h2>
+              <p id="classReminderScopeText">เรียงตามเวลาเรียนและสาขา</p>
+            </div>
+          </div>
+
+          <div class="class-reminder-summary" id="classReminderSummary"></div>
+          <div class="class-reminder-list" id="classReminderRows"></div>
+
+          <div class="empty-state" id="classReminderEmptyState" hidden>
+            <div>🔔</div>
+            <h3>พรุ่งนี้ยังไม่มีเด็กที่ตั้งตารางเรียนไว้</h3>
+            <p>เมื่อครูหรือแอดมินสาขาตั้งวัน/เวลาเรียนในคอร์สแล้ว รายการจะแสดงตรงนี้อัตโนมัติ</p>
+          </div>
+          <div class="loading-state" id="classReminderLoadingState" hidden>
+            <i></i><span>กำลังโหลดคิวแจ้งเตือน...</span>
           </div>
         </section>
       </section>
@@ -953,6 +989,31 @@
     </div>
   </div>
 
+  <div class="review-backdrop" id="classReminderModal" aria-hidden="true">
+    <div class="review-modal class-reminder-modal" role="dialog" aria-modal="true" aria-labelledby="classReminderTitle">
+      <button class="modal-close" id="closeClassReminder" type="button" aria-label="ปิด">×</button>
+      <div class="modal-heading">
+        <span>ข้อความแจ้งเตือน</span>
+        <h2 id="classReminderTitle">แจ้งเตือนผู้ปกครอง</h2>
+        <p id="classReminderSummaryText">ตรวจข้อความและดาวน์โหลดการ์ดก่อนส่ง</p>
+      </div>
+      <div class="class-reminder-preview-grid">
+        <div class="class-reminder-canvas-wrap">
+          <canvas id="classReminderCanvas" width="1080" height="1080" aria-label="การ์ดแจ้งเตือนก่อนวันเรียน"></canvas>
+        </div>
+        <label class="learning-share-text class-reminder-message">
+          ข้อความส่งผู้ปกครอง
+          <textarea id="classReminderMessage" rows="9"></textarea>
+        </label>
+      </div>
+      <div class="class-reminder-actions">
+        <button type="button" id="copyClassReminderMessageButton">คัดลอกข้อความ</button>
+        <button type="button" id="downloadClassReminderCardButton">ดาวน์โหลดการ์ด</button>
+        <button type="button" id="markClassReminderSentButton">แจ้งเตือนเรียบร้อย</button>
+      </div>
+    </div>
+  </div>
+
   <div class="review-backdrop" id="recordSessionModal" aria-hidden="true">
     <div class="review-modal learning-record-card" role="dialog" aria-modal="true">
       <button class="modal-close" id="closeRecordSession" type="button" aria-label="ปิด">×</button>
@@ -1126,6 +1187,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260627-course-schedule"></script>
+  <script src="admin.js?v=20260627-class-reminders"></script>
 </body>
 </html>

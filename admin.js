@@ -93,6 +93,22 @@ const studentSearchInput = document.querySelector("#studentSearchInput");
 const studentCourseFilter = document.querySelector("#studentCourseFilter");
 const studentStatusFilter = document.querySelector("#studentStatusFilter");
 const refreshStudentsButton = document.querySelector("#refreshStudentsButton");
+const classReminderBadge = document.querySelector("#classReminderBadge");
+const classReminderHeroText = document.querySelector("#classReminderHeroText");
+const classReminderScopeText = document.querySelector("#classReminderScopeText");
+const classReminderSummary = document.querySelector("#classReminderSummary");
+const classReminderRows = document.querySelector("#classReminderRows");
+const classReminderLoadingState = document.querySelector("#classReminderLoadingState");
+const classReminderEmptyState = document.querySelector("#classReminderEmptyState");
+const refreshClassRemindersButton = document.querySelector("#refreshClassRemindersButton");
+const classReminderModal = document.querySelector("#classReminderModal");
+const classReminderTitle = document.querySelector("#classReminderTitle");
+const classReminderSummaryText = document.querySelector("#classReminderSummaryText");
+const classReminderCanvas = document.querySelector("#classReminderCanvas");
+const classReminderMessage = document.querySelector("#classReminderMessage");
+const copyClassReminderMessageButton = document.querySelector("#copyClassReminderMessageButton");
+const downloadClassReminderCardButton = document.querySelector("#downloadClassReminderCardButton");
+const markClassReminderSentButton = document.querySelector("#markClassReminderSentButton");
 const courseScheduleModal = document.querySelector("#courseScheduleModal");
 const courseScheduleForm = document.querySelector("#courseScheduleForm");
 const courseScheduleTitle = document.querySelector("#courseScheduleTitle");
@@ -169,6 +185,9 @@ let artLessons = [];
 let activeArtLesson = null;
 let learningEnrollments = [];
 let studentManagementEnrollments = [];
+let classReminderEnrollments = [];
+let classReminderSentKeys = new Set();
+let activeClassReminder = null;
 let activeLearningEnrollment = null;
 let activeScheduleEnrollment = null;
 let lastSessionShareData = null;
@@ -378,6 +397,30 @@ function formatDateOnly(value) {
   return new Intl.DateTimeFormat("th-TH", {
     dateStyle: "medium"
   }).format(new Date(value));
+}
+
+function formatDateInputFromDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getTomorrowDate() {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  date.setHours(12, 0, 0, 0);
+  return date;
+}
+
+function getClassReminderDateInfo() {
+  const date = getTomorrowDate();
+  return {
+    date,
+    dateInput: formatDateInputFromDate(date),
+    weekday: date.getDay(),
+    dateLabel: formatDateOnly(date)
+  };
 }
 
 function formatRelativeDate(value) {
@@ -731,9 +774,9 @@ function updateStats() {
 
 function showAdminView(viewName) {
   const roleAllowedViews = isBranchTeacher()
-    ? ["progress"]
+    ? ["progress", "classReminders"]
     : isBranchAdmin()
-      ? ["applications", "students", "progress", "branchStaff"]
+      ? ["applications", "students", "classReminders", "progress", "branchStaff"]
       : null;
   if (roleAllowedViews && !roleAllowedViews.includes(viewName)) {
     viewName = "applications";
@@ -749,6 +792,7 @@ function showAdminView(viewName) {
   const viewCopy = {
     applications: ["ใบสมัครเรียน", "ศูนย์จัดการสมาชิก"],
     students: ["นักเรียน", "STUDENT CENTER"],
+    classReminders: ["แจ้งเตือนก่อนวันเรียน", "CLASS REMINDERS"],
     branchAdmins: ["ผู้ดูแลสาขา", "BRANCH ADMIN ACCESS"],
     branchStaff: ["ทีมสาขา/ครู", "BRANCH TEAM"],
     branches: ["สาขาเฟรนไชน์", "FRANCHISE CENTER"],
@@ -764,6 +808,7 @@ function showAdminView(viewName) {
   document.querySelector(".sidebar").classList.remove("open");
   if (viewName === "branchAdmins") loadBranchAdminApplications();
   if (viewName === "students") loadStudentManagement();
+  if (viewName === "classReminders") loadClassReminders();
   if (viewName === "branchStaff") loadBranchTeacherInvitations();
   if (viewName === "branches") loadBranchesAdmin();
   if (viewName === "progress") loadLearningProgress();
@@ -1331,6 +1376,307 @@ async function clearCourseSchedule() {
   renderLearningProgress();
   showToast("ล้างตารางเรียนเรียบร้อยแล้ว");
   closeCourseSchedule();
+}
+
+function getReminderKey(enrollmentId, classDate) {
+  return `${enrollmentId}|${classDate}`;
+}
+
+function getClassReminderContact(enrollment = {}) {
+  const app = getStudentApplication(enrollment);
+  return {
+    parentName: app.parent_name || enrollment.parent_name || "ผู้ปกครอง",
+    parentPhone: app.parent_phone || enrollment.parent_phone || "",
+    parentEmail: app.parent_email || enrollment.parent_email || "",
+    lineDisplayName: app.line_display_name || "",
+    lineUserId: app.line_user_id || enrollment.line_user_id || ""
+  };
+}
+
+function buildClassReminderMessage(enrollment, dateInfo = getClassReminderDateInfo()) {
+  const contact = getClassReminderContact(enrollment);
+  const studentName = getLearningStudentDisplayName(enrollment);
+  const courseName = getCourseEnrollmentLabel(enrollment);
+  const branchName = enrollment.branch_name ||
+    enrollment.branches?.name ||
+    getStudentApplication(enrollment).branches?.name ||
+    getCurrentBranchName();
+  const timeLabel = [
+    normalizeTimeLabel(enrollment.class_start_time),
+    normalizeTimeLabel(enrollment.class_end_time)
+  ].filter(Boolean).join("-");
+  return [
+    `แจ้งเตือนคอร์สเรียนของน้อง${studentName.replace(/^น้อง/, "")}`,
+    "",
+    `พรุ่งนี้ (${dateInfo.dateLabel}) น้องมีเรียน ${courseName}`,
+    `เวลา ${timeLabel || "ตามเวลาที่แจ้งไว้"}${branchName ? ` ที่สาขา ${branchName}` : ""}`,
+    "",
+    "รบกวนเตรียมตัวน้องให้พร้อม และหากต้องการเลื่อนเวลาเรียนสามารถแจ้งสาขาล่วงหน้าได้เลยนะคะ/ครับ",
+    "",
+    "Toko & Poppy"
+  ].join("\n");
+}
+
+function getClassReminderRows() {
+  return [...classReminderEnrollments].sort((a, b) => {
+    const timeCompare = String(a.class_start_time || "").localeCompare(String(b.class_start_time || ""));
+    if (timeCompare !== 0) return timeCompare;
+    const branchCompare = String(a.branch_name || a.branches?.name || "").localeCompare(String(b.branch_name || b.branches?.name || ""));
+    if (branchCompare !== 0) return branchCompare;
+    return String(getLearningStudentDisplayName(a)).localeCompare(String(getLearningStudentDisplayName(b)));
+  });
+}
+
+function renderClassReminderSummary() {
+  if (!classReminderSummary) return;
+  const dateInfo = getClassReminderDateInfo();
+  const total = classReminderEnrollments.length;
+  const sent = classReminderEnrollments.filter((enrollment) =>
+    classReminderSentKeys.has(getReminderKey(enrollment.id, dateInfo.dateInput))).length;
+  const pending = Math.max(total - sent, 0);
+  const branchCount = new Set(classReminderEnrollments.map((enrollment) =>
+    enrollment.branch_id || enrollment.branches?.name || "unknown")).size;
+  classReminderSummary.innerHTML = [
+    ["วันเรียน", `${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel}`],
+    ["ต้องแจ้ง", `${pending} คน`],
+    ["แจ้งแล้ว", `${sent} คน`],
+    ["รวม", `${total} คอร์ส`],
+    ["สาขา", `${branchCount} สาขา`]
+  ].map(([label, value]) => `
+    <article>
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </article>
+  `).join("");
+  if (classReminderBadge) classReminderBadge.textContent = pending;
+}
+
+function renderClassReminders() {
+  if (!classReminderRows) return;
+  const dateInfo = getClassReminderDateInfo();
+  const rows = getClassReminderRows();
+  renderClassReminderSummary();
+  classReminderEmptyState.hidden = rows.length > 0;
+  classReminderRows.innerHTML = rows.map((enrollment) => {
+    const contact = getClassReminderContact(enrollment);
+    const sent = classReminderSentKeys.has(getReminderKey(enrollment.id, dateInfo.dateInput));
+    const branchName = enrollment.branch_name ||
+      enrollment.branches?.name ||
+      getStudentApplication(enrollment).branches?.name ||
+      "ไม่ระบุสาขา";
+    const timeLabel = [
+      normalizeTimeLabel(enrollment.class_start_time),
+      normalizeTimeLabel(enrollment.class_end_time)
+    ].filter(Boolean).join("-");
+    return `
+      <article class="class-reminder-item ${sent ? "is-sent" : ""}">
+        <div class="class-reminder-time">
+          <strong>${escapeHtml(timeLabel || "-")}</strong>
+          <span>${escapeHtml(weekdayLabels[dateInfo.weekday])}</span>
+        </div>
+        <div class="class-reminder-student">
+          <span class="learning-course-icon">${getCourseIcon(enrollment.course_type)}</span>
+          <div>
+            <strong>${escapeHtml(getLearningStudentDisplayName(enrollment))}</strong>
+            <small>${escapeHtml(getCourseEnrollmentLabel(enrollment))} · สาขา ${escapeHtml(branchName)}</small>
+            <small>${escapeHtml([
+              contact.parentName ? `ผู้ปกครอง ${contact.parentName}` : "",
+              contact.parentPhone,
+              contact.lineDisplayName ? `LINE: ${contact.lineDisplayName}` : ""
+            ].filter(Boolean).join(" · ") || "ยังไม่มีข้อมูลติดต่อ")}</small>
+          </div>
+        </div>
+        <div class="class-reminder-status">
+          <span>${sent ? "แจ้งแล้ว" : "รอแจ้ง"}</span>
+          <small>${escapeHtml(dateInfo.dateLabel)}</small>
+        </div>
+        <div class="class-reminder-row-actions">
+          <button type="button" data-create-class-reminder="${enrollment.id}">สร้างการ์ด/ข้อความ</button>
+          <button type="button" data-mark-class-reminder="${enrollment.id}" ${sent ? "disabled" : ""}>แจ้งแล้ว</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function loadClassReminders() {
+  if (!classReminderRows) return;
+  const dateInfo = getClassReminderDateInfo();
+  classReminderLoadingState.hidden = false;
+  classReminderEmptyState.hidden = true;
+  classReminderRows.innerHTML = "";
+  if (classReminderHeroText) {
+    classReminderHeroText.textContent =
+      `พรุ่งนี้ ${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel} มีคิวเรียนที่ต้องแจ้งผู้ปกครอง`;
+  }
+  if (classReminderScopeText) {
+    classReminderScopeText.textContent = isMainAdmin()
+      ? "แอดมินหลักเห็นทุกสาขา"
+      : `มุมมอง${getCurrentBranchName()}`;
+  }
+
+  let query = supabaseClient
+    .from("course_enrollments")
+    .select("*, enrollment_applications(id,status,student_name,student_nickname,parent_name,parent_phone,parent_email,line_display_name,line_user_id,branches(name,code)), branches(name,code)")
+    .eq("class_weekday", dateInfo.weekday)
+    .eq("class_reminder_enabled", true)
+    .not("class_start_time", "is", null)
+    .neq("status", "completed")
+    .order("class_start_time", { ascending: true });
+
+  if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
+    query = query.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    classReminderLoadingState.hidden = true;
+    classReminderEmptyState.hidden = false;
+    showToast(`โหลดคิวแจ้งเตือนไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  classReminderEnrollments = (data || []).filter((enrollment) => {
+    const app = getStudentApplication(enrollment);
+    return !app.status || app.status === "approved";
+  });
+
+  const enrollmentIds = classReminderEnrollments.map((enrollment) => enrollment.id);
+  classReminderSentKeys = new Set();
+  if (enrollmentIds.length) {
+    const { data: logs, error: logError } = await supabaseClient
+      .from("course_reminder_logs")
+      .select("course_enrollment_id,class_date")
+      .eq("class_date", dateInfo.dateInput)
+      .in("course_enrollment_id", enrollmentIds);
+    if (!logError) {
+      (logs || []).forEach((log) => {
+        classReminderSentKeys.add(getReminderKey(log.course_enrollment_id, log.class_date));
+      });
+    }
+  }
+
+  classReminderLoadingState.hidden = true;
+  renderClassReminders();
+}
+
+async function renderClassReminderCard(enrollment, message) {
+  if (!classReminderCanvas) return;
+  const context = classReminderCanvas.getContext("2d");
+  const width = classReminderCanvas.width;
+  const height = classReminderCanvas.height;
+  const dateInfo = getClassReminderDateInfo();
+  const [logoImage, locationImage, courseImage, sparkleImage] = await Promise.all([
+    loadSummaryCardImage(summaryCardAssets.logo),
+    loadSummaryCardImage(summaryCardAssets.location),
+    loadSummaryCardImage(summaryCardAssets.course[enrollment.course_type] || summaryCardAssets.course.creative_art),
+    loadSummaryCardImage(summaryCardAssets.star)
+  ]);
+  const studentName = getLearningStudentDisplayName(enrollment);
+  const branchName = enrollment.branch_name ||
+    enrollment.branches?.name ||
+    getStudentApplication(enrollment).branches?.name ||
+    getCurrentBranchName();
+  const timeLabel = [
+    normalizeTimeLabel(enrollment.class_start_time),
+    normalizeTimeLabel(enrollment.class_end_time)
+  ].filter(Boolean).join("-");
+
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = "#FAF6EF";
+  context.fillRect(0, 0, width, height);
+  drawCardImage(context, logoImage, 70, 64, 300, 86);
+  drawCardImage(context, sparkleImage, 880, 88, 82, 82, 0.72);
+
+  drawCardShadow(context, 70, 190, 940, 250, 34, "#FFFFFF", "#E9DCCB");
+  context.fillStyle = "#F05B3E";
+  context.font = "900 42px Kanit, 'Noto Sans Thai', sans-serif";
+  context.fillText("พรุ่งนี้มีเรียน", 130, 270);
+  context.fillStyle = "#4A372E";
+  context.font = "900 62px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasText(context, `น้อง${studentName.replace(/^น้อง/, "")}`, 130, 346, 560, 68, 1);
+  drawCardImage(context, courseImage, 770, 242, 120, 120);
+
+  drawCardShadow(context, 70, 470, 940, 260, 32, "#F2F8EC", "#9BBE86");
+  context.fillStyle = "#4F7D48";
+  context.font = "900 36px Kanit, 'Noto Sans Thai', sans-serif";
+  context.fillText(getCourseEnrollmentLabel(enrollment), 130, 548);
+  context.fillStyle = "#4A372E";
+  context.font = "800 48px Kanit, 'Noto Sans Thai', sans-serif";
+  context.fillText(`${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel}`, 130, 622);
+  context.fillStyle = "#F05B3E";
+  context.font = "900 54px Kanit, 'Noto Sans Thai', sans-serif";
+  context.fillText(timeLabel || "ตามเวลาที่แจ้งไว้", 130, 690);
+
+  drawCardShadow(context, 70, 760, 940, 190, 30, "#FFFFFF", "#E9DCCB");
+  drawCardImage(context, locationImage, 130, 815, 48, 48);
+  context.fillStyle = "#4A372E";
+  context.font = "800 34px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasText(context, `สาขา ${branchName}`, 195, 852, 650, 40, 1);
+  context.fillStyle = "#8A7668";
+  context.font = "700 25px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasText(context, "รบกวนเตรียมตัวน้องให้พร้อม แล้วพบกันพรุ่งนี้นะคะ/ครับ", 130, 905, 760, 32, 2);
+
+  context.fillStyle = "#6EA154";
+  context.font = "900 28px Kanit, 'Noto Sans Thai', sans-serif";
+  context.textAlign = "center";
+  context.fillText("Toko & Poppy", width / 2, 1012);
+  context.textAlign = "start";
+}
+
+function openClassReminder(enrollmentId) {
+  const enrollment = classReminderEnrollments.find((item) => item.id === enrollmentId);
+  if (!enrollment || !classReminderModal) return;
+  const dateInfo = getClassReminderDateInfo();
+  activeClassReminder = enrollment;
+  classReminderTitle.textContent = `แจ้งเตือน: ${getLearningStudentDisplayName(enrollment)}`;
+  classReminderSummaryText.textContent =
+    `${getCourseEnrollmentLabel(enrollment)} · ${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel} · ${getCourseScheduleLabel(enrollment)}`;
+  classReminderMessage.value = buildClassReminderMessage(enrollment, dateInfo);
+  classReminderModal.classList.add("open");
+  classReminderModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  renderClassReminderCard(enrollment, classReminderMessage.value);
+}
+
+function closeClassReminder() {
+  classReminderModal?.classList.remove("open");
+  classReminderModal?.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  activeClassReminder = null;
+}
+
+function downloadClassReminderCard() {
+  if (!classReminderCanvas || !activeClassReminder) return;
+  const dateInfo = getClassReminderDateInfo();
+  const link = document.createElement("a");
+  link.download = `toko-poppy-reminder-${getLearningStudentDisplayName(activeClassReminder)}-${dateInfo.dateInput}.png`;
+  link.href = classReminderCanvas.toDataURL("image/png");
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+async function markClassReminderSent(enrollmentId = activeClassReminder?.id) {
+  if (!enrollmentId) return;
+  const dateInfo = getClassReminderDateInfo();
+  const targetEnrollment = classReminderEnrollments.find((item) => item.id === enrollmentId);
+  const message = activeClassReminder?.id === enrollmentId && classReminderMessage?.value
+    ? classReminderMessage.value
+    : buildClassReminderMessage(targetEnrollment, dateInfo);
+  const { error } = await supabaseClient.rpc("mark_course_reminder_sent", {
+    p_course_enrollment_id: enrollmentId,
+    p_class_date: dateInfo.dateInput,
+    p_message: message
+  });
+  if (error) {
+    showToast(`บันทึกสถานะแจ้งเตือนไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+  classReminderSentKeys.add(getReminderKey(enrollmentId, dateInfo.dateInput));
+  renderClassReminders();
+  showToast("บันทึกว่าแจ้งเตือนผู้ปกครองเรียบร้อยแล้ว");
+  if (activeClassReminder?.id === enrollmentId) closeClassReminder();
 }
 
 function renderLearningTeacherSummary() {
@@ -5584,6 +5930,29 @@ teacherInviteRows?.addEventListener("click", (event) => {
 });
 refreshLearningButton?.addEventListener("click", loadLearningProgress);
 refreshStudentsButton?.addEventListener("click", loadStudentManagement);
+refreshClassRemindersButton?.addEventListener("click", loadClassReminders);
+classReminderRows?.addEventListener("click", (event) => {
+  const createButton = event.target.closest("[data-create-class-reminder]");
+  if (createButton) {
+    openClassReminder(createButton.dataset.createClassReminder);
+    return;
+  }
+
+  const markButton = event.target.closest("[data-mark-class-reminder]");
+  if (markButton) markClassReminderSent(markButton.dataset.markClassReminder);
+});
+classReminderMessage?.addEventListener("input", () => {
+  if (activeClassReminder) renderClassReminderCard(activeClassReminder, classReminderMessage.value);
+});
+copyClassReminderMessageButton?.addEventListener("click", () => {
+  copyTextToClipboard(classReminderMessage?.value || "", "คัดลอกข้อความแจ้งเตือนแล้ว");
+});
+downloadClassReminderCardButton?.addEventListener("click", downloadClassReminderCard);
+markClassReminderSentButton?.addEventListener("click", () => markClassReminderSent());
+document.querySelector("#closeClassReminder")?.addEventListener("click", closeClassReminder);
+classReminderModal?.addEventListener("click", (event) => {
+  if (event.target === classReminderModal) closeClassReminder();
+});
 studentSearchInput?.addEventListener("input", renderStudentManagement);
 studentCourseFilter?.addEventListener("change", renderStudentManagement);
 studentStatusFilter?.addEventListener("change", renderStudentManagement);
@@ -5783,6 +6152,10 @@ document.addEventListener("keydown", (event) => {
   }
   if (courseScheduleModal?.classList.contains("open")) {
     closeCourseSchedule();
+    return;
+  }
+  if (classReminderModal?.classList.contains("open")) {
+    closeClassReminder();
     return;
   }
   if (reviewModal.classList.contains("open")) {
