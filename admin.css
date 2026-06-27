@@ -454,6 +454,178 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .lesson-admin-hero h2 { margin: 5px 0 4px; font-size: 24px; }
 .lesson-admin-hero p { margin: 0; color: #7c846e; font-size: 10px; }
 .lesson-admin-hero a { margin-left: auto; border-radius: 11px; padding: 10px 13px; color: #55764e; background: rgba(255,255,255,.75); font-size: 9px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.students-hero { background: linear-gradient(120deg, #e7f0df, #fff7dd); }
+.student-management-panel { margin-top: 18px; }
+.student-management-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 22px 16px;
+}
+.student-management-summary article {
+  border: 1px solid #e8decf;
+  border-radius: 16px;
+  padding: 13px;
+  background: #fffdf8;
+}
+.student-management-summary strong {
+  display: block;
+  color: #55794b;
+  font: 900 21px Nunito, sans-serif;
+}
+.student-management-summary span {
+  display: block;
+  margin-top: 3px;
+  color: #8d7b70;
+  font-size: 8px;
+  font-weight: 800;
+}
+.student-management-list {
+  display: grid;
+  gap: 13px;
+  padding: 0 22px 22px;
+}
+.student-management-card {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.2fr) minmax(170px, .65fr) minmax(260px, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid #eadfce;
+  border-radius: 18px;
+  padding: 16px;
+  background: white;
+  box-shadow: 0 10px 24px rgba(80,61,48,.045);
+}
+.student-management-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+}
+.student-management-avatar {
+  display: grid;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 15px;
+  background: #edf5e8;
+  font-size: 23px;
+}
+.student-management-main div {
+  min-width: 0;
+}
+.student-management-main strong {
+  display: block;
+  overflow: hidden;
+  color: #4d3b31;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.student-management-main small {
+  display: block;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  color: #8e7e73;
+  font-size: 8px;
+  line-height: 1.45;
+}
+.student-management-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+.student-management-metrics span {
+  border-radius: 12px;
+  padding: 9px 7px;
+  color: #816f64;
+  background: #f8f3eb;
+  text-align: center;
+  font-size: 7px;
+  font-weight: 800;
+}
+.student-management-metrics strong {
+  display: block;
+  color: #4e7448;
+  font: 900 15px Nunito, sans-serif;
+}
+.student-management-courses {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.student-management-courses li {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  color: #5b493e;
+  font-size: 8px;
+  font-weight: 800;
+}
+.student-management-courses span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.student-management-courses strong {
+  color: #4e7448;
+  white-space: nowrap;
+}
+.student-management-courses em {
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: #816f64;
+  background: #f3eee7;
+  font-style: normal;
+  white-space: nowrap;
+}
+.student-management-courses em.completed {
+  color: #55794b;
+  background: #eaf3e4;
+}
+.student-management-courses em.not_started {
+  color: #9a6a28;
+  background: #fff1cf;
+}
+.student-management-courses i {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  height: 6px;
+  border-radius: 999px;
+  background: #e9e0d6;
+}
+.student-management-courses b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #6f9a5b;
+}
+.student-management-actions {
+  display: grid;
+  gap: 8px;
+  justify-items: stretch;
+}
+.student-management-actions button {
+  white-space: nowrap;
+}
+.delete-student-button {
+  border: 0;
+  border-radius: 13px;
+  padding: 12px 14px;
+  color: #a85d52;
+  background: #fae4df;
+  font-size: 9px;
+  font-weight: 900;
+}
+.delete-student-button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
 .lesson-admin-layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 18px; margin-top: 20px; }
 .lesson-list-panel, .lesson-editor { border: 1px solid var(--line); border-radius: 22px; background: white; box-shadow: 0 8px 25px rgba(79,61,50,.045); }
 .lesson-list-panel { min-width: 0; overflow: hidden; }
@@ -2217,6 +2389,18 @@ body { font-size: 16px; }
 }
 
 @media (max-width: 1180px) {
+  .student-management-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .student-management-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .student-management-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .learning-student-header {
     grid-template-columns: 1fr;
     align-items: start;
@@ -2236,6 +2420,28 @@ body { font-size: 16px; }
 }
 
 @media (max-width: 860px) {
+  .student-management-summary {
+    grid-template-columns: 1fr 1fr;
+    margin-inline: 14px;
+  }
+
+  .student-management-list {
+    padding-inline: 14px;
+  }
+
+  .student-management-metrics,
+  .student-management-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .student-management-courses li {
+    grid-template-columns: 1fr;
+  }
+
+  .student-management-courses span {
+    white-space: normal;
+  }
+
   .learning-course-item,
   .art-program-row {
     grid-template-columns: 1fr;

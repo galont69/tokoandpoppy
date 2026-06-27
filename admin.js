@@ -83,6 +83,16 @@ const learningTeacherSummary = document.querySelector("#learningTeacherSummary")
 const learningFollowupQueue = document.querySelector("#learningFollowupQueue");
 const learningScopeText = document.querySelector("#learningScopeText");
 const refreshLearningButton = document.querySelector("#refreshLearningButton");
+const studentBadge = document.querySelector("#studentBadge");
+const studentManagementRows = document.querySelector("#studentManagementRows");
+const studentManagementLoadingState = document.querySelector("#studentManagementLoadingState");
+const studentManagementEmptyState = document.querySelector("#studentManagementEmptyState");
+const studentManagementSummary = document.querySelector("#studentManagementSummary");
+const studentManagementScopeText = document.querySelector("#studentManagementScopeText");
+const studentSearchInput = document.querySelector("#studentSearchInput");
+const studentCourseFilter = document.querySelector("#studentCourseFilter");
+const studentStatusFilter = document.querySelector("#studentStatusFilter");
+const refreshStudentsButton = document.querySelector("#refreshStudentsButton");
 const recordSessionModal = document.querySelector("#recordSessionModal");
 const recordSessionForm = document.querySelector("#recordSessionForm");
 const recordSessionTitle = document.querySelector("#recordSessionTitle");
@@ -147,6 +157,7 @@ let artLevels = [];
 let artLessons = [];
 let activeArtLesson = null;
 let learningEnrollments = [];
+let studentManagementEnrollments = [];
 let activeLearningEnrollment = null;
 let lastSessionShareData = null;
 let pendingSessionShareData = null;
@@ -619,6 +630,7 @@ function applyAdminPermissions() {
     element.hidden = !canManageBranchStaff();
   });
   document.querySelector('[data-admin-view="applications"]').hidden = branchTeacher;
+  document.querySelector('[data-admin-view="students"]').hidden = branchTeacher;
   document.querySelector(".admin-profile strong").textContent = mainAdmin
     ? "ผู้ดูแลระบบ"
     : branchTeacher
@@ -692,13 +704,14 @@ function updateStats() {
   document.querySelector("#approvedCount").textContent = count("approved");
   document.querySelector("#rejectedCount").textContent = count("rejected");
   document.querySelector("#pendingBadge").textContent = pending;
+  if (studentBadge) studentBadge.textContent = count("approved");
 }
 
 function showAdminView(viewName) {
   const roleAllowedViews = isBranchTeacher()
     ? ["progress"]
     : isBranchAdmin()
-      ? ["applications", "progress", "branchStaff"]
+      ? ["applications", "students", "progress", "branchStaff"]
       : null;
   if (roleAllowedViews && !roleAllowedViews.includes(viewName)) {
     viewName = "applications";
@@ -713,6 +726,7 @@ function showAdminView(viewName) {
   });
   const viewCopy = {
     applications: ["ใบสมัครเรียน", "ศูนย์จัดการสมาชิก"],
+    students: ["นักเรียน", "STUDENT CENTER"],
     branchAdmins: ["ผู้ดูแลสาขา", "BRANCH ADMIN ACCESS"],
     branchStaff: ["ทีมสาขา/ครู", "BRANCH TEAM"],
     branches: ["สาขาเฟรนไชน์", "FRANCHISE CENTER"],
@@ -727,6 +741,7 @@ function showAdminView(viewName) {
   document.querySelector(".page-kicker").textContent = kicker;
   document.querySelector(".sidebar").classList.remove("open");
   if (viewName === "branchAdmins") loadBranchAdminApplications();
+  if (viewName === "students") loadStudentManagement();
   if (viewName === "branchStaff") loadBranchTeacherInvitations();
   if (viewName === "branches") loadBranchesAdmin();
   if (viewName === "progress") loadLearningProgress();
@@ -876,6 +891,249 @@ function getLearningStudentGroups(rows) {
 
   return [...groups.values()].sort((a, b) =>
     String(b.latestUpdatedAt).localeCompare(String(a.latestUpdatedAt)));
+}
+
+function getStudentApplication(enrollment) {
+  return enrollment?.enrollment_applications || enrollment?.application || {};
+}
+
+function getStudentManagementRows() {
+  const keyword = (studentSearchInput?.value || "").trim().toLowerCase();
+  const course = studentCourseFilter?.value || "all";
+  const status = studentStatusFilter?.value || "active";
+  return studentManagementEnrollments.filter((enrollment) => {
+    const app = getStudentApplication(enrollment);
+    const haystack = [
+      enrollment.student_name,
+      enrollment.student_nickname,
+      app.student_name,
+      app.student_nickname,
+      app.parent_name,
+      app.parent_phone,
+      app.parent_email,
+      app.line_display_name,
+      enrollment.course_type,
+      enrollment.level_label,
+      enrollment.program_label
+    ].filter(Boolean).join(" ").toLowerCase();
+    const matchesKeyword = !keyword || haystack.includes(keyword);
+    const matchesCourse = course === "all" ||
+      enrollment.course_type === course ||
+      (course === "art_family" && isArtCourseType(enrollment.course_type));
+    const state = getLearningEnrollmentState(enrollment);
+    const matchesStatus = status === "all" ||
+      state.key === status ||
+      (status === "active" && state.key !== "completed");
+    return matchesKeyword && matchesCourse && matchesStatus;
+  });
+}
+
+function getStudentManagementGroups(rows) {
+  const groups = new Map();
+  rows.forEach((enrollment) => {
+    const app = getStudentApplication(enrollment);
+    const key = enrollment.application_id || getLearningStudentKey(enrollment);
+    if (!groups.has(key)) {
+      groups.set(key, {
+        key,
+        applicationId: enrollment.application_id,
+        studentName: app.student_name || enrollment.student_name || "ไม่ระบุชื่อนักเรียน",
+        nickname: app.student_nickname || enrollment.student_nickname || "",
+        parentName: app.parent_name || "",
+        parentEmail: app.parent_email || "",
+        parentPhone: app.parent_phone || "",
+        lineDisplayName: app.line_display_name || "",
+        lineUserId: app.line_user_id || enrollment.line_user_id || "",
+        branchName: app.branches?.name || enrollment.branches?.name || "",
+        status: app.status || "approved",
+        createdAt: app.created_at || enrollment.created_at || "",
+        latestUpdatedAt: enrollment.updated_at || enrollment.created_at || "",
+        enrollments: []
+      });
+    }
+
+    const group = groups.get(key);
+    group.enrollments.push(enrollment);
+    const updatedAt = enrollment.updated_at || enrollment.created_at || "";
+    if (updatedAt > group.latestUpdatedAt) group.latestUpdatedAt = updatedAt;
+    if (!group.applicationId && enrollment.application_id) group.applicationId = enrollment.application_id;
+    if (!group.branchName && enrollment.branches?.name) group.branchName = enrollment.branches.name;
+  });
+
+  return [...groups.values()].sort((a, b) =>
+    String(b.latestUpdatedAt).localeCompare(String(a.latestUpdatedAt)));
+}
+
+function renderStudentManagementSummary(groups) {
+  if (!studentManagementSummary) return;
+  const totals = studentManagementEnrollments.reduce((summary, enrollment) => {
+    const state = getLearningEnrollmentState(enrollment);
+    if (state.key !== "completed") summary.active += 1;
+    if (state.key === "not_started") summary.notStarted += 1;
+    if (state.key === "completed") summary.completed += 1;
+    summary.remaining += Math.max(Number(enrollment.total_sessions || 0) - Number(enrollment.completed_sessions || 0), 0);
+    return summary;
+  }, {
+    active: 0,
+    notStarted: 0,
+    completed: 0,
+    remaining: 0
+  });
+  const allGroups = getStudentManagementGroups(studentManagementEnrollments);
+  studentManagementSummary.innerHTML = [
+    ["นักเรียนทั้งหมด", allGroups.length],
+    ["คอร์สกำลังเรียน", totals.active],
+    ["ยังไม่เริ่มเรียน", totals.notStarted],
+    ["จบคอร์สแล้ว", totals.completed],
+    ["ครั้งคงเหลือรวม", totals.remaining]
+  ].map(([label, count]) => `
+    <article>
+      <strong>${count}</strong>
+      <span>${escapeHtml(label)}</span>
+    </article>
+  `).join("");
+  if (studentBadge) studentBadge.textContent = allGroups.length;
+}
+
+function renderStudentManagement() {
+  if (!studentManagementRows) return;
+  const rows = getStudentManagementRows();
+  const groups = getStudentManagementGroups(rows);
+  renderStudentManagementSummary(groups);
+  studentManagementEmptyState.hidden = groups.length > 0;
+
+  studentManagementRows.innerHTML = groups.map((group) => {
+    const completedTotal = group.enrollments.reduce((sum, enrollment) =>
+      sum + Number(enrollment.completed_sessions || 0), 0);
+    const sessionTotal = group.enrollments.reduce((sum, enrollment) =>
+      sum + Number(enrollment.total_sessions || 0), 0);
+    const remainingTotal = Math.max(sessionTotal - completedTotal, 0);
+    const courses = group.enrollments.map((enrollment) => {
+      const completed = Number(enrollment.completed_sessions || 0);
+      const total = Number(enrollment.total_sessions || 0);
+      const percent = total ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+      const state = getLearningEnrollmentState(enrollment);
+      return `
+        <li>
+          <span>${getCourseIcon(enrollment.course_type)} ${escapeHtml(getCourseEnrollmentLabel(enrollment))}</span>
+          <strong>${completed}/${total} ครั้ง</strong>
+          <em class="${escapeHtml(state.key)}">${escapeHtml(state.label)}</em>
+          <i><b style="width: ${percent}%"></b></i>
+        </li>
+      `;
+    }).join("");
+    const contact = [
+      group.parentPhone,
+      group.parentEmail,
+      group.lineDisplayName ? `LINE: ${group.lineDisplayName}` : ""
+    ].filter(Boolean).join(" · ") || "ยังไม่มีข้อมูลติดต่อ";
+    const canDelete = Boolean(group.applicationId) && !isBranchTeacher();
+    return `
+      <article class="student-management-card">
+        <div class="student-management-main">
+          <span class="student-management-avatar">🧒</span>
+          <div>
+            <strong>${escapeHtml(group.studentName)}</strong>
+            <small>${escapeHtml([
+              group.nickname ? `ชื่อเล่น ${group.nickname}` : "",
+              group.parentName ? `ผู้ปกครอง ${group.parentName}` : "",
+              group.branchName ? `สาขา ${group.branchName}` : ""
+            ].filter(Boolean).join(" · ") || "ข้อมูลจากใบสมัครที่อนุมัติแล้ว")}</small>
+            <small>${escapeHtml(contact)}</small>
+          </div>
+        </div>
+        <div class="student-management-metrics">
+          <span><strong>${group.enrollments.length}</strong> คอร์ส</span>
+          <span><strong>${completedTotal}/${sessionTotal}</strong> ครั้ง</span>
+          <span><strong>${remainingTotal}</strong> คงเหลือ</span>
+        </div>
+        <ul class="student-management-courses">${courses}</ul>
+        <div class="student-management-actions">
+          ${group.enrollments[0] ? `
+            <button class="review-button" type="button" data-student-record-enrollment="${group.enrollments[0].id}">
+              เปิดสมุดพัฒนาการ
+            </button>
+          ` : ""}
+          ${canDelete ? `
+            <button class="delete-student-button" type="button" data-delete-student-application="${group.applicationId}" data-student-name="${escapeHtml(group.studentName)}">
+              ลบนักเรียน
+            </button>
+          ` : ""}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function loadStudentManagement() {
+  if (!studentManagementRows) return;
+  studentManagementLoadingState.hidden = false;
+  studentManagementEmptyState.hidden = true;
+  studentManagementRows.innerHTML = "";
+  if (studentManagementScopeText) {
+    studentManagementScopeText.textContent = isBranchAdmin()
+      ? `นักเรียนที่อนุมัติแล้วใน${getCurrentBranchName()}`
+      : "นักเรียนที่อนุมัติแล้วจากทุกสาขา";
+  }
+
+  let query = supabaseClient
+    .from("course_enrollments")
+    .select("*, enrollment_applications(id,status,student_name,student_nickname,parent_name,parent_phone,parent_email,line_display_name,line_user_id,created_at,branches(name,code)), branches(name,code)")
+    .order("updated_at", { ascending: false });
+
+  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+    query = query.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const { data, error } = await query;
+  studentManagementLoadingState.hidden = true;
+  if (error) {
+    showToast(`โหลดรายชื่อนักเรียนไม่สำเร็จ: ${error.message}`, true);
+    studentManagementRows.innerHTML = "";
+    studentManagementEmptyState.hidden = false;
+    return;
+  }
+
+  studentManagementEnrollments = (data || []).filter((enrollment) => {
+    const app = getStudentApplication(enrollment);
+    return !app.status || app.status === "approved";
+  });
+  renderStudentManagement();
+}
+
+async function deleteStudentRecord(applicationId, studentName) {
+  if (!applicationId || isBranchTeacher()) return;
+  const confirmed = window.confirm(
+    `ต้องการลบนักเรียน "${studentName || "รายการนี้"}" ใช่ไหม?\n\nระบบจะลบใบสมัครที่อนุมัติแล้ว คอร์สที่เปิดสิทธิ์ และประวัติครั้งเรียนของนักเรียนคนนี้ เพื่อให้สมัครใหม่ได้`
+  );
+  if (!confirmed) return;
+
+  const button = studentManagementRows?.querySelector(`[data-delete-student-application="${CSS.escape(applicationId)}"]`);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "กำลังลบ...";
+  }
+
+  const { error } = await supabaseClient.rpc("delete_student_record", {
+    p_application_id: applicationId
+  });
+
+  if (error) {
+    showToast(`ลบนักเรียนไม่สำเร็จ: ${error.message}`, true);
+    if (button) {
+      button.disabled = false;
+      button.textContent = "ลบนักเรียน";
+    }
+    return;
+  }
+
+  showToast("ลบนักเรียนและข้อมูลคอร์สเรียบร้อยแล้ว");
+  await Promise.all([
+    loadStudentManagement(),
+    isBranchTeacher() ? Promise.resolve() : loadApplications()
+  ]);
+  learningEnrollments = learningEnrollments.filter((enrollment) => enrollment.application_id !== applicationId);
+  renderLearningProgress();
 }
 
 function renderLearningTeacherSummary() {
@@ -5123,6 +5381,26 @@ teacherInviteRows?.addEventListener("click", (event) => {
   if (invitation) copyTextToClipboard(getTeacherInviteLink(invitation), "คัดลอกลิงก์เชิญครูแล้ว");
 });
 refreshLearningButton?.addEventListener("click", loadLearningProgress);
+refreshStudentsButton?.addEventListener("click", loadStudentManagement);
+studentSearchInput?.addEventListener("input", renderStudentManagement);
+studentCourseFilter?.addEventListener("change", renderStudentManagement);
+studentStatusFilter?.addEventListener("change", renderStudentManagement);
+studentManagementRows?.addEventListener("click", async (event) => {
+  const recordButton = event.target.closest("[data-student-record-enrollment]");
+  if (recordButton) {
+    showAdminView("progress");
+    if (!learningEnrollments.some((enrollment) => enrollment.id === recordButton.dataset.studentRecordEnrollment)) {
+      await loadLearningProgress();
+    }
+    openRecordSession(recordButton.dataset.studentRecordEnrollment);
+    return;
+  }
+
+  const deleteButton = event.target.closest("[data-delete-student-application]");
+  if (deleteButton) {
+    deleteStudentRecord(deleteButton.dataset.deleteStudentApplication, deleteButton.dataset.studentName);
+  }
+});
 learningSearchInput?.addEventListener("input", renderLearningProgress);
 learningCourseFilter?.addEventListener("change", renderLearningProgress);
 learningStatusFilter?.addEventListener("change", renderLearningProgress);

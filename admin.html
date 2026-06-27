@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260627-preview-before-save">
+  <link rel="stylesheet" href="admin.css?v=20260627-student-management">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -75,6 +75,10 @@
         <button class="nav-item active" type="button" data-admin-view="applications">
           <span>📋</span> ใบสมัครเรียน
           <i id="pendingBadge">0</i>
+        </button>
+        <button class="nav-item" type="button" data-admin-view="students">
+          <span>🧒</span> นักเรียน
+          <i id="studentBadge">0</i>
         </button>
         <button class="nav-item" type="button" data-admin-view="branchAdmins" data-main-admin-only>
           <span>🧑‍🏫</span> ผู้ดูแลสาขา
@@ -212,6 +216,61 @@
           </div>
           <div class="loading-state" id="loadingState">
             <i></i><span>กำลังโหลดใบสมัคร...</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="content admin-view" id="studentsView" hidden>
+        <div class="lesson-admin-hero students-hero">
+          <div>
+            <span>STUDENT CENTER</span>
+            <h2>จัดการนักเรียน</h2>
+            <p>นักเรียนที่อนุมัติแล้วจะมาอยู่ที่นี่ ใช้สำหรับตรวจคอร์ส ดูข้อมูลผู้ปกครอง หรือลบข้อมูลเมื่อต้องสมัครใหม่</p>
+          </div>
+          <button class="refresh-button" id="refreshStudentsButton" type="button">↻ รีเฟรช</button>
+        </div>
+
+        <section class="applications-panel student-management-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>รายชื่อนักเรียนที่อนุมัติแล้ว</h2>
+              <p id="studentManagementScopeText">รวมจากคอร์สที่เปิดสิทธิ์หลังอนุมัติใบสมัคร</p>
+            </div>
+          </div>
+
+          <div class="student-management-summary" id="studentManagementSummary"></div>
+
+          <div class="toolbar learning-toolbar">
+            <label class="search-box">
+              <span>⌕</span>
+              <input id="studentSearchInput" type="search" placeholder="ค้นหาชื่อนักเรียน ชื่อเล่น ผู้ปกครอง เบอร์ หรืออีเมล">
+            </label>
+            <select id="studentCourseFilter" class="soft-select">
+              <option value="all">ทุกคอร์ส</option>
+              <option value="robot">โรบอท</option>
+              <option value="art_family">ศิลปะทั้งหมด</option>
+              <option value="creative_art">Creative Art</option>
+              <option value="water_color">Water Color</option>
+              <option value="clay">ปั้นดินเบา (CLAY)</option>
+              <option value="art">ศิลปะเดิม</option>
+            </select>
+            <select id="studentStatusFilter" class="soft-select">
+              <option value="active">กำลังเรียน</option>
+              <option value="not_started">ยังไม่เริ่มเรียน</option>
+              <option value="completed">จบคอร์สแล้ว</option>
+              <option value="all">ทั้งหมด</option>
+            </select>
+          </div>
+
+          <div class="student-management-list" id="studentManagementRows"></div>
+
+          <div class="empty-state" id="studentManagementEmptyState" hidden>
+            <div>🧒</div>
+            <h3>ยังไม่มีนักเรียนในมุมมองนี้</h3>
+            <p>เมื่อใบสมัครได้รับอนุมัติและเปิดสิทธิ์คอร์สแล้ว รายชื่อนักเรียนจะปรากฏที่นี่</p>
+          </div>
+          <div class="loading-state" id="studentManagementLoadingState" hidden>
+            <i></i><span>กำลังโหลดรายชื่อนักเรียน...</span>
           </div>
         </section>
       </section>
@@ -1025,6 +1084,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260627-preview-before-save"></script>
+  <script src="admin.js?v=20260627-student-management"></script>
 </body>
 </html>
