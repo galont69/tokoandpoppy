@@ -1394,13 +1394,16 @@ function getClassReminderContact(enrollment = {}) {
 }
 
 function buildClassReminderMessage(enrollment, dateInfo = getClassReminderDateInfo()) {
-  const contact = getClassReminderContact(enrollment);
   const studentName = getLearningStudentDisplayName(enrollment);
   const courseName = getCourseEnrollmentLabel(enrollment);
   const branchName = enrollment.branch_name ||
     enrollment.branches?.name ||
     getStudentApplication(enrollment).branches?.name ||
     getCurrentBranchName();
+  const completed = Number(enrollment.completed_sessions || 0);
+  const total = Number(enrollment.total_sessions || 0);
+  const nextSession = total ? Math.min(completed + 1, total) : completed + 1;
+  const sessionText = total ? `ครั้งที่ ${nextSession}/${total}` : `ครั้งที่ ${nextSession}`;
   const timeLabel = [
     normalizeTimeLabel(enrollment.class_start_time),
     normalizeTimeLabel(enrollment.class_end_time)
@@ -1408,10 +1411,10 @@ function buildClassReminderMessage(enrollment, dateInfo = getClassReminderDateIn
   return [
     `แจ้งเตือนคอร์สเรียนของน้อง${studentName.replace(/^น้อง/, "")}`,
     "",
-    `พรุ่งนี้ (${dateInfo.dateLabel}) น้องมีเรียน ${courseName}`,
+    `พรุ่งนี้ (${dateInfo.dateLabel}) น้องมีเรียน ${courseName} ${sessionText}`,
     `เวลา ${timeLabel || "ตามเวลาที่แจ้งไว้"}${branchName ? ` ที่สาขา ${branchName}` : ""}`,
     "",
-    "รบกวนเตรียมตัวน้องให้พร้อม และหากต้องการเลื่อนเวลาเรียนสามารถแจ้งสาขาล่วงหน้าได้เลยนะคะ/ครับ",
+    "หากไม่สะดวกหรือต้องการเปลี่ยนวันและเวลา แจ้งได้เลยนะคะ",
     "",
     "Toko & Poppy"
   ].join("\n");
@@ -1577,6 +1580,10 @@ async function renderClassReminderCard(enrollment, message) {
     enrollment.branches?.name ||
     getStudentApplication(enrollment).branches?.name ||
     getCurrentBranchName();
+  const completed = Number(enrollment.completed_sessions || 0);
+  const total = Number(enrollment.total_sessions || 0);
+  const nextSession = total ? Math.min(completed + 1, total) : completed + 1;
+  const sessionText = total ? `ครั้งที่ ${nextSession}/${total}` : `ครั้งที่ ${nextSession}`;
   const timeLabel = [
     normalizeTimeLabel(enrollment.class_start_time),
     normalizeTimeLabel(enrollment.class_end_time)
@@ -1585,42 +1592,48 @@ async function renderClassReminderCard(enrollment, message) {
   context.clearRect(0, 0, width, height);
   context.fillStyle = "#FAF6EF";
   context.fillRect(0, 0, width, height);
-  drawCardImage(context, logoImage, 70, 64, 300, 86);
-  drawCardImage(context, sparkleImage, 880, 88, 82, 82, 0.72);
+  drawCardImage(context, logoImage, 80, 70, 256, 74);
+  drawCardImage(context, sparkleImage, 888, 102, 62, 62, 0.68);
 
-  drawCardShadow(context, 70, 190, 940, 250, 34, "#FFFFFF", "#E9DCCB");
+  drawCardShadow(context, 70, 182, 940, 245, 34, "#FFFFFF", "#E9DCCB");
   context.fillStyle = "#F05B3E";
-  context.font = "900 42px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText("พรุ่งนี้มีเรียน", 130, 270);
+  context.font = "900 38px Kanit, 'Noto Sans Thai', sans-serif";
+  context.fillText("พรุ่งนี้มีเรียน", 130, 258);
   context.fillStyle = "#4A372E";
-  context.font = "900 62px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, `น้อง${studentName.replace(/^น้อง/, "")}`, 130, 346, 560, 68, 1);
-  drawCardImage(context, courseImage, 770, 242, 120, 120);
-
-  drawCardShadow(context, 70, 470, 940, 260, 32, "#F2F8EC", "#9BBE86");
+  context.font = "900 56px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasText(context, `น้อง${studentName.replace(/^น้อง/, "")}`, 130, 328, 560, 62, 1);
+  drawCardImage(context, courseImage, 782, 250, 86, 86);
   context.fillStyle = "#4F7D48";
-  context.font = "900 36px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText(getCourseEnrollmentLabel(enrollment), 130, 548);
-  context.fillStyle = "#4A372E";
-  context.font = "800 48px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText(`${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel}`, 130, 622);
-  context.fillStyle = "#F05B3E";
-  context.font = "900 54px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText(timeLabel || "ตามเวลาที่แจ้งไว้", 130, 690);
+  context.font = "900 28px Kanit, 'Noto Sans Thai', sans-serif";
+  context.fillText(sessionText, 130, 386);
 
-  drawCardShadow(context, 70, 760, 940, 190, 30, "#FFFFFF", "#E9DCCB");
-  drawCardImage(context, locationImage, 130, 815, 48, 48);
+  drawCardShadow(context, 70, 462, 940, 278, 32, "#F2F8EC", "#9BBE86");
+  context.fillStyle = "#4F7D48";
+  context.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasText(context, getCourseEnrollmentLabel(enrollment), 130, 538, 760, 40, 1);
   context.fillStyle = "#4A372E";
-  context.font = "800 34px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, `สาขา ${branchName}`, 195, 852, 650, 40, 1);
+  context.font = "800 44px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasText(context, `${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel}`, 130, 612, 760, 50, 1);
+  context.fillStyle = "#F05B3E";
+  context.font = "900 50px Kanit, 'Noto Sans Thai', sans-serif";
+  context.fillText(timeLabel || "ตามเวลาที่แจ้งไว้", 130, 678);
+  context.fillStyle = "#4F7D48";
+  context.font = "900 26px Kanit, 'Noto Sans Thai', sans-serif";
+  context.fillText(sessionText, 130, 716);
+
+  drawCardShadow(context, 70, 770, 940, 184, 30, "#FFFFFF", "#E9DCCB");
+  drawCardImage(context, locationImage, 132, 816, 34, 34);
+  context.fillStyle = "#4A372E";
+  context.font = "800 31px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasText(context, `สาขา ${branchName}`, 186, 846, 650, 36, 1);
   context.fillStyle = "#8A7668";
-  context.font = "700 25px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, "รบกวนเตรียมตัวน้องให้พร้อม แล้วพบกันพรุ่งนี้นะคะ/ครับ", 130, 905, 760, 32, 2);
+  context.font = "700 24px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasText(context, "หากไม่สะดวกหรือต้องการเปลี่ยนวันและเวลา แจ้งได้เลยนะคะ", 130, 902, 790, 32, 2);
 
   context.fillStyle = "#6EA154";
-  context.font = "900 28px Kanit, 'Noto Sans Thai', sans-serif";
+  context.font = "900 26px Kanit, 'Noto Sans Thai', sans-serif";
   context.textAlign = "center";
-  context.fillText("Toko & Poppy", width / 2, 1012);
+  context.fillText("Toko & Poppy", width / 2, 1010);
   context.textAlign = "start";
 }
 
