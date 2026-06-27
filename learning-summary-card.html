@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Summary Card Preview | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="learning-summary-card.css">
+</head>
+<body>
+  <main class="summary-preview-page">
+    <section class="preview-tools" aria-label="ปรับข้อมูลตัวอย่าง">
+      <div>
+        <span>LearningSummaryCard</span>
+        <h1>Preview การ์ดสรุปหลังเรียน</h1>
+        <p>แก้ข้อมูลตัวอย่างแล้วกด Export PNG เพื่อดาวน์โหลดภาพขนาด 1080 x 1350 px</p>
+      </div>
+      <form id="summaryCardForm">
+        <label>ชื่อนักเรียน
+          <input name="studentName" maxlength="12" value="โลมา">
+        </label>
+        <label>สาขา
+          <input name="branchName" value="ชลบุรี">
+        </label>
+        <label>คอร์ส
+          <select name="courseType">
+            <option value="clay">ปั้นดินเบา (CLAY)</option>
+            <option value="creative_art">Creative Art</option>
+            <option value="water_color">Water Color</option>
+            <option value="robot">Robot + Coding</option>
+          </select>
+        </label>
+        <label>บทที่
+          <input name="lessonNumber" type="number" min="1" value="2">
+        </label>
+        <label>หัวข้อบทเรียน
+          <input name="lessonTitle" maxlength="28" value="ปั้นผลไม้">
+        </label>
+        <label>วันที่เรียน
+          <input name="classDate" type="date" value="2026-06-27">
+        </label>
+        <label>ครั้งที่เรียน
+          <input name="sessionNumber" type="number" min="1" value="2">
+        </label>
+        <label>จำนวนครั้งทั้งหมด
+          <input name="totalSessions" type="number" min="1" value="4">
+        </label>
+        <label class="full">ข้อความจากคุณครู
+          <textarea name="teacherNote" maxlength="140" rows="4">วันนี้น้องโลมาคึกคักร่าเริงขึ้น ยังอยากชวนเพื่อนฝึกสมาธิและทำตามขั้นตอนต่อเนื่องอีกนิดค่ะ คุณครูชอบมากเลยค่ะ</textarea>
+        </label>
+        <label class="full">รูปผลงาน
+          <input name="photo" type="file" accept="image/png,image/jpeg,image/webp">
+        </label>
+      </form>
+      <button id="exportSummaryCard" type="button">Export PNG 1080 x 1350</button>
+    </section>
+
+    <section class="card-stage" aria-label="ตัวอย่างการ์ด">
+      <article class="learning-summary-card" id="learningSummaryCard">
+        <img class="card-deco plus plus-one" src="assets/card/doodle_sparkle_yellow.png" alt="">
+        <img class="card-deco plus plus-two" src="assets/card/doodle_sparkle_yellow.png" alt="">
+        <header class="summary-card-header">
+          <img class="summary-logo" src="assets/card/01_logo_short.png" alt="Toko & Poppy">
+          <span class="header-divider"></span>
+          <div class="branch-pill">
+            <img src="assets/card/icon_location.png" alt="">
+            <strong>สาขา <span data-field="branchName">ชลบุรี</span></strong>
+          </div>
+        </header>
+
+        <section class="summary-title">
+          <img src="assets/card/deco_sun_rays_yellow.png" alt="">
+          <h2>วันนี้ <span>น้อง<span data-field="studentName">โลมา</span></span> เรียนอะไรบ้าง?</h2>
+        </section>
+
+        <section class="main-photo-card">
+          <div class="photo-label"><span>★</span> ผลงานวันนี้</div>
+          <img class="main-photo" data-field="photo" src="images/hero-learning.jpg" alt="ผลงานวันนี้">
+        </section>
+
+        <section class="info-row">
+          <div class="info-cell course-cell">
+            <img data-field="courseIcon" src="assets/card/icon_clay.png" alt="">
+            <strong data-field="courseName">ปั้นดินเบา (CLAY)</strong>
+          </div>
+          <div class="info-cell">
+            <img src="assets/card/icon_book.png" alt="">
+            <div><strong>บทที่ <span data-field="lessonNumber">2</span></strong><span data-field="lessonTitle">ปั้นผลไม้</span></div>
+          </div>
+          <div class="info-cell">
+            <img src="assets/card/icon_calendar.png" alt="">
+            <strong data-field="classDate">27 มิ.ย. 2569</strong>
+          </div>
+          <div class="info-cell session-cell">
+            <span>ครั้งที่</span>
+            <strong><span data-field="sessionNumber">2</span>/<span data-field="totalSessions">4</span></strong>
+          </div>
+        </section>
+
+        <section class="teacher-note-box">
+          <img class="note-icon" src="assets/card/icon_teacher_note_heart.png" alt="">
+          <div>
+            <h3>ข้อความจากคุณครู</h3>
+            <p data-field="teacherNote">วันนี้น้องโลมาคึกคักร่าเริงขึ้น ยังอยากชวนเพื่อนฝึกสมาธิและทำตามขั้นตอนต่อเนื่องอีกนิดค่ะ คุณครูชอบมากเลยค่ะ</p>
+          </div>
+          <img class="note-heart" src="assets/card/icon_heart.png" alt="">
+        </section>
+
+        <section class="progress-box">
+          <img src="assets/card/icon_trophy.png" alt="">
+          <div class="progress-copy">
+            <strong>เรียนแล้ว <span data-field="sessionNumber">2</span> ครั้ง</strong>
+            <span>เก่งขึ้นทุกครั้งเลยนะ!</span>
+          </div>
+          <div class="progress-dots" data-field="progressDots" aria-label="ความคืบหน้า"></div>
+          <strong class="remaining-copy">คงเหลือ <span data-field="remainingSessions">2</span> ครั้ง</strong>
+          <img class="progress-sparkle" src="assets/card/doodle_sparkle_yellow.png" alt="">
+        </section>
+      </article>
+    </section>
+  </main>
+  <script src="learning-summary-card.js"></script>
+</body>
+</html>
