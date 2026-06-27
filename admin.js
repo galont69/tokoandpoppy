@@ -93,6 +93,17 @@ const studentSearchInput = document.querySelector("#studentSearchInput");
 const studentCourseFilter = document.querySelector("#studentCourseFilter");
 const studentStatusFilter = document.querySelector("#studentStatusFilter");
 const refreshStudentsButton = document.querySelector("#refreshStudentsButton");
+const courseScheduleModal = document.querySelector("#courseScheduleModal");
+const courseScheduleForm = document.querySelector("#courseScheduleForm");
+const courseScheduleTitle = document.querySelector("#courseScheduleTitle");
+const courseScheduleSummary = document.querySelector("#courseScheduleSummary");
+const courseScheduleWeekday = document.querySelector("#courseScheduleWeekday");
+const courseScheduleStartTime = document.querySelector("#courseScheduleStartTime");
+const courseScheduleEndTime = document.querySelector("#courseScheduleEndTime");
+const courseScheduleReminderEnabled = document.querySelector("#courseScheduleReminderEnabled");
+const courseScheduleNote = document.querySelector("#courseScheduleNote");
+const saveCourseScheduleButton = document.querySelector("#saveCourseScheduleButton");
+const clearCourseScheduleButton = document.querySelector("#clearCourseScheduleButton");
 const recordSessionModal = document.querySelector("#recordSessionModal");
 const recordSessionForm = document.querySelector("#recordSessionForm");
 const recordSessionTitle = document.querySelector("#recordSessionTitle");
@@ -159,6 +170,7 @@ let activeArtLesson = null;
 let learningEnrollments = [];
 let studentManagementEnrollments = [];
 let activeLearningEnrollment = null;
+let activeScheduleEnrollment = null;
 let lastSessionShareData = null;
 let pendingSessionShareData = null;
 let pendingSessionObjectUrl = "";
@@ -251,6 +263,16 @@ const partnerLeadInstituteLabels = {
   yes: "มีโรงเรียน/สถาบันอยู่แล้ว",
   planning: "กำลังวางแผนเปิด",
   no: "ยังไม่มี แต่อยากศึกษาโอกาส"
+};
+
+const weekdayLabels = {
+  0: "วันอาทิตย์",
+  1: "วันจันทร์",
+  2: "วันอังคาร",
+  3: "วันพุธ",
+  4: "วันพฤหัสบดี",
+  5: "วันศุกร์",
+  6: "วันเสาร์"
 };
 
 const freeResourceCategoryLabels = {
@@ -776,6 +798,31 @@ function getCourseIcon(courseType) {
   return "🎨";
 }
 
+function normalizeTimeLabel(value) {
+  if (!value) return "";
+  return String(value).slice(0, 5);
+}
+
+function getCourseScheduleLabel(enrollment = {}) {
+  const weekday = enrollment.class_weekday;
+  const hasWeekday = weekday !== null && weekday !== undefined && weekday !== "";
+  const dayLabel = hasWeekday ? weekdayLabels[Number(weekday)] : "";
+  const startTime = normalizeTimeLabel(enrollment.class_start_time);
+  const endTime = normalizeTimeLabel(enrollment.class_end_time);
+  if (!dayLabel && !startTime) return "ยังไม่ได้ตั้งตารางเรียน";
+  const timeLabel = [startTime, endTime].filter(Boolean).join("-");
+  return [dayLabel, timeLabel].filter(Boolean).join(" · ");
+}
+
+function getCourseScheduleClass(enrollment = {}) {
+  const hasSchedule = enrollment.class_weekday !== null &&
+    enrollment.class_weekday !== undefined &&
+    enrollment.class_weekday !== "" &&
+    Boolean(enrollment.class_start_time);
+  if (!hasSchedule) return "is-empty";
+  return enrollment.class_reminder_enabled === false ? "is-muted" : "is-ready";
+}
+
 function getLearningEnrollmentState(enrollment) {
   const completed = Number(enrollment.completed_sessions || 0);
   const total = Number(enrollment.total_sessions || 0);
@@ -1013,11 +1060,16 @@ function renderStudentManagement() {
       const total = Number(enrollment.total_sessions || 0);
       const percent = total ? Math.min(100, Math.round((completed / total) * 100)) : 0;
       const state = getLearningEnrollmentState(enrollment);
+      const scheduleLabel = getCourseScheduleLabel(enrollment);
+      const scheduleClass = getCourseScheduleClass(enrollment);
       return `
         <li>
           <span>${getCourseIcon(enrollment.course_type)} ${escapeHtml(getCourseEnrollmentLabel(enrollment))}</span>
           <strong>${completed}/${total} ครั้ง</strong>
           <em class="${escapeHtml(state.key)}">${escapeHtml(state.label)}</em>
+          <button class="course-schedule-chip ${scheduleClass}" type="button" data-edit-course-schedule="${enrollment.id}">
+            ${escapeHtml(scheduleLabel)}
+          </button>
           <i><b style="width: ${percent}%"></b></i>
         </li>
       `;
@@ -1134,6 +1186,151 @@ async function deleteStudentRecord(applicationId, studentName) {
   ]);
   learningEnrollments = learningEnrollments.filter((enrollment) => enrollment.application_id !== applicationId);
   renderLearningProgress();
+}
+
+function findCourseEnrollment(enrollmentId) {
+  return learningEnrollments.find((enrollment) => enrollment.id === enrollmentId) ||
+    studentManagementEnrollments.find((enrollment) => enrollment.id === enrollmentId) ||
+    null;
+}
+
+function updateCourseEnrollmentInMemory(updatedEnrollment) {
+  if (!updatedEnrollment?.id) return;
+  const applyUpdate = (list) => {
+    const index = list.findIndex((enrollment) => enrollment.id === updatedEnrollment.id);
+    if (index >= 0) {
+      list[index] = {
+        ...list[index],
+        ...updatedEnrollment,
+        enrollment_applications: list[index].enrollment_applications,
+        branches: list[index].branches
+      };
+    }
+  };
+  applyUpdate(learningEnrollments);
+  applyUpdate(studentManagementEnrollments);
+}
+
+function openCourseSchedule(enrollmentId) {
+  const enrollment = findCourseEnrollment(enrollmentId);
+  if (!enrollment || !courseScheduleModal) return;
+  activeScheduleEnrollment = enrollment;
+  courseScheduleTitle.textContent =
+    `ตารางเรียน: ${getLearningStudentDisplayName(enrollment)}`;
+  const branchLabel = enrollment.branch_name ||
+    enrollment.branches?.name ||
+    getStudentApplication(enrollment).branches?.name ||
+    getCurrentBranchName();
+  courseScheduleSummary.textContent =
+    `${getCourseEnrollmentLabel(enrollment)} · ${branchLabel} · ใช้สำหรับเตรียมแจ้งเตือนผู้ปกครองก่อนวันเรียน`;
+  courseScheduleWeekday.value = enrollment.class_weekday === null ||
+    enrollment.class_weekday === undefined
+      ? ""
+      : String(enrollment.class_weekday);
+  courseScheduleStartTime.value = normalizeTimeLabel(enrollment.class_start_time);
+  courseScheduleEndTime.value = normalizeTimeLabel(enrollment.class_end_time);
+  courseScheduleReminderEnabled.checked = enrollment.class_reminder_enabled !== false;
+  courseScheduleNote.value = enrollment.class_schedule_note || "";
+  courseScheduleModal.classList.add("open");
+  courseScheduleModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+
+function closeCourseSchedule() {
+  courseScheduleModal?.classList.remove("open");
+  courseScheduleModal?.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+  activeScheduleEnrollment = null;
+}
+
+function getCourseSchedulePayload({ clear = false } = {}) {
+  if (clear) {
+    return {
+      p_course_enrollment_id: activeScheduleEnrollment?.id,
+      p_class_weekday: null,
+      p_class_start_time: null,
+      p_class_end_time: null,
+      p_class_schedule_note: null,
+      p_class_reminder_enabled: false
+    };
+  }
+
+  const weekday = courseScheduleWeekday.value;
+  const startTime = courseScheduleStartTime.value;
+  const endTime = courseScheduleEndTime.value;
+  if (weekday === "") {
+    courseScheduleWeekday.focus();
+    throw new Error("กรุณาเลือกวันเรียน");
+  }
+  if (!startTime) {
+    courseScheduleStartTime.focus();
+    throw new Error("กรุณาระบุเวลาเริ่มเรียน");
+  }
+  if (endTime && endTime <= startTime) {
+    courseScheduleEndTime.focus();
+    throw new Error("เวลาเลิกเรียนต้องมากกว่าเวลาเริ่มเรียน");
+  }
+
+  return {
+    p_course_enrollment_id: activeScheduleEnrollment?.id,
+    p_class_weekday: Number(weekday),
+    p_class_start_time: startTime,
+    p_class_end_time: endTime || null,
+    p_class_schedule_note: courseScheduleNote.value.trim() || null,
+    p_class_reminder_enabled: Boolean(courseScheduleReminderEnabled.checked)
+  };
+}
+
+async function saveCourseSchedule(event) {
+  event.preventDefault();
+  if (!activeScheduleEnrollment) return;
+  let payload;
+  try {
+    payload = getCourseSchedulePayload();
+  } catch (error) {
+    showToast(error.message, true);
+    return;
+  }
+
+  saveCourseScheduleButton.disabled = true;
+  saveCourseScheduleButton.textContent = "กำลังบันทึก...";
+  const { data, error } = await supabaseClient.rpc("update_course_schedule", payload);
+  saveCourseScheduleButton.disabled = false;
+  saveCourseScheduleButton.textContent = "บันทึกตารางเรียน";
+
+  if (error) {
+    showToast(`บันทึกตารางเรียนไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  updateCourseEnrollmentInMemory(data);
+  renderStudentManagement();
+  renderLearningProgress();
+  showToast("บันทึกตารางเรียนเรียบร้อยแล้ว");
+  closeCourseSchedule();
+}
+
+async function clearCourseSchedule() {
+  if (!activeScheduleEnrollment) return;
+  const confirmed = window.confirm("ล้างตารางเรียนของคอร์สนี้ใช่ไหม?");
+  if (!confirmed) return;
+
+  clearCourseScheduleButton.disabled = true;
+  clearCourseScheduleButton.textContent = "กำลังล้าง...";
+  const { data, error } = await supabaseClient.rpc("update_course_schedule", getCourseSchedulePayload({ clear: true }));
+  clearCourseScheduleButton.disabled = false;
+  clearCourseScheduleButton.textContent = "ล้างตารางเรียน";
+
+  if (error) {
+    showToast(`ล้างตารางเรียนไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  updateCourseEnrollmentInMemory(data);
+  renderStudentManagement();
+  renderLearningProgress();
+  showToast("ล้างตารางเรียนเรียบร้อยแล้ว");
+  closeCourseSchedule();
 }
 
 function renderLearningTeacherSummary() {
@@ -1557,6 +1754,8 @@ function renderLearningProgress() {
       const packageAlert = learningState.urgency === "critical" || learningState.urgency === "almost"
         ? `<span class="learning-package-alert is-${learningState.urgency}">${escapeHtml(learningState.label)}</span>`
         : "";
+      const scheduleLabel = getCourseScheduleLabel(enrollment);
+      const scheduleClass = getCourseScheduleClass(enrollment);
 
       return `
         <div class="learning-course-item ${learningState.key === "completed" ? "is-completed" : ""}">
@@ -1567,6 +1766,9 @@ function renderLearningProgress() {
               ${packageAlert}
               <small>${escapeHtml(certificateText)}</small>
               <small class="learning-last-updated">อัปเดตล่าสุด ${escapeHtml(updatedLabel)}</small>
+              <button class="course-schedule-chip ${scheduleClass}" type="button" data-edit-course-schedule="${enrollment.id}">
+                ${escapeHtml(scheduleLabel)}
+              </button>
             </div>
           </div>
           <div class="learning-course-meter">
@@ -5386,6 +5588,12 @@ studentSearchInput?.addEventListener("input", renderStudentManagement);
 studentCourseFilter?.addEventListener("change", renderStudentManagement);
 studentStatusFilter?.addEventListener("change", renderStudentManagement);
 studentManagementRows?.addEventListener("click", async (event) => {
+  const scheduleButton = event.target.closest("[data-edit-course-schedule]");
+  if (scheduleButton) {
+    openCourseSchedule(scheduleButton.dataset.editCourseSchedule);
+    return;
+  }
+
   const recordButton = event.target.closest("[data-student-record-enrollment]");
   if (recordButton) {
     showAdminView("progress");
@@ -5422,6 +5630,12 @@ learningFollowupQueue?.addEventListener("click", (event) => {
   if (recordButton) openRecordSession(recordButton.dataset.queueRecordEnrollment);
 });
 learningProgressRows?.addEventListener("click", (event) => {
+  const scheduleButton = event.target.closest("[data-edit-course-schedule]");
+  if (scheduleButton) {
+    openCourseSchedule(scheduleButton.dataset.editCourseSchedule);
+    return;
+  }
+
   const detailButton = event.target.closest("[data-student-detail]");
   if (detailButton) {
     const detailPanel = document.getElementById(detailButton.dataset.studentDetail);
@@ -5438,6 +5652,12 @@ learningProgressRows?.addEventListener("click", (event) => {
   if (button) openRecordSession(button.dataset.recordEnrollment);
 });
 recordSessionForm?.addEventListener("submit", previewLearningSession);
+courseScheduleForm?.addEventListener("submit", saveCourseSchedule);
+clearCourseScheduleButton?.addEventListener("click", clearCourseSchedule);
+document.querySelector("#closeCourseSchedule")?.addEventListener("click", closeCourseSchedule);
+courseScheduleModal?.addEventListener("click", (event) => {
+  if (event.target === courseScheduleModal) closeCourseSchedule();
+});
 recordSessionPhoto?.addEventListener("change", () => {
   renderLearningPhotoPreview();
   markSessionPreviewDirty();
@@ -5559,6 +5779,10 @@ document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   if (recordSessionModal?.classList.contains("open")) {
     closeRecordSession();
+    return;
+  }
+  if (courseScheduleModal?.classList.contains("open")) {
+    closeCourseSchedule();
     return;
   }
   if (reviewModal.classList.contains("open")) {
