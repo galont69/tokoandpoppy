@@ -240,7 +240,7 @@ async function exportSummaryCard() {
     context.fillText(" เรียนอะไรบ้าง?", titleMid, 210);
     context.fillStyle = "#876F5F";
     context.font = "700 24px Kanit, sans-serif";
-    context.fillText(formatThaiDate(data.get("classDate")), 304, 248);
+    context.fillText(formatThaiDate(data.get("classDate")), 124, 248);
     drawCardBox(context, 48, 270, 984, 594, 38, "#FFFFFF", "#F1DEC8");
     drawCoverImage(context, photo, 62, 284, 956, 566, 26);
     context.fillStyle = "#62A742";

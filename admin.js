@@ -1742,7 +1742,7 @@ function drawSummaryDateLabel(context, sessionDate) {
   if (!dateText) return;
   context.fillStyle = "#876F5F";
   context.font = "700 24px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText(dateText, 304, 248);
+  context.fillText(dateText, 124, 248);
 }
 
 function drawSummaryInfoColumn(context, { icon, title, subtitle, accent, big, iconSize = 46, titleFont, subtitleFont }, x, y, width, height) {
