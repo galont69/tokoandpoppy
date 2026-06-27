@@ -1689,6 +1689,9 @@ async function renderSessionShareCard(data) {
   const photoImage = await loadCanvasImage(data.photoUrl);
   const childLabel = getShareCardChildLabel(data.studentName);
   const lessonTitle = data.lessonTitle || "กิจกรรมสร้างสรรค์ของวันนี้";
+  const sessionText = data.totalSessions
+    ? `ครั้งที่ ${data.sessionNumber}/${data.totalSessions}`
+    : `ครั้งที่ ${data.sessionNumber}`;
 
   context.clearRect(0, 0, width, height);
   context.fillStyle = "#fffaf1";
@@ -1706,7 +1709,7 @@ async function renderSessionShareCard(data) {
   gradient.addColorStop(0.55, "rgba(255, 250, 241, 0.92)");
   gradient.addColorStop(1, "rgba(252, 228, 202, 0.9)");
   context.fillStyle = gradient;
-  drawRoundedRect(context, 52, 54, width - 104, height - 108, 56);
+  drawRoundedRect(context, 52, 54, width - 104, height - 74, 56);
   context.fill();
   context.strokeStyle = "#e4d1bd";
   context.lineWidth = 4;
@@ -1737,26 +1740,26 @@ async function renderSessionShareCard(data) {
   context.font = "900 30px 'Noto Sans Thai', 'Arial', sans-serif";
   context.fillText("สรุปหลังเรียน", 94, 238);
   context.fillStyle = "#49372f";
-  context.font = "900 54px 'Noto Sans Thai', 'Arial', sans-serif";
-  const titleBottom = wrapCanvasText(context, `วันนี้ ${childLabel} เรียนอะไรบ้าง?`, 94, 304, 830, 62, 2);
+  context.font = "900 50px 'Noto Sans Thai', 'Arial', sans-serif";
+  const titleBottom = wrapCanvasText(context, `วันนี้ ${childLabel} เรียนอะไรบ้าง?`, 94, 302, 850, 58, 2);
   context.fillStyle = "#8b7668";
   context.font = "700 24px 'Noto Sans Thai', 'Arial', sans-serif";
-  context.fillText("ผลงานวันนี้ บทเรียนที่เรียน และข้อความจากคุณครู", 94, Math.max(titleBottom + 10, 378));
+  context.fillText("ภาพผลงาน บทเรียนวันนี้ และข้อความจากคุณครู", 94, Math.max(titleBottom + 8, 368));
 
   context.fillStyle = "#fff6e6";
-  drawRoundedRect(context, 94, 420, 892, 70, 32);
+  drawRoundedRect(context, 94, 410, 892, 72, 32);
   context.fill();
   context.fillStyle = "#6b9658";
   context.font = "900 24px 'Noto Sans Thai', 'Arial', sans-serif";
-  context.fillText("บทเรียนวันนี้", 124, 464);
+  context.fillText("บทเรียนวันนี้", 124, 455);
   context.fillStyle = "#5c493d";
-  context.font = "900 30px 'Noto Sans Thai', 'Arial', sans-serif";
-  wrapCanvasText(context, lessonTitle, 320, 464, 610, 34, 1);
+  context.font = "900 28px 'Noto Sans Thai', 'Arial', sans-serif";
+  wrapCanvasText(context, lessonTitle, 320, 455, 620, 32, 1);
 
   const photoX = 94;
-  const photoY = 522;
+  const photoY = 516;
   const photoW = 892;
-  const photoH = 430;
+  const photoH = 500;
   context.fillStyle = "#ffffff";
   drawRoundedRect(context, photoX - 16, photoY - 16, photoW + 32, photoH + 32, 42);
   context.fill();
@@ -1785,48 +1788,47 @@ async function renderSessionShareCard(data) {
   context.fillText("ผลงาน / กิจกรรมวันนี้", photoX + 44, photoY + 55);
 
   context.fillStyle = "#ffffff";
-  drawRoundedRect(context, 94, 996, 420, 180, 30);
+  drawRoundedRect(context, 94, 1030, 892, 76, 30);
   context.fill();
-  drawRoundedRect(context, 566, 996, 420, 180, 30);
-  context.fill();
-
   context.fillStyle = "#6b9658";
-  context.font = "900 28px 'Noto Sans Thai', 'Arial', sans-serif";
-  context.fillText(`${data.courseIcon} ${data.courseName}`, 124, 1046);
+  context.font = "900 24px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText(`${data.courseIcon} ${data.courseName}`, 124, 1062);
   context.fillStyle = "#5c493d";
-  context.font = "800 34px 'Noto Sans Thai', 'Arial', sans-serif";
-  const sessionText = data.totalSessions
-    ? `ครั้งที่ ${data.sessionNumber}/${data.totalSessions}`
-    : `ครั้งที่ ${data.sessionNumber}`;
-  context.fillText(sessionText, 124, 1100);
+  context.font = "900 28px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText(sessionText, 124, 1095);
   context.fillStyle = "#8b7668";
-  context.font = "700 24px 'Noto Sans Thai', 'Arial', sans-serif";
-  context.fillText(formatDateOnly(data.sessionDate), 124, 1142);
+  context.font = "800 24px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.textAlign = "right";
+  context.fillText(formatDateOnly(data.sessionDate), 956, 1083);
+  context.textAlign = "start";
 
+  context.fillStyle = "#ffffff";
+  drawRoundedRect(context, 94, 1124, 892, 144, 30);
+  context.fill();
   context.fillStyle = "#db7d68";
-  context.font = "900 28px 'Noto Sans Thai', 'Arial', sans-serif";
-  context.fillText("ข้อความจากคุณครู", 596, 1046);
+  context.font = "900 26px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.fillText("คุณครูฝากถึงบ้าน", 124, 1162);
   context.fillStyle = "#5c493d";
-  context.font = "800 26px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.font = "800 24px 'Noto Sans Thai', 'Arial', sans-serif";
   wrapCanvasText(
     context,
     data.teacherComment || lessonTitle || "วันนี้ตั้งใจเรียนดีมาก เก็บผลงานไว้เป็นกำลังใจนะคะ/ครับ",
-    596,
-    1092,
-    340,
-    36,
+    124,
+    1198,
+    820,
+    31,
     3
   );
 
   context.fillStyle = "#eef7e7";
-  drawRoundedRect(context, 94, 1214, 892, 74, 37);
+  drawRoundedRect(context, 94, 1286, 892, 52, 26);
   context.fill();
   context.fillStyle = "#4f7d48";
-  context.font = "900 30px 'Noto Sans Thai', 'Arial', sans-serif";
+  context.font = "900 26px 'Noto Sans Thai', 'Arial', sans-serif";
   const footerText = data.totalSessions
     ? `เรียนแล้ว ${data.completedAfter} ครั้ง · คงเหลือ ${data.remainingAfter} ครั้ง`
     : data.branchName || "ขอบคุณที่เรียนกับ Toko & Poppy";
-  context.fillText(footerText, 132, 1262);
+  context.fillText(footerText, 132, 1322);
 }
 
 async function showSessionSharePanel(data) {
