@@ -34,3 +34,18 @@
 2. สมัครเรียนทดสอบ 1 คน แล้วตรวจใน `admin.html`
 3. Approve ผู้เรียน แล้ว login ทดสอบหน้า Robot, Art และ Codekids
 4. หลังระบบสมัครเรียนนิ่ง ค่อยเริ่มรัน SQL migration ฝั่ง Homeschool ตาม `homeschool/HOMESCHOOL-DATABASE-INTEGRATION.md`
+
+## อัปเดตล่าสุด 28 มิถุนายน 2026
+
+- หน้า admin เมนู “นักเรียน” มีปุ่ม `เพิ่มนักเรียน` สำหรับเพิ่มนักเรียนเก่าโดยทีมงาน
+- ครู, แอดมินสาขา และแอดมินหลักเพิ่มนักเรียนในสาขาที่ตัวเองมีสิทธิ์ได้
+- สร้างข้อมูลพร้อมใช้กับสมุดพัฒนาการ ตารางเรียน และแจ้งเตือนเรียน
+- นักเรียนที่เพิ่มโดยทีมงานใช้ `registration_source = 'staff_created'` และ `parent_link_status = 'unlinked'`
+- เมื่อผูกบัญชีผู้ปกครองภายหลัง ระบบจะไม่ reset จำนวนครั้งของนักเรียนที่ทีมงานเพิ่มเอง
+
+SQL ที่ต้องรันเพิ่มหลังอัปไฟล์:
+
+1. `supabase-student-management.sql`
+2. `supabase-course-schedule.sql`
+3. `supabase-class-reminders.sql`
+4. `supabase-staff-student-import.sql`

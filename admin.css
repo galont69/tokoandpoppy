@@ -454,6 +454,7 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .lesson-admin-hero h2 { margin: 5px 0 4px; font-size: 24px; }
 .lesson-admin-hero p { margin: 0; color: #7c846e; font-size: 10px; }
 .lesson-admin-hero a { margin-left: auto; border-radius: 11px; padding: 10px 13px; color: #55764e; background: rgba(255,255,255,.75); font-size: 9px; font-weight: 700; text-decoration: none; white-space: nowrap; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-left: auto; justify-content: flex-end; }
 .students-hero { background: linear-gradient(120deg, #e7f0df, #fff7dd); }
 .reminders-hero { background: linear-gradient(120deg, #eaf4e2, #fff1dc); }
 .class-reminder-panel { margin-top: 18px; }
@@ -874,6 +875,77 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   grid-template-columns: auto minmax(180px, 1fr);
   gap: 10px;
   align-items: center;
+}
+.staff-student-card {
+  width: min(860px, 100%);
+  padding: 28px;
+}
+.staff-student-form {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+}
+.staff-student-form section {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #eadfd2;
+  border-radius: 18px;
+  padding: 15px;
+  background: rgba(255,255,255,.6);
+}
+.staff-student-form h3 {
+  margin: 0;
+  color: #4f7d48;
+  font-size: 16px;
+}
+.staff-student-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+.staff-student-grid .full {
+  grid-column: 1 / -1;
+}
+.staff-student-form label {
+  display: grid;
+  gap: 8px;
+  color: #5d4a3f;
+  font-size: 13px;
+  font-weight: 900;
+}
+.staff-student-form input,
+.staff-student-form select,
+.staff-student-form textarea {
+  width: 100%;
+  border: 1px solid #e4d6c7;
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: #fffdf9;
+  color: #4e3d33;
+  font: inherit;
+}
+.staff-student-toggle {
+  min-height: 50px;
+}
+.staff-student-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 14px;
+  background: rgba(250,246,239,.94);
+  backdrop-filter: blur(12px);
+}
+.staff-student-actions span {
+  color: #8b786b;
+  font-size: 10px;
+  font-weight: 700;
+}
+.staff-student-actions button {
+  margin-left: auto;
 }
 .lesson-admin-layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 18px; margin-top: 20px; }
 .lesson-list-panel, .lesson-editor { border: 1px solid var(--line); border-radius: 22px; background: white; box-shadow: 0 8px 25px rgba(79,61,50,.045); }
@@ -2676,6 +2748,10 @@ body { font-size: 16px; }
     grid-template-columns: 1fr 1fr;
   }
 
+  .staff-student-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .learning-student-header {
     grid-template-columns: 1fr;
     align-items: start;
@@ -2721,6 +2797,30 @@ body { font-size: 16px; }
   .student-management-summary {
     grid-template-columns: 1fr 1fr;
     margin-inline: 14px;
+  }
+
+  .hero-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: stretch;
+  }
+
+  .hero-actions button {
+    flex: 1 1 150px;
+  }
+
+  .staff-student-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .staff-student-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .staff-student-actions button {
+    width: 100%;
+    margin-left: 0;
   }
 
   .student-management-list {

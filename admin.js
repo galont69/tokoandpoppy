@@ -93,6 +93,27 @@ const studentSearchInput = document.querySelector("#studentSearchInput");
 const studentCourseFilter = document.querySelector("#studentCourseFilter");
 const studentStatusFilter = document.querySelector("#studentStatusFilter");
 const refreshStudentsButton = document.querySelector("#refreshStudentsButton");
+const addStaffStudentButton = document.querySelector("#addStaffStudentButton");
+const staffStudentModal = document.querySelector("#staffStudentModal");
+const staffStudentForm = document.querySelector("#staffStudentForm");
+const staffStudentBranch = document.querySelector("#staffStudentBranch");
+const staffStudentName = document.querySelector("#staffStudentName");
+const staffStudentNickname = document.querySelector("#staffStudentNickname");
+const staffStudentBirthDate = document.querySelector("#staffStudentBirthDate");
+const staffStudentAge = document.querySelector("#staffStudentAge");
+const staffStudentCourse = document.querySelector("#staffStudentCourse");
+const staffStudentTotalSessions = document.querySelector("#staffStudentTotalSessions");
+const staffStudentCompletedSessions = document.querySelector("#staffStudentCompletedSessions");
+const staffStudentLevel = document.querySelector("#staffStudentLevel");
+const staffStudentWeekday = document.querySelector("#staffStudentWeekday");
+const staffStudentStartTime = document.querySelector("#staffStudentStartTime");
+const staffStudentEndTime = document.querySelector("#staffStudentEndTime");
+const staffStudentReminderEnabled = document.querySelector("#staffStudentReminderEnabled");
+const staffStudentParentName = document.querySelector("#staffStudentParentName");
+const staffStudentParentPhone = document.querySelector("#staffStudentParentPhone");
+const staffStudentNote = document.querySelector("#staffStudentNote");
+const saveStaffStudentButton = document.querySelector("#saveStaffStudentButton");
+const staffStudentReadinessText = document.querySelector("#staffStudentReadinessText");
 const classReminderBadge = document.querySelector("#classReminderBadge");
 const classReminderHeroText = document.querySelector("#classReminderHeroText");
 const classReminderScopeText = document.querySelector("#classReminderScopeText");
@@ -695,7 +716,7 @@ function applyAdminPermissions() {
     element.hidden = !canManageBranchStaff();
   });
   document.querySelector('[data-admin-view="applications"]').hidden = branchTeacher;
-  document.querySelector('[data-admin-view="students"]').hidden = branchTeacher;
+  document.querySelector('[data-admin-view="students"]').hidden = false;
   document.querySelector(".admin-profile strong").textContent = mainAdmin
     ? "ผู้ดูแลระบบ"
     : branchTeacher
@@ -774,7 +795,7 @@ function updateStats() {
 
 function showAdminView(viewName) {
   const roleAllowedViews = isBranchTeacher()
-    ? ["progress", "classReminders"]
+    ? ["students", "progress", "classReminders"]
     : isBranchAdmin()
       ? ["applications", "students", "classReminders", "progress", "branchStaff"]
       : null;
@@ -1036,6 +1057,7 @@ function getStudentManagementGroups(rows) {
         parentPhone: app.parent_phone || "",
         lineDisplayName: app.line_display_name || "",
         lineUserId: app.line_user_id || enrollment.line_user_id || "",
+        registrationSource: app.registration_source || "",
         branchName: app.branches?.name || enrollment.branches?.name || "",
         status: app.status || "approved",
         createdAt: app.created_at || enrollment.created_at || "",
@@ -1119,11 +1141,20 @@ function renderStudentManagement() {
         </li>
       `;
     }).join("");
+    const parentPhone = group.parentPhone === "00000000" ? "" : group.parentPhone;
+    const parentEmail = String(group.parentEmail || "").endsWith("@staff-created.tokoandpoppy.local") ? "" : group.parentEmail;
     const contact = [
-      group.parentPhone,
-      group.parentEmail,
+      parentPhone,
+      parentEmail,
       group.lineDisplayName ? `LINE: ${group.lineDisplayName}` : ""
-    ].filter(Boolean).join(" · ") || "ยังไม่มีข้อมูลติดต่อ";
+    ].filter(Boolean).join(" · ") || (
+      group.registrationSource === "staff_created"
+        ? "ยังไม่ได้ผูกบัญชีผู้ปกครอง"
+        : "ยังไม่มีข้อมูลติดต่อ"
+    );
+    const sourceText = group.registrationSource === "staff_created"
+      ? "เพิ่มโดยทีมงาน · รอผูกบัญชีผู้ปกครองได้ภายหลัง"
+      : "ข้อมูลจากใบสมัครที่อนุมัติแล้ว";
     const canDelete = Boolean(group.applicationId) && !isBranchTeacher();
     return `
       <article class="student-management-card">
@@ -1135,8 +1166,9 @@ function renderStudentManagement() {
               group.nickname ? `ชื่อเล่น ${group.nickname}` : "",
               group.parentName ? `ผู้ปกครอง ${group.parentName}` : "",
               group.branchName ? `สาขา ${group.branchName}` : ""
-            ].filter(Boolean).join(" · ") || "ข้อมูลจากใบสมัครที่อนุมัติแล้ว")}</small>
+            ].filter(Boolean).join(" · ") || sourceText)}</small>
             <small>${escapeHtml(contact)}</small>
+            ${group.registrationSource === "staff_created" ? `<small>${escapeHtml(sourceText)}</small>` : ""}
           </div>
         </div>
         <div class="student-management-metrics">
@@ -1168,17 +1200,17 @@ async function loadStudentManagement() {
   studentManagementEmptyState.hidden = true;
   studentManagementRows.innerHTML = "";
   if (studentManagementScopeText) {
-    studentManagementScopeText.textContent = isBranchAdmin()
+    studentManagementScopeText.textContent = (isBranchAdmin() || isBranchTeacher())
       ? `นักเรียนที่อนุมัติแล้วใน${getCurrentBranchName()}`
       : "นักเรียนที่อนุมัติแล้วจากทุกสาขา";
   }
 
   let query = supabaseClient
     .from("course_enrollments")
-    .select("*, enrollment_applications(id,status,student_name,student_nickname,parent_name,parent_phone,parent_email,line_display_name,line_user_id,created_at,branches(name,code)), branches(name,code)")
+    .select("*, enrollment_applications(id,status,student_name,student_nickname,parent_name,parent_phone,parent_email,line_display_name,line_user_id,registration_source,created_at,branches(name,code)), branches(name,code)")
     .order("updated_at", { ascending: false });
 
-  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+  if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
     query = query.eq("branch_id", currentBranchAssignment.branch_id);
   }
 
@@ -1231,6 +1263,150 @@ async function deleteStudentRecord(applicationId, studentName) {
   ]);
   learningEnrollments = learningEnrollments.filter((enrollment) => enrollment.application_id !== applicationId);
   renderLearningProgress();
+}
+
+async function loadStaffStudentBranches() {
+  if (!staffStudentBranch) return;
+
+  if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
+    staffStudentBranch.innerHTML = `
+      <option value="${escapeHtml(currentBranchAssignment.branch_id)}">${escapeHtml(getCurrentBranchName())}</option>
+    `;
+    staffStudentBranch.value = currentBranchAssignment.branch_id;
+    staffStudentBranch.disabled = true;
+    return;
+  }
+
+  staffStudentBranch.disabled = false;
+  if (!branches.length) {
+    const { data, error } = await supabaseClient
+      .from("branches")
+      .select("id,name,code,is_active")
+      .eq("is_active", true)
+      .order("name", { ascending: true });
+    if (error) {
+      staffStudentBranch.innerHTML = '<option value="">โหลดสาขาไม่สำเร็จ</option>';
+      showToast(`โหลดสาขาไม่สำเร็จ: ${error.message}`, true);
+      return;
+    }
+    branches = data || [];
+  }
+
+  staffStudentBranch.innerHTML = [
+    '<option value="">เลือกสาขา</option>',
+    ...branches
+      .filter((branch) => branch.is_active !== false)
+      .map((branch) => `
+        <option value="${escapeHtml(branch.id)}">${escapeHtml(branch.name)}${branch.code ? ` (${escapeHtml(branch.code)})` : ""}</option>
+      `)
+  ].join("");
+}
+
+async function openStaffStudentModal() {
+  if (!staffStudentModal || !staffStudentForm) return;
+  staffStudentForm.reset();
+  if (staffStudentTotalSessions) staffStudentTotalSessions.value = "12";
+  if (staffStudentCompletedSessions) staffStudentCompletedSessions.value = "0";
+  if (staffStudentReminderEnabled) staffStudentReminderEnabled.checked = true;
+  if (staffStudentReadinessText) {
+    staffStudentReadinessText.textContent = "กรอกข้อมูลนักเรียนและคอร์สเพื่อเพิ่มเข้าระบบ";
+  }
+  await loadStaffStudentBranches();
+  staffStudentModal.classList.add("open");
+  staffStudentModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  staffStudentName?.focus();
+}
+
+function closeStaffStudentModal() {
+  staffStudentModal?.classList.remove("open");
+  staffStudentModal?.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+
+function getStaffStudentPayload() {
+  const branchId = staffStudentBranch?.value || "";
+  const studentName = staffStudentName?.value.trim() || "";
+  const totalSessions = Number.parseInt(staffStudentTotalSessions?.value || "", 10);
+  const completedSessions = Number.parseInt(staffStudentCompletedSessions?.value || "0", 10);
+  const weekday = staffStudentWeekday?.value || "";
+  const startTime = staffStudentStartTime?.value || "";
+  const endTime = staffStudentEndTime?.value || "";
+
+  if (!studentName || studentName.length < 2) {
+    staffStudentName?.focus();
+    throw new Error("กรุณาระบุชื่อนักเรียนอย่างน้อย 2 ตัวอักษร");
+  }
+  if (!branchId) {
+    staffStudentBranch?.focus();
+    throw new Error("กรุณาเลือกสาขา");
+  }
+  if (!Number.isInteger(totalSessions) || totalSessions < 1 || totalSessions > 120) {
+    staffStudentTotalSessions?.focus();
+    throw new Error("กรุณาระบุจำนวนครั้งทั้งหมด 1-120 ครั้ง");
+  }
+  if (!Number.isInteger(completedSessions) || completedSessions < 0 || completedSessions > totalSessions) {
+    staffStudentCompletedSessions?.focus();
+    throw new Error("จำนวนครั้งที่เรียนไปแล้วต้องอยู่ระหว่าง 0 ถึงจำนวนครั้งทั้งหมด");
+  }
+  if ((weekday || startTime || endTime) && (weekday === "" || !startTime)) {
+    (weekday === "" ? staffStudentWeekday : staffStudentStartTime)?.focus();
+    throw new Error("ถ้าตั้งตารางเรียน กรุณาเลือกวันเรียนและเวลาเริ่ม");
+  }
+  if (endTime && endTime <= startTime) {
+    staffStudentEndTime?.focus();
+    throw new Error("เวลาเลิกเรียนต้องมากกว่าเวลาเริ่มเรียน");
+  }
+
+  return {
+    p_student_name: studentName,
+    p_student_nickname: staffStudentNickname?.value.trim() || null,
+    p_birth_date: staffStudentBirthDate?.value || null,
+    p_age_years: staffStudentAge?.value ? Number.parseInt(staffStudentAge.value, 10) : null,
+    p_branch_id: branchId,
+    p_course_type: staffStudentCourse?.value || "creative_art",
+    p_total_sessions: totalSessions,
+    p_completed_sessions: completedSessions,
+    p_level_label: staffStudentLevel?.value.trim() || null,
+    p_class_weekday: weekday === "" ? null : Number(weekday),
+    p_class_start_time: startTime || null,
+    p_class_end_time: endTime || null,
+    p_class_reminder_enabled: Boolean(staffStudentReminderEnabled?.checked),
+    p_parent_name: staffStudentParentName?.value.trim() || null,
+    p_parent_phone: staffStudentParentPhone?.value.trim() || null,
+    p_staff_note: staffStudentNote?.value.trim() || null
+  };
+}
+
+async function saveStaffStudent(event) {
+  event.preventDefault();
+  let payload;
+  try {
+    payload = getStaffStudentPayload();
+  } catch (error) {
+    showToast(error.message, true);
+    return;
+  }
+
+  saveStaffStudentButton.disabled = true;
+  saveStaffStudentButton.textContent = "กำลังเพิ่ม...";
+  if (staffStudentReadinessText) staffStudentReadinessText.textContent = "กำลังสร้างนักเรียนและคอร์ส...";
+  const { error } = await supabaseClient.rpc("create_staff_student_record", payload);
+  saveStaffStudentButton.disabled = false;
+  saveStaffStudentButton.textContent = "เพิ่มนักเรียน";
+
+  if (error) {
+    if (staffStudentReadinessText) staffStudentReadinessText.textContent = "เพิ่มไม่สำเร็จ กรุณาตรวจข้อมูลอีกครั้ง";
+    showToast(`เพิ่มนักเรียนไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  showToast("เพิ่มนักเรียนเข้าระบบเรียบร้อยแล้ว");
+  closeStaffStudentModal();
+  await Promise.all([
+    loadStudentManagement(),
+    loadLearningProgress()
+  ]);
 }
 
 function findCourseEnrollment(enrollmentId) {
@@ -5945,6 +6121,12 @@ teacherInviteRows?.addEventListener("click", (event) => {
 });
 refreshLearningButton?.addEventListener("click", loadLearningProgress);
 refreshStudentsButton?.addEventListener("click", loadStudentManagement);
+addStaffStudentButton?.addEventListener("click", openStaffStudentModal);
+staffStudentForm?.addEventListener("submit", saveStaffStudent);
+document.querySelector("#closeStaffStudent")?.addEventListener("click", closeStaffStudentModal);
+staffStudentModal?.addEventListener("click", (event) => {
+  if (event.target === staffStudentModal) closeStaffStudentModal();
+});
 refreshClassRemindersButton?.addEventListener("click", loadClassReminders);
 classReminderRows?.addEventListener("click", (event) => {
   const createButton = event.target.closest("[data-create-class-reminder]");
@@ -6167,6 +6349,10 @@ document.addEventListener("keydown", (event) => {
   }
   if (courseScheduleModal?.classList.contains("open")) {
     closeCourseSchedule();
+    return;
+  }
+  if (staffStudentModal?.classList.contains("open")) {
+    closeStaffStudentModal();
     return;
   }
   if (classReminderModal?.classList.contains("open")) {

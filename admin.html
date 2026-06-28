@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260627-reminder-card-tuning">
+  <link rel="stylesheet" href="admin.css?v=20260628-staff-student-import">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -229,16 +229,19 @@
           <div>
             <span>STUDENT CENTER</span>
             <h2>จัดการนักเรียน</h2>
-            <p>นักเรียนที่อนุมัติแล้วจะมาอยู่ที่นี่ ใช้สำหรับตรวจคอร์ส ดูข้อมูลผู้ปกครอง หรือลบข้อมูลเมื่อต้องสมัครใหม่</p>
+            <p>นักเรียนที่อนุมัติแล้วและนักเรียนเก่าที่ทีมงานเพิ่มเองจะมาอยู่ที่นี่ ใช้สำหรับตรวจคอร์ส บันทึกการเรียน และแจ้งเตือนผู้ปกครอง</p>
           </div>
-          <button class="refresh-button" id="refreshStudentsButton" type="button">↻ รีเฟรช</button>
+          <div class="hero-actions">
+            <button class="refresh-button" id="addStaffStudentButton" type="button">＋ เพิ่มนักเรียน</button>
+            <button class="refresh-button" id="refreshStudentsButton" type="button">↻ รีเฟรช</button>
+          </div>
         </div>
 
         <section class="applications-panel student-management-panel">
           <div class="panel-heading">
             <div>
               <h2>รายชื่อนักเรียนที่อนุมัติแล้ว</h2>
-              <p id="studentManagementScopeText">รวมจากคอร์สที่เปิดสิทธิ์หลังอนุมัติใบสมัคร</p>
+              <p id="studentManagementScopeText">รวมจากคอร์สที่เปิดสิทธิ์หลังอนุมัติใบสมัครและรายการที่ทีมงานเพิ่มเอง</p>
             </div>
           </div>
 
@@ -271,7 +274,7 @@
           <div class="empty-state" id="studentManagementEmptyState" hidden>
             <div>🧒</div>
             <h3>ยังไม่มีนักเรียนในมุมมองนี้</h3>
-            <p>เมื่อใบสมัครได้รับอนุมัติและเปิดสิทธิ์คอร์สแล้ว รายชื่อนักเรียนจะปรากฏที่นี่</p>
+            <p>เมื่อใบสมัครได้รับอนุมัติ หรือทีมงานเพิ่มนักเรียนเก่าเข้าระบบ รายชื่อนักเรียนจะปรากฏที่นี่</p>
           </div>
           <div class="loading-state" id="studentManagementLoadingState" hidden>
             <i></i><span>กำลังโหลดรายชื่อนักเรียน...</span>
@@ -989,6 +992,111 @@
     </div>
   </div>
 
+  <div class="review-backdrop" id="staffStudentModal" aria-hidden="true">
+    <div class="review-modal staff-student-card" role="dialog" aria-modal="true" aria-labelledby="staffStudentTitle">
+      <button class="modal-close" id="closeStaffStudent" type="button" aria-label="ปิด">×</button>
+      <div class="modal-heading">
+        <span>เพิ่มนักเรียนโดยทีมงาน</span>
+        <h2 id="staffStudentTitle">เพิ่มนักเรียนเก่าเข้าระบบ</h2>
+        <p>สร้างข้อมูลนักเรียนและคอร์สให้พร้อมใช้งานสมุดพัฒนาการ/แจ้งเตือนก่อนเรียน โดยยังผูกบัญชีผู้ปกครองภายหลังได้</p>
+      </div>
+      <form class="staff-student-form" id="staffStudentForm">
+        <section>
+          <h3>ข้อมูลนักเรียน</h3>
+          <div class="staff-student-grid">
+            <label>ชื่อ-นามสกุลนักเรียน
+              <input id="staffStudentName" type="text" maxlength="150" required placeholder="เช่น ด.ญ. โลมา สดใส">
+            </label>
+            <label>ชื่อเล่น
+              <input id="staffStudentNickname" type="text" maxlength="80" placeholder="เช่น โลมา">
+            </label>
+            <label>วันเกิด
+              <input id="staffStudentBirthDate" type="date">
+            </label>
+            <label>อายุ
+              <input id="staffStudentAge" type="number" min="1" max="18" placeholder="ถ้าไม่ทราบวันเกิด">
+            </label>
+            <label class="full">สาขา
+              <select id="staffStudentBranch" required></select>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h3>คอร์สและจำนวนครั้ง</h3>
+          <div class="staff-student-grid">
+            <label>คอร์ส
+              <select id="staffStudentCourse" required>
+                <option value="robot">Robot + Coding</option>
+                <option value="creative_art">Creative Art</option>
+                <option value="water_color">Water Color</option>
+                <option value="clay">ปั้นดินเบา (CLAY)</option>
+                <option value="art">ศิลปะเดิม</option>
+              </select>
+            </label>
+            <label>จำนวนครั้งทั้งหมด
+              <input id="staffStudentTotalSessions" type="number" min="1" max="120" value="12" required>
+            </label>
+            <label>เรียนไปแล้ว
+              <input id="staffStudentCompletedSessions" type="number" min="0" max="120" value="0" required>
+            </label>
+            <label>Level / หมวด
+              <input id="staffStudentLevel" type="text" maxlength="80" placeholder="เช่น Beginner / Level 1">
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h3>ตารางเรียนประจำ</h3>
+          <div class="staff-student-grid">
+            <label>วันเรียน
+              <select id="staffStudentWeekday">
+                <option value="">ยังไม่ตั้งตาราง</option>
+                <option value="1">วันจันทร์</option>
+                <option value="2">วันอังคาร</option>
+                <option value="3">วันพุธ</option>
+                <option value="4">วันพฤหัสบดี</option>
+                <option value="5">วันศุกร์</option>
+                <option value="6">วันเสาร์</option>
+                <option value="0">วันอาทิตย์</option>
+              </select>
+            </label>
+            <label>เวลาเริ่ม
+              <input id="staffStudentStartTime" type="time">
+            </label>
+            <label>เวลาเลิก
+              <input id="staffStudentEndTime" type="time">
+            </label>
+            <label class="schedule-toggle staff-student-toggle">
+              <input id="staffStudentReminderEnabled" type="checkbox" checked>
+              <span>เปิดใช้แจ้งเตือนก่อนเรียน</span>
+            </label>
+          </div>
+        </section>
+
+        <section>
+          <h3>ข้อมูลผู้ปกครอง</h3>
+          <div class="staff-student-grid">
+            <label>ชื่อผู้ปกครอง
+              <input id="staffStudentParentName" type="text" maxlength="120" placeholder="ไม่บังคับ">
+            </label>
+            <label>เบอร์โทร
+              <input id="staffStudentParentPhone" type="tel" maxlength="30" placeholder="ไม่บังคับ">
+            </label>
+            <label class="full">หมายเหตุสำหรับทีมงาน
+              <textarea id="staffStudentNote" rows="3" maxlength="800" placeholder="เช่น นักเรียนเก่าจากรอบทดลอง / รอผู้ปกครองกด LIFF เพื่อผูกบัญชี"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <div class="staff-student-actions">
+          <span id="staffStudentReadinessText">กรอกข้อมูลนักเรียนและคอร์สเพื่อเพิ่มเข้าระบบ</span>
+          <button class="save-lesson-button" id="saveStaffStudentButton" type="submit">เพิ่มนักเรียน</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="review-backdrop" id="classReminderModal" aria-hidden="true">
     <div class="review-modal class-reminder-modal" role="dialog" aria-modal="true" aria-labelledby="classReminderTitle">
       <button class="modal-close" id="closeClassReminder" type="button" aria-label="ปิด">×</button>
@@ -1187,6 +1295,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260628-reminder-card-equal-icons"></script>
+  <script src="admin.js?v=20260628-staff-student-import"></script>
 </body>
 </html>
