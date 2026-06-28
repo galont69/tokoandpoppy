@@ -4166,20 +4166,23 @@ function renderBranchRevenue() {
   if (!revenueRows) return;
   const rows = getFilteredRevenueEvents();
   const activeRows = rows.filter((event) => !["cancelled", "refunded"].includes(event.status));
-  const totalActual = activeRows.reduce((sum, event) => sum + Number(event.actual_amount || 0), 0);
-  const totalRoyaltyBase = activeRows.reduce((sum, event) => sum + getRevenueRoyaltyBase(event), 0);
-  const totalFranchiseFee = activeRows.reduce((sum, event) => sum + getRevenueFranchiseFee(event), 0);
+  const pendingRows = activeRows.filter((event) => (event.status || "pending") === "pending");
+  const confirmedRows = activeRows.filter((event) => event.status === "confirmed");
+  const totalConfirmedActual = confirmedRows.reduce((sum, event) => sum + Number(event.actual_amount || 0), 0);
+  const totalConfirmedRoyaltyBase = confirmedRows.reduce((sum, event) => sum + getRevenueRoyaltyBase(event), 0);
+  const totalConfirmedFranchiseFee = confirmedRows.reduce((sum, event) => sum + getRevenueFranchiseFee(event), 0);
   const uniqueStudents = new Set(activeRows.map((event) => event.application_id || event.student_name).filter(Boolean)).size;
   const totalSessions = activeRows.reduce((sum, event) => sum + Number(event.total_sessions || 0), 0);
 
   if (revenueSummary) {
     revenueSummary.innerHTML = [
       ["เด็กที่เปิดคอร์ส", uniqueStudents],
-      ["จำนวนคอร์ส", activeRows.length],
+      ["รายการรอตรวจ", pendingRows.length, pendingRows.length ? "warning" : ""],
+      ["รายการยืนยันแล้ว", confirmedRows.length],
       ["จำนวนครั้งรวม", totalSessions],
-      ["ยอดรับจริง", `${formatMoney(totalActual)} บาท`],
-      ["ฐานค่าแฟรนไชส์", `${formatMoney(totalRoyaltyBase)} บาท`],
-      ["ค่าแฟรนไชส์ซีประจำเดือน", `${formatMoney(totalFranchiseFee)} บาท`, "highlight"]
+      ["ยอดรับที่ยืนยันแล้ว", `${formatMoney(totalConfirmedActual)} บาท`],
+      ["ฐานแฟรนไชส์ที่ยืนยันแล้ว", `${formatMoney(totalConfirmedRoyaltyBase)} บาท`],
+      ["ค่าแฟรนไชส์ซีประจำเดือน", `${formatMoney(totalConfirmedFranchiseFee)} บาท`, "highlight"]
     ].map(([label, count, tone]) => `
       <article class="${tone || ""}">
         <strong>${escapeHtml(count)}</strong>
@@ -4195,6 +4198,9 @@ function renderBranchRevenue() {
     const royaltyBase = getRevenueRoyaltyBase(event);
     const royaltyRate = getRevenueRoyaltyRate(event);
     const franchiseFee = getRevenueFranchiseFee(event);
+    const reviewedBy = event.reviewed_by_email
+      ? `<small>ตรวจโดย ${escapeHtml(event.reviewed_by_email)}</small>`
+      : "";
     return `
       <tr>
         <td><strong>${escapeHtml(formatDateOnly(event.event_date || event.created_at))}</strong><small>${escapeHtml(toLocalDateTimeValue(event.created_at))}</small></td>
@@ -4207,10 +4213,67 @@ function renderBranchRevenue() {
         <td><strong>${formatMoney(franchiseFee)} บาท</strong></td>
         <td>${formatMoney(royaltyRate * 100)}%</td>
         <td><span class="revenue-status ${escapeHtml(event.status || "pending")}">${escapeHtml(getRevenueStatusLabel(event.status))}</span></td>
-        <td><small>${escapeHtml(openedBy)}</small></td>
+        <td><small>${escapeHtml(openedBy)}</small>${reviewedBy}</td>
+        <td>${renderRevenueActions(event)}</td>
       </tr>
     `;
   }).join("");
+}
+
+function renderRevenueActions(event) {
+  if (!isMainAdmin()) return '<small class="muted-text">ดูได้อย่างเดียว</small>';
+  const status = event.status || "pending";
+  if (status === "pending") {
+    return `
+      <div class="revenue-actions">
+        <button type="button" data-revenue-status="${event.id}" data-status="confirmed">ยืนยัน</button>
+        <button class="danger" type="button" data-revenue-status="${event.id}" data-status="cancelled">ยกเลิก</button>
+      </div>
+    `;
+  }
+  if (status === "confirmed") {
+    return `
+      <div class="revenue-actions">
+        <button class="danger" type="button" data-revenue-status="${event.id}" data-status="refunded">คืนเงิน</button>
+      </div>
+    `;
+  }
+  return '<small class="muted-text">ปิดรายการแล้ว</small>';
+}
+
+async function updateRevenueEventStatus(eventId, nextStatus) {
+  if (!isMainAdmin()) {
+    showToast("เฉพาะแอดมินหลักเท่านั้นที่ยืนยันรายรับได้", true);
+    return;
+  }
+  const event = branchRevenueEvents.find((item) => item.id === eventId);
+  if (!event) return;
+
+  const statusText = getRevenueStatusLabel(nextStatus);
+  let note = "";
+  if (["cancelled", "refunded"].includes(nextStatus)) {
+    note = window.prompt(`ระบุหมายเหตุสำหรับสถานะ "${statusText}"`) || "";
+    if (!note.trim()) return;
+  } else {
+    const confirmed = window.confirm(
+      `ยืนยันรายรับรายการนี้ใช่ไหม?\n\n${event.student_name || "-"} · ${courseLabels[event.course_type]?.[0] || event.course_type}\nยอดรับจริง ${formatMoney(event.actual_amount || 0)} บาท\nค่าแฟรนไชส์ซี ${formatMoney(getRevenueFranchiseFee(event))} บาท`
+    );
+    if (!confirmed) return;
+  }
+
+  const { error } = await supabaseClient.rpc("review_course_revenue_event", {
+    p_event_id: eventId,
+    p_status: nextStatus,
+    p_note: note.trim() || null
+  });
+
+  if (error) {
+    showToast(`อัปเดตสถานะรายรับไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  showToast(`อัปเดตสถานะเป็น "${statusText}" แล้ว`);
+  await loadBranchRevenue();
 }
 
 async function loadBranchRevenue() {
@@ -4281,6 +4344,8 @@ function exportBranchRevenueCsv() {
     "ค่าแฟรนไชส์ซี",
     "สถานะ",
     "ผู้เปิดสิทธิ์",
+    "ผู้ตรวจรายรับ",
+    "เวลาตรวจรายรับ",
     "หมายเหตุ"
   ];
   const lines = [
@@ -4300,6 +4365,8 @@ function exportBranchRevenueCsv() {
       getRevenueFranchiseFee(event),
       getRevenueStatusLabel(event.status),
       event.opened_by_email || "",
+      event.reviewed_by_email || "",
+      event.reviewed_at || "",
       event.note || ""
     ].map(csvCell).join(","))
   ];
@@ -7067,6 +7134,11 @@ staffStudentModal?.addEventListener("click", (event) => {
 refreshClassRemindersButton?.addEventListener("click", loadClassReminders);
 refreshRevenueButton?.addEventListener("click", loadBranchRevenue);
 exportRevenueButton?.addEventListener("click", exportBranchRevenueCsv);
+revenueRows?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-revenue-status]");
+  if (!button) return;
+  updateRevenueEventStatus(button.dataset.revenueStatus, button.dataset.status);
+});
 [
   revenueDateFrom,
   revenueDateTo,

@@ -514,6 +514,13 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   border-color: #b9d89e;
   background: linear-gradient(135deg, #f2faeb, #fff9df);
 }
+.revenue-summary article.warning {
+  border-color: #f2d6a2;
+  background: #fff8e5;
+}
+.revenue-summary article.warning strong {
+  color: #a46f1f;
+}
 .revenue-summary article.highlight strong {
   color: #4f8448;
 }
@@ -545,6 +552,24 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .revenue-status.confirmed { color: #4f7d48; background: #e5f1df; }
 .revenue-status.cancelled,
 .revenue-status.refunded { color: #a65f54; background: #fae4df; }
+.revenue-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.revenue-actions button {
+  border: 0;
+  border-radius: 10px;
+  padding: 7px 10px;
+  color: white;
+  background: #668b55;
+  font-size: 12px;
+  font-weight: 900;
+}
+.revenue-actions button.danger {
+  background: #c47a68;
+}
+.muted-text {
+  color: #9a8a7d;
+  font-size: 12px;
+  font-weight: 800;
+}
 .reminders-hero { background: linear-gradient(120deg, #eaf4e2, #fff1dc); }
 .class-reminder-panel { margin-top: 18px; }
 .class-reminder-summary {
