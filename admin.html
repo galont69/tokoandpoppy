@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260628-premium-admin-ui-readable">
+  <link rel="stylesheet" href="admin.css?v=20260628-staff-profile-first">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -1099,7 +1099,7 @@
       <div class="modal-heading">
         <span>เพิ่มนักเรียนโดยทีมงาน</span>
         <h2 id="staffStudentTitle">เพิ่มนักเรียนเก่าเข้าระบบ</h2>
-        <p>สร้างข้อมูลนักเรียนและคอร์สให้พร้อมใช้งานสมุดพัฒนาการ/แจ้งเตือนก่อนเรียน โดยยังผูกบัญชีผู้ปกครองภายหลังได้</p>
+        <p>สร้างข้อมูลนักเรียนเบื้องต้นก่อน จากนั้นให้แอดมินสาขาเปิดสิทธิ์คอร์สพร้อมราคาผ่านหน้าใบสมัคร เพื่อให้ตรวจสอบรายรับได้ช่องทางเดียว</p>
       </div>
       <form class="staff-student-form" id="staffStudentForm">
         <section>
@@ -1124,12 +1124,6 @@
         </section>
 
         <section>
-          <h3>คอร์สและจำนวนครั้ง</h3>
-          <div class="staff-course-list" id="staffStudentCourseList"></div>
-          <button class="staff-add-course-button" id="addStaffStudentCourseButton" type="button">＋ เพิ่มคอร์ส</button>
-        </section>
-
-        <section>
           <h3>ข้อมูลผู้ปกครอง</h3>
           <div class="staff-student-grid">
             <label>ชื่อผู้ปกครอง
@@ -1144,8 +1138,13 @@
           </div>
         </section>
 
+        <section class="staff-student-note-panel">
+          <h3>ขั้นตอนเปิดสิทธิ์คอร์ส</h3>
+          <p>หลังบันทึก ระบบจะส่งรายการไปที่เมนูใบสมัครเรียนเพื่อให้แอดมินสาขา/แอดมินหลักเลือกคอร์ส จำนวนครั้ง ตรวจราคา และยืนยันยอดชำระก่อนเปิดสิทธิ์</p>
+        </section>
+
         <div class="staff-student-actions">
-          <span id="staffStudentReadinessText">กรอกข้อมูลนักเรียนและคอร์สเพื่อเพิ่มเข้าระบบ</span>
+          <span id="staffStudentReadinessText">กรอกข้อมูลนักเรียนก่อน แล้วเปิดสิทธิ์คอร์สจากหน้าใบสมัครเรียน</span>
           <button class="save-lesson-button" id="saveStaffStudentButton" type="submit">เพิ่มนักเรียน</button>
         </div>
       </form>
@@ -1351,6 +1350,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260628-revenue-review-flow"></script>
+  <script src="admin.js?v=20260628-staff-profile-first"></script>
 </body>
 </html>

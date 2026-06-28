@@ -1007,6 +1007,17 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
   padding: 15px;
   background: rgba(255,255,255,.6);
 }
+.staff-student-note-panel {
+  border-color: #d9e9cf !important;
+  background: linear-gradient(135deg, #f4faef, #fff8e7) !important;
+}
+.staff-student-note-panel p {
+  margin: 0;
+  color: #6f6259;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.7;
+}
 .staff-student-form h3 {
   margin: 0;
   color: #4f7d48;
@@ -3812,6 +3823,18 @@ tbody tr:hover td {
   padding: 7px 12px;
   font-size: 13px;
   line-height: 1.25;
+}
+
+.student-management-courses .profile-only-course {
+  grid-template-columns: minmax(160px, 1fr) auto auto;
+  border: 1px dashed #dfcfbb;
+  border-radius: 14px;
+  padding: 12px;
+  background: #fffaf0;
+}
+
+.student-management-courses .profile-only-course span {
+  color: #7e6b5e;
 }
 
 .student-management-actions {
