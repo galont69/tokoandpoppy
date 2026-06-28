@@ -65,6 +65,12 @@ const artImageList = document.querySelector("#artImageList");
 const deleteArtLessonButton = document.querySelector("#deleteArtLessonButton");
 const branchRows = document.querySelector("#branchRows");
 const branchForm = document.querySelector("#branchForm");
+const branchFormTitle = document.querySelector("#branchFormTitle");
+const saveBranchButton = document.querySelector("#saveBranchButton");
+const cancelBranchEditButton = document.querySelector("#cancelBranchEditButton");
+const coursePricingRows = document.querySelector("#coursePricingRows");
+const refreshCoursePricingButton = document.querySelector("#refreshCoursePricingButton");
+const saveCoursePricingButton = document.querySelector("#saveCoursePricingButton");
 const branchAdminRows = document.querySelector("#branchAdminRows");
 const branchAdminPendingBadge = document.querySelector("#branchAdminPendingBadge");
 const refreshBranchAdminsButton = document.querySelector("#refreshBranchAdminsButton");
@@ -205,6 +211,8 @@ let branchAdminApplications = [];
 let branchTeacherInvitations = [];
 let signupBranchesLoaded = false;
 let branches = [];
+let coursePricing = [];
+let editingBranchId = "";
 let robotLessons = [];
 let activeLesson = null;
 let artCategories = [];
@@ -262,6 +270,55 @@ const courseLabels = {
 
 const artCourseTypes = ["art", "creative_art", "water_color", "clay"];
 const liffCourseTypes = ["robot", "creative_art", "water_color", "clay"];
+const coursePricingCatalog = [
+  {
+    type: "creative_art",
+    title: "Creative Art",
+    note: "ใช้ตารางราคาศิลปะจากภาพ",
+    packages: [
+      { sessions: 4, listPrice: 2120, discount: 0, actualPrice: 2120 },
+      { sessions: 8, listPrice: 4240, discount: 424, actualPrice: 3810 },
+      { sessions: 12, listPrice: 6370, discount: 954, actualPrice: 5415 },
+      { sessions: 24, listPrice: 12720, discount: 2544, actualPrice: 10170 }
+    ]
+  },
+  {
+    type: "water_color",
+    title: "Water Color",
+    note: "ใช้ตารางราคาศิลปะจากภาพ",
+    packages: [
+      { sessions: 4, listPrice: 2120, discount: 0, actualPrice: 2120 },
+      { sessions: 8, listPrice: 4240, discount: 424, actualPrice: 3810 },
+      { sessions: 12, listPrice: 6370, discount: 954, actualPrice: 5415 },
+      { sessions: 24, listPrice: 12720, discount: 2544, actualPrice: 10170 }
+    ]
+  },
+  {
+    type: "clay",
+    title: "Clay",
+    note: "ราคาจากช่อง G-Clay ปั้นดินเบา ลด 20%",
+    packages: [
+      { sessions: 1, listPrice: 500, discount: 100, actualPrice: 400 },
+      { sessions: 5, listPrice: 2500, discount: 500, actualPrice: 2000 },
+      { sessions: 10, listPrice: 5000, discount: 1000, actualPrice: 4000 }
+    ]
+  },
+  {
+    type: "robot",
+    title: "Robot + Coding",
+    note: "ราคาจากช่องโรบอท + โค้ดดิ้ง",
+    packages: [
+      { sessions: 5, listPrice: 2700, discount: 0, actualPrice: 2700 },
+      { sessions: 10, listPrice: 5400, discount: 540, actualPrice: 4860 },
+      { sessions: 15, listPrice: 8100, discount: 1215, actualPrice: 6885 },
+      { sessions: 30, listPrice: 16200, discount: 3240, actualPrice: 12960 }
+    ]
+  }
+];
+const bundlePricingNotes = [
+  "สมัครศิลปะ + Clay ลดเพิ่ม 20%",
+  "สมัครศิลปะ + Robot + Coding ลดเพิ่ม 10%"
+];
 
 function getApplicationCourseCodes(application = {}) {
   const requestedCourses = Array.isArray(application.requested_courses)
@@ -3417,6 +3474,7 @@ async function loadBranchesAdmin() {
 
   branches = data || [];
   renderBranchesAdmin();
+  await loadCoursePricing();
 }
 
 function renderBranchesAdmin() {
@@ -3443,11 +3501,38 @@ function renderBranchesAdmin() {
         </small>
         <small>${escapeHtml(branch.contact_name || "-")} ${escapeHtml(branch.contact_phone || "")}</small>
       </div>
-      <button type="button" data-branch-toggle="${branch.id}">
-        ${branch.is_active ? "ลบจาก dropdown" : "เปิดใช้งาน"}
-      </button>
+      <div class="branch-card-actions">
+        <button class="secondary-action" type="button" data-branch-edit="${branch.id}">แก้ไข</button>
+        <button type="button" data-branch-toggle="${branch.id}">
+          ${branch.is_active ? "ลบจาก dropdown" : "เปิดใช้งาน"}
+        </button>
+      </div>
     </article>
   `).join("");
+}
+
+function resetBranchForm() {
+  editingBranchId = "";
+  branchForm?.reset();
+  if (branchFormTitle) branchFormTitle.textContent = "เพิ่มสาขาใหม่";
+  if (saveBranchButton) saveBranchButton.textContent = "เพิ่มสาขา";
+  if (cancelBranchEditButton) cancelBranchEditButton.hidden = true;
+}
+
+function editBranch(branchId) {
+  const branch = branches.find(({ id }) => id === branchId);
+  if (!branch || !branchForm) return;
+  editingBranchId = branch.id;
+  document.querySelector("#branchName").value = branch.name || "";
+  document.querySelector("#branchCode").value = branch.code || "";
+  document.querySelector("#branchProvince").value = branch.province || "";
+  document.querySelector("#branchContactName").value = branch.contact_name || "";
+  document.querySelector("#branchContactPhone").value = branch.contact_phone || "";
+  document.querySelector("#branchFeeRate").value = branch.franchise_fee_rate ?? 0;
+  if (branchFormTitle) branchFormTitle.textContent = `แก้ไข ${branch.name}`;
+  if (saveBranchButton) saveBranchButton.textContent = "บันทึกข้อมูลสาขา";
+  if (cancelBranchEditButton) cancelBranchEditButton.hidden = false;
+  branchForm.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 async function createBranch(event) {
@@ -3462,24 +3547,28 @@ async function createBranch(event) {
     province: document.querySelector("#branchProvince").value.trim() || null,
     contact_name: document.querySelector("#branchContactName").value.trim() || null,
     contact_phone: document.querySelector("#branchContactPhone").value.trim() || null,
-    franchise_fee_rate: Number(document.querySelector("#branchFeeRate").value || 0),
-    is_active: true
+    franchise_fee_rate: Number(document.querySelector("#branchFeeRate").value || 0)
   };
+  if (!editingBranchId) payload.is_active = true;
 
-  const submitButton = branchForm.querySelector("button[type=submit]");
+  const submitButton = saveBranchButton || branchForm.querySelector("button[type=submit]");
   submitButton.disabled = true;
-  submitButton.textContent = "กำลังเพิ่มสาขา...";
-  const { error } = await supabaseClient.from("branches").insert(payload);
+  submitButton.textContent = editingBranchId ? "กำลังบันทึก..." : "กำลังเพิ่มสาขา...";
+  const request = editingBranchId
+    ? supabaseClient.from("branches").update(payload).eq("id", editingBranchId)
+    : supabaseClient.from("branches").insert(payload);
+  const { error } = await request;
   submitButton.disabled = false;
-  submitButton.textContent = "เพิ่มสาขา";
+  submitButton.textContent = editingBranchId ? "บันทึกข้อมูลสาขา" : "เพิ่มสาขา";
 
   if (error) {
-    showToast(`เพิ่มสาขาไม่สำเร็จ: ${error.message}`, true);
+    showToast(`บันทึกสาขาไม่สำเร็จ: ${error.message}`, true);
     return;
   }
 
-  branchForm.reset();
-  showToast("เพิ่มสาขาเรียบร้อย");
+  const edited = Boolean(editingBranchId);
+  resetBranchForm();
+  showToast(edited ? "บันทึกข้อมูลสาขาเรียบร้อย" : "เพิ่มสาขาเรียบร้อย");
   await loadBranchesAdmin();
 }
 
@@ -3502,6 +3591,137 @@ async function toggleBranch(branchId) {
 
   showToast(branch.is_active ? "ลบสาขาออกจาก dropdown แล้ว" : "เปิดใช้งานสาขาแล้ว");
   await loadBranchesAdmin();
+}
+
+function getDefaultPricingItem(courseType, sessions) {
+  const course = coursePricingCatalog.find((item) => item.type === courseType);
+  return course?.packages.find((item) => item.sessions === Number(sessions)) || null;
+}
+
+function getPricingRecord(courseType, sessions) {
+  const stored = coursePricing.find((item) =>
+    item.course_type === courseType && Number(item.package_sessions) === Number(sessions)
+  );
+  const fallback = getDefaultPricingItem(courseType, sessions);
+  const listPrice = Number(stored?.list_price ?? fallback?.listPrice ?? 0);
+  const discount = Number(stored?.discount_amount ?? fallback?.discount ?? 0);
+  const actualPrice = Number(stored?.actual_price ?? fallback?.actualPrice ?? Math.max(0, listPrice - discount));
+  return { listPrice, discount, actualPrice };
+}
+
+function renderCoursePricing() {
+  if (!coursePricingRows) return;
+  coursePricingRows.innerHTML = coursePricingCatalog.map((course) => `
+    <article class="course-pricing-card" data-course-pricing-card="${course.type}">
+      <h3>${escapeHtml(course.title)}</h3>
+      <p>${escapeHtml(course.note)}</p>
+      <div class="course-pricing-table">
+        <div class="course-pricing-row header">
+          <span>จำนวนครั้ง</span>
+          <span>ราคาปกติ</span>
+          <span>ส่วนลด</span>
+          <span>ราคาสุทธิ</span>
+        </div>
+        ${course.packages.map((pack) => {
+          const pricing = getPricingRecord(course.type, pack.sessions);
+          return `
+            <div class="course-pricing-row" data-course-type="${course.type}" data-package-sessions="${pack.sessions}">
+              <label>
+                ครั้ง
+                <input type="number" value="${pack.sessions}" readonly>
+              </label>
+              <label>
+                ราคาปกติ
+                <input type="number" min="0" step="1" value="${pricing.listPrice}" data-price-field="list_price">
+              </label>
+              <label>
+                ส่วนลด
+                <input type="number" min="0" step="1" value="${pricing.discount}" data-price-field="discount_amount">
+              </label>
+              <label>
+                ราคาสุทธิ
+                <input type="number" min="0" step="1" value="${pricing.actualPrice}" data-price-field="actual_price">
+              </label>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </article>
+  `).join("");
+}
+
+async function loadCoursePricing() {
+  if (!isMainAdmin() || !coursePricingRows) return;
+  coursePricingRows.innerHTML = '<div class="loading-state"><i></i><span>กำลังโหลดราคาคอร์ส...</span></div>';
+  const { data, error } = await supabaseClient
+    .from("course_pricing")
+    .select("*")
+    .in("course_type", coursePricingCatalog.map((course) => course.type))
+    .order("course_type", { ascending: true })
+    .order("package_sessions", { ascending: true });
+
+  if (error) {
+    coursePricing = [];
+    renderCoursePricing();
+    showToast(`โหลดราคาคอร์สไม่ได้: ${error.message}`, true);
+    return;
+  }
+
+  coursePricing = data || [];
+  renderCoursePricing();
+}
+
+function readCoursePricingPayload() {
+  return [...coursePricingRows.querySelectorAll("[data-course-type][data-package-sessions]")]
+    .map((row) => {
+      const courseType = row.dataset.courseType;
+      const packageSessions = Number(row.dataset.packageSessions);
+      const label = `${courseLabels[courseType]?.[0] || courseType} ${packageSessions} ครั้ง`;
+      const listPrice = Number(row.querySelector('[data-price-field="list_price"]')?.value || 0);
+      const discountAmount = Number(row.querySelector('[data-price-field="discount_amount"]')?.value || 0);
+      const actualPrice = Number(row.querySelector('[data-price-field="actual_price"]')?.value || 0);
+      return {
+        course_type: courseType,
+        package_sessions: packageSessions,
+        label,
+        list_price: listPrice,
+        discount_amount: discountAmount,
+        actual_price: actualPrice,
+        bundle_note: bundlePricingNotes.join(" · ")
+      };
+    });
+}
+
+async function saveCoursePricing() {
+  if (!isMainAdmin() || !coursePricingRows) return;
+  const payload = readCoursePricingPayload();
+  const invalid = payload.find((item) =>
+    !item.course_type ||
+    !item.package_sessions ||
+    item.list_price < 0 ||
+    item.discount_amount < 0 ||
+    item.actual_price < 0
+  );
+  if (invalid) {
+    showToast("ราคาคอร์สต้องเป็นตัวเลข 0 ขึ้นไป", true);
+    return;
+  }
+
+  saveCoursePricingButton.disabled = true;
+  saveCoursePricingButton.textContent = "กำลังบันทึกราคา...";
+  const { error } = await supabaseClient.rpc("upsert_course_pricing", {
+    p_items: payload
+  });
+  saveCoursePricingButton.disabled = false;
+  saveCoursePricingButton.textContent = "บันทึกราคาคอร์ส";
+
+  if (error) {
+    showToast(`บันทึกราคาไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  showToast("บันทึกราคาคอร์สเรียบร้อย");
+  await loadCoursePricing();
 }
 
 function getFilteredApplications() {
@@ -6477,7 +6697,12 @@ document.querySelector("#refreshBranchesButton").addEventListener("click", loadB
 branchRows.addEventListener("click", (event) => {
   const button = event.target.closest("[data-branch-toggle]");
   if (button) toggleBranch(button.dataset.branchToggle);
+  const editButton = event.target.closest("[data-branch-edit]");
+  if (editButton) editBranch(editButton.dataset.branchEdit);
 });
+cancelBranchEditButton?.addEventListener("click", resetBranchForm);
+refreshCoursePricingButton?.addEventListener("click", loadCoursePricing);
+saveCoursePricingButton?.addEventListener("click", saveCoursePricing);
 refreshBranchAdminsButton.addEventListener("click", loadBranchAdminApplications);
 branchAdminRows.addEventListener("click", (event) => {
   const button = event.target.closest("[data-branch-admin-review]");

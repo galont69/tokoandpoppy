@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260628-branch-revenue-ledger">
+  <link rel="stylesheet" href="admin.css?v=20260628-branch-pricing">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -528,7 +528,10 @@
 
         <div class="branch-admin-grid">
           <form class="branch-form" id="branchForm">
-            <h3>เพิ่มสาขาใหม่</h3>
+            <div class="branch-form-heading">
+              <h3 id="branchFormTitle">เพิ่มสาขาใหม่</h3>
+              <button class="text-button" id="cancelBranchEditButton" type="button" hidden>ยกเลิกแก้ไข</button>
+            </div>
             <label>ชื่อสาขา
               <input id="branchName" type="text" maxlength="150" required placeholder="เช่น สาขาเชียงใหม่ นิมมาน">
             </label>
@@ -551,7 +554,7 @@
             <label>อัตราค่าแฟรนไชส์ (%) สำหรับคำนวณภายหลัง
               <input id="branchFeeRate" type="number" min="0" step="0.01" placeholder="เช่น 20">
             </label>
-            <button class="save-lesson-button" type="submit">เพิ่มสาขา</button>
+            <button class="save-lesson-button" id="saveBranchButton" type="submit">เพิ่มสาขา</button>
           </form>
 
           <section class="applications-panel branch-list-panel">
@@ -565,6 +568,23 @@
             <div class="branch-list" id="branchRows"></div>
           </section>
         </div>
+
+        <section class="applications-panel course-pricing-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>ตั้งราคาคอร์ส</h2>
+              <p>ใช้เป็นราคาตั้งต้นสำหรับบันทึกรายรับทุกครั้งที่เปิดสิทธิ์คอร์สให้นักเรียน</p>
+            </div>
+            <button class="refresh-button" id="refreshCoursePricingButton" type="button">↻ รีเฟรชราคา</button>
+          </div>
+          <div class="course-pricing-note">
+            ราคาจากภาพ: ศิลปะใช้กับ Creative Art และ Water Color, Clay ลด 20%, Robot + Coding มีแพ็กเกจ 5/10/15/30 ครั้ง
+          </div>
+          <div class="course-pricing-grid" id="coursePricingRows"></div>
+          <div class="course-pricing-actions">
+            <button class="save-lesson-button" id="saveCoursePricingButton" type="button">บันทึกราคาคอร์ส</button>
+          </div>
+        </section>
       </section>
 
       <section class="content admin-view" id="lessonsView" hidden>
@@ -1327,6 +1347,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260628-branch-revenue-ledger"></script>
+  <script src="admin.js?v=20260628-branch-pricing"></script>
 </body>
 </html>
