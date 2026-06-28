@@ -96,6 +96,7 @@ const refreshStudentsButton = document.querySelector("#refreshStudentsButton");
 const addStaffStudentButton = document.querySelector("#addStaffStudentButton");
 const staffStudentModal = document.querySelector("#staffStudentModal");
 const staffStudentForm = document.querySelector("#staffStudentForm");
+const staffStudentTitle = document.querySelector("#staffStudentTitle");
 const staffStudentBranch = document.querySelector("#staffStudentBranch");
 const staffStudentName = document.querySelector("#staffStudentName");
 const staffStudentNickname = document.querySelector("#staffStudentNickname");
@@ -205,6 +206,7 @@ let classReminderSentKeys = new Set();
 let activeClassReminder = null;
 let activeLearningEnrollment = null;
 let activeScheduleEnrollment = null;
+let activeStaffStudentApplicationId = null;
 let lastSessionShareData = null;
 let pendingSessionShareData = null;
 let pendingSessionObjectUrl = "";
@@ -1051,9 +1053,13 @@ function getStudentManagementGroups(rows) {
         parentName: app.parent_name || "",
         parentEmail: app.parent_email || "",
         parentPhone: app.parent_phone || "",
+        birthDate: app.birth_date || "",
+        ageYears: app.age_years || "",
+        legacyNote: app.legacy_note || app.student_notes || "",
         lineDisplayName: app.line_display_name || "",
         lineUserId: app.line_user_id || enrollment.line_user_id || "",
         registrationSource: app.registration_source || "",
+        branchId: app.branch_id || enrollment.branch_id || "",
         branchName: app.branches?.name || enrollment.branches?.name || "",
         status: app.status || "approved",
         createdAt: app.created_at || enrollment.created_at || "",
@@ -1067,6 +1073,7 @@ function getStudentManagementGroups(rows) {
     const updatedAt = enrollment.updated_at || enrollment.created_at || "";
     if (updatedAt > group.latestUpdatedAt) group.latestUpdatedAt = updatedAt;
     if (!group.applicationId && enrollment.application_id) group.applicationId = enrollment.application_id;
+    if (!group.branchId && enrollment.branch_id) group.branchId = enrollment.branch_id;
     if (!group.branchName && enrollment.branches?.name) group.branchName = enrollment.branches.name;
   });
 
@@ -1179,6 +1186,11 @@ function renderStudentManagement() {
               เปิดสมุดพัฒนาการ
             </button>
           ` : ""}
+          ${group.applicationId ? `
+            <button class="review-button" type="button" data-edit-staff-student="${group.applicationId}">
+              แก้ไข / เพิ่มคอร์ส
+            </button>
+          ` : ""}
           ${canDelete ? `
             <button class="delete-student-button" type="button" data-delete-student-application="${group.applicationId}" data-student-name="${escapeHtml(group.studentName)}">
               ลบนักเรียน
@@ -1203,7 +1215,7 @@ async function loadStudentManagement() {
 
   let query = supabaseClient
     .from("course_enrollments")
-    .select("*, enrollment_applications(id,status,student_name,student_nickname,parent_name,parent_phone,parent_email,line_display_name,line_user_id,registration_source,created_at,branches(name,code)), branches(name,code)")
+    .select("*, enrollment_applications(id,status,student_name,student_nickname,parent_name,parent_phone,parent_email,birth_date,age_years,student_notes,legacy_note,line_display_name,line_user_id,registration_source,branch_id,created_at,branches(name,code)), branches(name,code)")
     .order("updated_at", { ascending: false });
 
   if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
@@ -1300,7 +1312,10 @@ async function loadStaffStudentBranches() {
 
 async function openStaffStudentModal() {
   if (!staffStudentModal || !staffStudentForm) return;
+  activeStaffStudentApplicationId = null;
   staffStudentForm.reset();
+  if (staffStudentTitle) staffStudentTitle.textContent = "เพิ่มนักเรียนเก่าเข้าระบบ";
+  if (saveStaffStudentButton) saveStaffStudentButton.textContent = "เพิ่มนักเรียน";
   renderStaffStudentCourseItems([getBlankStaffStudentCourse()]);
   if (staffStudentReadinessText) {
     staffStudentReadinessText.textContent = "รู้แค่ชื่อเล่นก็เพิ่มก่อนได้ แล้วกลับมากรอกส่วนที่เหลือภายหลัง";
@@ -1312,10 +1327,57 @@ async function openStaffStudentModal() {
   staffStudentName?.focus();
 }
 
+async function openEditStaffStudentModal(applicationId) {
+  if (!applicationId || !staffStudentModal || !staffStudentForm) return;
+  const group = getStudentManagementGroups(studentManagementEnrollments)
+    .find((item) => item.applicationId === applicationId);
+  if (!group) {
+    showToast("ไม่พบนักเรียนที่ต้องการแก้ไข กรุณารีเฟรชรายชื่ออีกครั้ง", true);
+    return;
+  }
+
+  activeStaffStudentApplicationId = applicationId;
+  staffStudentForm.reset();
+  if (staffStudentTitle) staffStudentTitle.textContent = `แก้ไขข้อมูล: ${group.nickname || group.studentName}`;
+  staffStudentName.value = group.studentName || "";
+  staffStudentNickname.value = group.nickname || "";
+  staffStudentBirthDate.value = group.birthDate || "";
+  staffStudentAge.value = group.ageYears || "";
+  staffStudentParentName.value = group.parentName || "";
+  staffStudentParentPhone.value = group.parentPhone === "00000000" ? "" : group.parentPhone || "";
+  staffStudentNote.value = group.legacyNote || "";
+  if (saveStaffStudentButton) saveStaffStudentButton.textContent = "บันทึกข้อมูล";
+  if (staffStudentReadinessText) {
+    staffStudentReadinessText.textContent = "แก้ไขข้อมูลเด็กหรือกดเพิ่มคอร์สเพื่อเปิดคอร์สใหม่ให้เด็กคนนี้";
+  }
+
+  await loadStaffStudentBranches();
+  if (staffStudentBranch && group.branchId) {
+    staffStudentBranch.value = group.branchId;
+  }
+
+  renderStaffStudentCourseItems(group.enrollments.map((enrollment) => ({
+    course_type: enrollment.course_type || "pending",
+    total_sessions: Number(enrollment.total_sessions || "") || "",
+    completed_sessions: Number(enrollment.completed_sessions || 0),
+    level_label: enrollment.level_label || "",
+    class_weekday: enrollment.class_weekday === null || enrollment.class_weekday === undefined ? "" : String(enrollment.class_weekday),
+    class_start_time: normalizeTimeLabel(enrollment.class_start_time),
+    class_end_time: normalizeTimeLabel(enrollment.class_end_time),
+    class_reminder_enabled: enrollment.class_reminder_enabled !== false
+  })));
+
+  staffStudentModal.classList.add("open");
+  staffStudentModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+  staffStudentNickname?.focus();
+}
+
 function closeStaffStudentModal() {
   staffStudentModal?.classList.remove("open");
   staffStudentModal?.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
+  activeStaffStudentApplicationId = null;
 }
 
 function getBlankStaffStudentCourse() {
@@ -1453,6 +1515,7 @@ function getStaffStudentPayload() {
   }
 
   return {
+    p_application_id: activeStaffStudentApplicationId || null,
     p_student_name: displayStudentName,
     p_student_nickname: nickname || null,
     p_birth_date: staffStudentBirthDate?.value || null,
@@ -1483,12 +1546,19 @@ async function saveStaffStudent(event) {
     return;
   }
 
+  const isEditing = Boolean(activeStaffStudentApplicationId);
   saveStaffStudentButton.disabled = true;
-  saveStaffStudentButton.textContent = "กำลังเพิ่ม...";
-  if (staffStudentReadinessText) staffStudentReadinessText.textContent = "กำลังสร้างนักเรียนและคอร์ส...";
-  const { error } = await supabaseClient.rpc("create_staff_student_record", payload);
+  saveStaffStudentButton.textContent = isEditing ? "กำลังบันทึก..." : "กำลังเพิ่ม...";
+  if (staffStudentReadinessText) {
+    staffStudentReadinessText.textContent = isEditing ? "กำลังบันทึกข้อมูลนักเรียน..." : "กำลังสร้างนักเรียนและคอร์ส...";
+  }
+  const rpcName = isEditing ? "update_staff_student_record" : "create_staff_student_record";
+  const rpcPayload = isEditing ? payload : Object.fromEntries(
+    Object.entries(payload).filter(([key]) => key !== "p_application_id")
+  );
+  const { error } = await supabaseClient.rpc(rpcName, rpcPayload);
   saveStaffStudentButton.disabled = false;
-  saveStaffStudentButton.textContent = "เพิ่มนักเรียน";
+  saveStaffStudentButton.textContent = isEditing ? "บันทึกข้อมูล" : "เพิ่มนักเรียน";
 
   if (error) {
     if (staffStudentReadinessText) staffStudentReadinessText.textContent = "เพิ่มไม่สำเร็จ กรุณาตรวจข้อมูลอีกครั้ง";
@@ -1496,7 +1566,7 @@ async function saveStaffStudent(event) {
     return;
   }
 
-  showToast("เพิ่มนักเรียนเข้าระบบเรียบร้อยแล้ว");
+  showToast(isEditing ? "บันทึกข้อมูลนักเรียนเรียบร้อยแล้ว" : "เพิ่มนักเรียนเข้าระบบเรียบร้อยแล้ว");
   closeStaffStudentModal();
   await Promise.all([
     loadStudentManagement(),
@@ -6279,6 +6349,12 @@ studentManagementRows?.addEventListener("click", async (event) => {
       await loadLearningProgress();
     }
     openRecordSession(recordButton.dataset.studentRecordEnrollment);
+    return;
+  }
+
+  const editButton = event.target.closest("[data-edit-staff-student]");
+  if (editButton) {
+    openEditStaffStudentModal(editButton.dataset.editStaffStudent);
     return;
   }
 
