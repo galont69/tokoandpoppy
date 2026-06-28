@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260628-staff-student-import">
+  <link rel="stylesheet" href="admin.css?v=20260628-staff-student-multicourse">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -1005,7 +1005,7 @@
           <h3>ข้อมูลนักเรียน</h3>
           <div class="staff-student-grid">
             <label>ชื่อ-นามสกุลนักเรียน
-              <input id="staffStudentName" type="text" maxlength="150" required placeholder="เช่น ด.ญ. โลมา สดใส">
+              <input id="staffStudentName" type="text" maxlength="150" placeholder="ไม่ทราบ / กรอกภายหลังได้">
             </label>
             <label>ชื่อเล่น
               <input id="staffStudentNickname" type="text" maxlength="80" placeholder="เช่น โลมา">
@@ -1024,54 +1024,8 @@
 
         <section>
           <h3>คอร์สและจำนวนครั้ง</h3>
-          <div class="staff-student-grid">
-            <label>คอร์ส
-              <select id="staffStudentCourse" required>
-                <option value="robot">Robot + Coding</option>
-                <option value="creative_art">Creative Art</option>
-                <option value="water_color">Water Color</option>
-                <option value="clay">ปั้นดินเบา (CLAY)</option>
-                <option value="art">ศิลปะเดิม</option>
-              </select>
-            </label>
-            <label>จำนวนครั้งทั้งหมด
-              <input id="staffStudentTotalSessions" type="number" min="1" max="120" value="12" required>
-            </label>
-            <label>เรียนไปแล้ว
-              <input id="staffStudentCompletedSessions" type="number" min="0" max="120" value="0" required>
-            </label>
-            <label>Level / หมวด
-              <input id="staffStudentLevel" type="text" maxlength="80" placeholder="เช่น Beginner / Level 1">
-            </label>
-          </div>
-        </section>
-
-        <section>
-          <h3>ตารางเรียนประจำ</h3>
-          <div class="staff-student-grid">
-            <label>วันเรียน
-              <select id="staffStudentWeekday">
-                <option value="">ยังไม่ตั้งตาราง</option>
-                <option value="1">วันจันทร์</option>
-                <option value="2">วันอังคาร</option>
-                <option value="3">วันพุธ</option>
-                <option value="4">วันพฤหัสบดี</option>
-                <option value="5">วันศุกร์</option>
-                <option value="6">วันเสาร์</option>
-                <option value="0">วันอาทิตย์</option>
-              </select>
-            </label>
-            <label>เวลาเริ่ม
-              <input id="staffStudentStartTime" type="time">
-            </label>
-            <label>เวลาเลิก
-              <input id="staffStudentEndTime" type="time">
-            </label>
-            <label class="schedule-toggle staff-student-toggle">
-              <input id="staffStudentReminderEnabled" type="checkbox" checked>
-              <span>เปิดใช้แจ้งเตือนก่อนเรียน</span>
-            </label>
-          </div>
+          <div class="staff-course-list" id="staffStudentCourseList"></div>
+          <button class="staff-add-course-button" id="addStaffStudentCourseButton" type="button">＋ เพิ่มคอร์ส</button>
         </section>
 
         <section>
@@ -1295,6 +1249,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260628-staff-student-import"></script>
+  <script src="admin.js?v=20260628-staff-student-multicourse"></script>
 </body>
 </html>

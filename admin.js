@@ -101,14 +101,8 @@ const staffStudentName = document.querySelector("#staffStudentName");
 const staffStudentNickname = document.querySelector("#staffStudentNickname");
 const staffStudentBirthDate = document.querySelector("#staffStudentBirthDate");
 const staffStudentAge = document.querySelector("#staffStudentAge");
-const staffStudentCourse = document.querySelector("#staffStudentCourse");
-const staffStudentTotalSessions = document.querySelector("#staffStudentTotalSessions");
-const staffStudentCompletedSessions = document.querySelector("#staffStudentCompletedSessions");
-const staffStudentLevel = document.querySelector("#staffStudentLevel");
-const staffStudentWeekday = document.querySelector("#staffStudentWeekday");
-const staffStudentStartTime = document.querySelector("#staffStudentStartTime");
-const staffStudentEndTime = document.querySelector("#staffStudentEndTime");
-const staffStudentReminderEnabled = document.querySelector("#staffStudentReminderEnabled");
+const staffStudentCourseList = document.querySelector("#staffStudentCourseList");
+const addStaffStudentCourseButton = document.querySelector("#addStaffStudentCourseButton");
 const staffStudentParentName = document.querySelector("#staffStudentParentName");
 const staffStudentParentPhone = document.querySelector("#staffStudentParentPhone");
 const staffStudentNote = document.querySelector("#staffStudentNote");
@@ -247,7 +241,8 @@ const courseLabels = {
   creative_art: ["Creative Art", "ศิลปะสร้างสรรค์"],
   water_color: ["Water Color", "สีน้ำ"],
   clay: ["ปั้นดินเบา (CLAY)", "Clay Art"],
-  both: ["ทั้งสองคอร์ส", "Robot + Creative Art"]
+  both: ["ทั้งสองคอร์ส", "Robot + Creative Art"],
+  pending: ["ยังไม่ระบุคอร์ส", "กรอกภายหลัง"]
 };
 
 const artCourseTypes = ["art", "creative_art", "water_color", "clay"];
@@ -861,6 +856,7 @@ function getCourseIcon(courseType) {
   if (courseType === "robot") return "🤖";
   if (courseType === "water_color") return "💧";
   if (courseType === "clay") return "🧱";
+  if (courseType === "pending") return "📝";
   return "🎨";
 }
 
@@ -1305,11 +1301,9 @@ async function loadStaffStudentBranches() {
 async function openStaffStudentModal() {
   if (!staffStudentModal || !staffStudentForm) return;
   staffStudentForm.reset();
-  if (staffStudentTotalSessions) staffStudentTotalSessions.value = "12";
-  if (staffStudentCompletedSessions) staffStudentCompletedSessions.value = "0";
-  if (staffStudentReminderEnabled) staffStudentReminderEnabled.checked = true;
+  renderStaffStudentCourseItems([getBlankStaffStudentCourse()]);
   if (staffStudentReadinessText) {
-    staffStudentReadinessText.textContent = "กรอกข้อมูลนักเรียนและคอร์สเพื่อเพิ่มเข้าระบบ";
+    staffStudentReadinessText.textContent = "รู้แค่ชื่อเล่นก็เพิ่มก่อนได้ แล้วกลับมากรอกส่วนที่เหลือภายหลัง";
   }
   await loadStaffStudentBranches();
   staffStudentModal.classList.add("open");
@@ -1324,54 +1318,155 @@ function closeStaffStudentModal() {
   document.body.style.overflow = "";
 }
 
+function getBlankStaffStudentCourse() {
+  return {
+    course_type: "pending",
+    total_sessions: "",
+    completed_sessions: "",
+    level_label: "",
+    class_weekday: "",
+    class_start_time: "",
+    class_end_time: "",
+    class_reminder_enabled: true
+  };
+}
+
+function renderStaffStudentCourseItems(courses = [getBlankStaffStudentCourse()]) {
+  if (!staffStudentCourseList) return;
+  staffStudentCourseList.innerHTML = courses.map((course, index) => `
+    <article class="staff-course-item" data-staff-course-item>
+      <div class="staff-course-heading">
+        <strong>คอร์สที่ ${index + 1}</strong>
+        <button type="button" data-remove-staff-course>ลบคอร์ส</button>
+      </div>
+      <div class="staff-student-grid">
+        <label>คอร์ส
+          <select data-staff-course-type>
+            <option value="pending" ${course.course_type === "pending" ? "selected" : ""}>ยังไม่ทราบ / กรอกภายหลัง</option>
+            <option value="robot" ${course.course_type === "robot" ? "selected" : ""}>Robot + Coding</option>
+            <option value="creative_art" ${course.course_type === "creative_art" ? "selected" : ""}>Creative Art</option>
+            <option value="water_color" ${course.course_type === "water_color" ? "selected" : ""}>Water Color</option>
+            <option value="clay" ${course.course_type === "clay" ? "selected" : ""}>ปั้นดินเบา (CLAY)</option>
+            <option value="art" ${course.course_type === "art" ? "selected" : ""}>ศิลปะเดิม</option>
+          </select>
+        </label>
+        <label>จำนวนครั้งทั้งหมด
+          <input data-staff-total-sessions type="number" min="1" max="120" value="${escapeHtml(course.total_sessions ?? "")}" placeholder="ไม่ทราบ / กรอกภายหลัง">
+        </label>
+        <label>เรียนไปแล้ว
+          <input data-staff-completed-sessions type="number" min="0" max="120" value="${escapeHtml(course.completed_sessions ?? "")}" placeholder="ไม่ทราบ / กรอกภายหลัง">
+        </label>
+        <label>Level / หมวด
+          <input data-staff-level type="text" maxlength="80" value="${escapeHtml(course.level_label || "")}" placeholder="ไม่ทราบ / กรอกภายหลัง">
+        </label>
+        <label>วันเรียน
+          <select data-staff-weekday>
+            <option value="" ${course.class_weekday === "" ? "selected" : ""}>ยังไม่ทราบ / กรอกภายหลัง</option>
+            <option value="1" ${String(course.class_weekday) === "1" ? "selected" : ""}>วันจันทร์</option>
+            <option value="2" ${String(course.class_weekday) === "2" ? "selected" : ""}>วันอังคาร</option>
+            <option value="3" ${String(course.class_weekday) === "3" ? "selected" : ""}>วันพุธ</option>
+            <option value="4" ${String(course.class_weekday) === "4" ? "selected" : ""}>วันพฤหัสบดี</option>
+            <option value="5" ${String(course.class_weekday) === "5" ? "selected" : ""}>วันศุกร์</option>
+            <option value="6" ${String(course.class_weekday) === "6" ? "selected" : ""}>วันเสาร์</option>
+            <option value="0" ${String(course.class_weekday) === "0" ? "selected" : ""}>วันอาทิตย์</option>
+          </select>
+        </label>
+        <label>เวลาเริ่ม
+          <input data-staff-start-time type="time" value="${escapeHtml(course.class_start_time || "")}">
+        </label>
+        <label>เวลาเลิก
+          <input data-staff-end-time type="time" value="${escapeHtml(course.class_end_time || "")}">
+        </label>
+        <label class="schedule-toggle staff-student-toggle">
+          <input data-staff-reminder-enabled type="checkbox" ${course.class_reminder_enabled === false ? "" : "checked"}>
+          <span>เปิดใช้แจ้งเตือนก่อนเรียน</span>
+        </label>
+      </div>
+    </article>
+  `).join("");
+}
+
+function getStaffStudentCourseItems() {
+  return [...(staffStudentCourseList?.querySelectorAll("[data-staff-course-item]") || [])];
+}
+
+function readStaffStudentCourseItems() {
+  return getStaffStudentCourseItems().map((item, index) => {
+    const totalValue = item.querySelector("[data-staff-total-sessions]")?.value || "";
+    const completedValue = item.querySelector("[data-staff-completed-sessions]")?.value || "";
+    const weekday = item.querySelector("[data-staff-weekday]")?.value || "";
+    const startTime = item.querySelector("[data-staff-start-time]")?.value || "";
+    const endTime = item.querySelector("[data-staff-end-time]")?.value || "";
+    const totalSessions = totalValue ? Number.parseInt(totalValue, 10) : null;
+    const completedSessions = completedValue ? Number.parseInt(completedValue, 10) : null;
+
+    if (totalValue && (!Number.isInteger(totalSessions) || totalSessions < 1 || totalSessions > 120)) {
+      item.querySelector("[data-staff-total-sessions]")?.focus();
+      throw new Error(`กรุณาระบุจำนวนครั้งทั้งหมดของคอร์สที่ ${index + 1} เป็น 1-120 หรือเว้นว่างไว้`);
+    }
+    if (completedValue && (!Number.isInteger(completedSessions) || completedSessions < 0 || completedSessions > (totalSessions || 120))) {
+      item.querySelector("[data-staff-completed-sessions]")?.focus();
+      throw new Error(`จำนวนครั้งที่เรียนไปแล้วของคอร์สที่ ${index + 1} ไม่ถูกต้อง`);
+    }
+    if ((weekday || startTime || endTime) && (weekday === "" || !startTime)) {
+      (weekday === "" ? item.querySelector("[data-staff-weekday]") : item.querySelector("[data-staff-start-time]"))?.focus();
+      throw new Error(`ถ้าตั้งตารางเรียนคอร์สที่ ${index + 1} กรุณาเลือกวันเรียนและเวลาเริ่ม`);
+    }
+    if (endTime && endTime <= startTime) {
+      item.querySelector("[data-staff-end-time]")?.focus();
+      throw new Error(`เวลาเลิกเรียนของคอร์สที่ ${index + 1} ต้องมากกว่าเวลาเริ่มเรียน`);
+    }
+
+    return {
+      course_type: item.querySelector("[data-staff-course-type]")?.value || "pending",
+      total_sessions: totalSessions,
+      completed_sessions: completedSessions,
+      level_label: item.querySelector("[data-staff-level]")?.value.trim() || null,
+      class_weekday: weekday === "" ? null : Number(weekday),
+      class_start_time: startTime || null,
+      class_end_time: endTime || null,
+      class_reminder_enabled: Boolean(item.querySelector("[data-staff-reminder-enabled]")?.checked)
+    };
+  });
+}
+
+function addStaffStudentCourse() {
+  const courses = readStaffStudentCourseItems();
+  courses.push(getBlankStaffStudentCourse());
+  renderStaffStudentCourseItems(courses);
+}
+
 function getStaffStudentPayload() {
   const branchId = staffStudentBranch?.value || "";
   const studentName = staffStudentName?.value.trim() || "";
-  const totalSessions = Number.parseInt(staffStudentTotalSessions?.value || "", 10);
-  const completedSessions = Number.parseInt(staffStudentCompletedSessions?.value || "0", 10);
-  const weekday = staffStudentWeekday?.value || "";
-  const startTime = staffStudentStartTime?.value || "";
-  const endTime = staffStudentEndTime?.value || "";
+  const nickname = staffStudentNickname?.value.trim() || "";
+  const displayStudentName = studentName || (nickname ? `น้อง${nickname.replace(/^น้อง/, "")}` : "");
+  const courses = readStaffStudentCourseItems();
 
-  if (!studentName || studentName.length < 2) {
-    staffStudentName?.focus();
-    throw new Error("กรุณาระบุชื่อนักเรียนอย่างน้อย 2 ตัวอักษร");
+  if (!displayStudentName || displayStudentName.length < 2) {
+    staffStudentNickname?.focus();
+    throw new Error("กรุณาระบุชื่อเล่นอย่างน้อย 2 ตัวอักษร หรือกรอกชื่อ-นามสกุล");
   }
   if (!branchId) {
     staffStudentBranch?.focus();
     throw new Error("กรุณาเลือกสาขา");
   }
-  if (!Number.isInteger(totalSessions) || totalSessions < 1 || totalSessions > 120) {
-    staffStudentTotalSessions?.focus();
-    throw new Error("กรุณาระบุจำนวนครั้งทั้งหมด 1-120 ครั้ง");
-  }
-  if (!Number.isInteger(completedSessions) || completedSessions < 0 || completedSessions > totalSessions) {
-    staffStudentCompletedSessions?.focus();
-    throw new Error("จำนวนครั้งที่เรียนไปแล้วต้องอยู่ระหว่าง 0 ถึงจำนวนครั้งทั้งหมด");
-  }
-  if ((weekday || startTime || endTime) && (weekday === "" || !startTime)) {
-    (weekday === "" ? staffStudentWeekday : staffStudentStartTime)?.focus();
-    throw new Error("ถ้าตั้งตารางเรียน กรุณาเลือกวันเรียนและเวลาเริ่ม");
-  }
-  if (endTime && endTime <= startTime) {
-    staffStudentEndTime?.focus();
-    throw new Error("เวลาเลิกเรียนต้องมากกว่าเวลาเริ่มเรียน");
-  }
 
   return {
-    p_student_name: studentName,
-    p_student_nickname: staffStudentNickname?.value.trim() || null,
+    p_student_name: displayStudentName,
+    p_student_nickname: nickname || null,
     p_birth_date: staffStudentBirthDate?.value || null,
     p_age_years: staffStudentAge?.value ? Number.parseInt(staffStudentAge.value, 10) : null,
     p_branch_id: branchId,
-    p_course_type: staffStudentCourse?.value || "creative_art",
-    p_total_sessions: totalSessions,
-    p_completed_sessions: completedSessions,
-    p_level_label: staffStudentLevel?.value.trim() || null,
-    p_class_weekday: weekday === "" ? null : Number(weekday),
-    p_class_start_time: startTime || null,
-    p_class_end_time: endTime || null,
-    p_class_reminder_enabled: Boolean(staffStudentReminderEnabled?.checked),
+    p_course_type: courses[0]?.course_type || "pending",
+    p_total_sessions: courses[0]?.total_sessions || null,
+    p_completed_sessions: courses[0]?.completed_sessions || null,
+    p_level_label: courses[0]?.level_label || null,
+    p_class_weekday: courses[0]?.class_weekday ?? null,
+    p_class_start_time: courses[0]?.class_start_time || null,
+    p_class_end_time: courses[0]?.class_end_time || null,
+    p_class_reminder_enabled: Boolean(courses[0]?.class_reminder_enabled),
+    p_courses: courses,
     p_parent_name: staffStudentParentName?.value.trim() || null,
     p_parent_phone: staffStudentParentPhone?.value.trim() || null,
     p_staff_note: staffStudentNote?.value.trim() || null
@@ -6122,6 +6217,23 @@ teacherInviteRows?.addEventListener("click", (event) => {
 refreshLearningButton?.addEventListener("click", loadLearningProgress);
 refreshStudentsButton?.addEventListener("click", loadStudentManagement);
 addStaffStudentButton?.addEventListener("click", openStaffStudentModal);
+addStaffStudentCourseButton?.addEventListener("click", () => {
+  try {
+    addStaffStudentCourse();
+  } catch (error) {
+    showToast(error.message, true);
+  }
+});
+staffStudentCourseList?.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-remove-staff-course]");
+  if (!removeButton) return;
+  const courses = readStaffStudentCourseItems();
+  if (courses.length <= 1) return;
+  const item = removeButton.closest("[data-staff-course-item]");
+  const index = getStaffStudentCourseItems().indexOf(item);
+  courses.splice(index, 1);
+  renderStaffStudentCourseItems(courses);
+});
 staffStudentForm?.addEventListener("submit", saveStaffStudent);
 document.querySelector("#closeStaffStudent")?.addEventListener("click", closeStaffStudentModal);
 staffStudentModal?.addEventListener("click", (event) => {

@@ -927,6 +927,52 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .staff-student-toggle {
   min-height: 50px;
 }
+.staff-course-list {
+  display: grid;
+  gap: 13px;
+}
+.staff-course-item {
+  display: grid;
+  gap: 13px;
+  border: 1px solid #e4d6c7;
+  border-radius: 18px;
+  padding: 14px;
+  background: #fffdf9;
+}
+.staff-course-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.staff-course-heading strong {
+  color: #4f7d48;
+  font-size: 14px;
+}
+.staff-course-heading button {
+  margin-left: auto;
+  border: 0;
+  border-radius: 11px;
+  padding: 8px 11px;
+  color: #a65f54;
+  background: #fae4e0;
+  font-size: 10px;
+  font-weight: 900;
+}
+.staff-course-item:first-child .staff-course-heading button {
+  visibility: hidden;
+}
+.staff-add-course-button {
+  border: 1px dashed #a9c895;
+  border-radius: 16px;
+  padding: 13px;
+  color: #4f7d48;
+  background: #f6fbf1;
+  font-size: 13px;
+  font-weight: 900;
+}
+.staff-add-course-button:hover {
+  background: #edf7e7;
+}
 .staff-student-actions {
   position: sticky;
   bottom: 0;
