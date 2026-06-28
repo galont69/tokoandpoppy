@@ -1592,7 +1592,7 @@ async function renderClassReminderCard(enrollment, message) {
   context.clearRect(0, 0, width, height);
   context.fillStyle = "#FAF6EF";
   context.fillRect(0, 0, width, height);
-  drawCardImage(context, logoImage, 80, 70, 256, 74);
+  drawCardImage(context, logoImage, 80, 62, 320, 92);
   drawCardImage(context, sparkleImage, 888, 102, 62, 62, 0.68);
 
   drawCardShadow(context, 70, 182, 940, 245, 34, "#FFFFFF", "#E9DCCB");
@@ -1602,7 +1602,7 @@ async function renderClassReminderCard(enrollment, message) {
   context.fillStyle = "#4A372E";
   context.font = "900 56px Kanit, 'Noto Sans Thai', sans-serif";
   wrapCanvasText(context, `น้อง${studentName.replace(/^น้อง/, "")}`, 130, 328, 560, 62, 1);
-  drawCardImage(context, courseImage, 782, 250, 86, 86);
+  drawCardImage(context, courseImage, 750, 226, 128, 128);
   context.fillStyle = "#4F7D48";
   context.font = "900 28px Kanit, 'Noto Sans Thai', sans-serif";
   context.fillText(sessionText, 130, 386);
