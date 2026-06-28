@@ -3514,6 +3514,7 @@ function renderBranchesAdmin() {
 function resetBranchForm() {
   editingBranchId = "";
   branchForm?.reset();
+  branchForm?.classList.remove("editing");
   if (branchFormTitle) branchFormTitle.textContent = "เพิ่มสาขาใหม่";
   if (saveBranchButton) saveBranchButton.textContent = "เพิ่มสาขา";
   if (cancelBranchEditButton) cancelBranchEditButton.hidden = true;
@@ -3521,7 +3522,10 @@ function resetBranchForm() {
 
 function editBranch(branchId) {
   const branch = branches.find(({ id }) => id === branchId);
-  if (!branch || !branchForm) return;
+  if (!branch || !branchForm) {
+    showToast("ไม่พบข้อมูลสาขา กรุณากดรีเฟรชแล้วลองอีกครั้ง", true);
+    return;
+  }
   editingBranchId = branch.id;
   document.querySelector("#branchName").value = branch.name || "";
   document.querySelector("#branchCode").value = branch.code || "";
@@ -3532,7 +3536,10 @@ function editBranch(branchId) {
   if (branchFormTitle) branchFormTitle.textContent = `แก้ไข ${branch.name}`;
   if (saveBranchButton) saveBranchButton.textContent = "บันทึกข้อมูลสาขา";
   if (cancelBranchEditButton) cancelBranchEditButton.hidden = false;
-  branchForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  branchForm.classList.add("editing");
+  branchForm.scrollIntoView({ behavior: "smooth", block: "center", inline: "start" });
+  setTimeout(() => window.scrollTo({ left: 0, top: window.scrollY, behavior: "smooth" }), 120);
+  showToast(`กำลังแก้ไขสาขา ${branch.name}`);
 }
 
 async function createBranch(event) {
@@ -6695,10 +6702,14 @@ document.querySelector("#filterTabs").addEventListener("click", (event) => {
 branchForm.addEventListener("submit", createBranch);
 document.querySelector("#refreshBranchesButton").addEventListener("click", loadBranchesAdmin);
 branchRows.addEventListener("click", (event) => {
+  const editButton = event.target.closest("[data-branch-edit]");
+  if (editButton) {
+    event.preventDefault();
+    editBranch(editButton.dataset.branchEdit);
+    return;
+  }
   const button = event.target.closest("[data-branch-toggle]");
   if (button) toggleBranch(button.dataset.branchToggle);
-  const editButton = event.target.closest("[data-branch-edit]");
-  if (editButton) editBranch(editButton.dataset.branchEdit);
 });
 cancelBranchEditButton?.addEventListener("click", resetBranchForm);
 refreshCoursePricingButton?.addEventListener("click", loadCoursePricing);
