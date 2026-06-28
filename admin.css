@@ -3514,6 +3514,17 @@ td,
   vertical-align: middle;
 }
 
+#applicationsView .table-wrap th {
+  position: static;
+  top: auto;
+  z-index: auto;
+}
+
+#applicationsView .table-wrap thead {
+  position: relative;
+  z-index: 1;
+}
+
 tbody tr {
   transition: background .14s ease;
 }

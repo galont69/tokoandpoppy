@@ -4852,7 +4852,11 @@ async function reviewApplication(decision) {
 
   setBusy(true);
   try {
-    const canOpenCourseAccess = Boolean(activeApplication.parent_user_id || activeApplication.line_user_id);
+    const canOpenCourseAccess = Boolean(
+      activeApplication.parent_user_id ||
+      activeApplication.line_user_id ||
+      activeApplication.registration_source === "staff_created"
+    );
     const { error } = await supabaseClient.rpc("review_enrollment", {
       p_application_id: activeApplication.id,
       p_decision: decision,
@@ -4895,9 +4899,15 @@ async function reviewApplication(decision) {
       ? "อนุมัติและเปิดสิทธิ์คอร์สเรียบร้อย"
       : approvedWithLine
         ? "อนุมัติและเปิดสิทธิ์คอร์สผ่าน LINE เรียบร้อย"
-        : "อนุมัติใบสมัครแล้ว แต่ยังไม่มีบัญชีหรือ LINE ID สำหรับเปิดสิทธิ์คอร์ส"
+        : activeApplication.registration_source === "staff_created"
+          ? "อนุมัติและเปิดสิทธิ์คอร์สให้นักเรียนเรียบร้อย รอผูกผู้ปกครองภายหลังได้"
+          : "อนุมัติใบสมัครแล้ว แต่ยังไม่มีบัญชีหรือ LINE ID สำหรับเปิดสิทธิ์คอร์ส"
     : "บันทึกการไม่อนุมัติเรียบร้อย");
-  await loadApplications();
+  await Promise.all([
+    loadApplications(),
+    loadStudentManagement(),
+    loadLearningProgress()
+  ]);
 }
 
 async function submitBranchAdminSignup(event) {
