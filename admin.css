@@ -456,6 +456,55 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .lesson-admin-hero a { margin-left: auto; border-radius: 11px; padding: 10px 13px; color: #55764e; background: rgba(255,255,255,.75); font-size: 9px; font-weight: 700; text-decoration: none; white-space: nowrap; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-left: auto; justify-content: flex-end; }
 .students-hero { background: linear-gradient(120deg, #e7f0df, #fff7dd); }
+.revenue-hero { background: linear-gradient(120deg, #eef4df, #fff1d8); }
+.revenue-panel { margin-top: 18px; }
+.revenue-toolbar label {
+  display: grid;
+  gap: 6px;
+  color: #6b574b;
+  font-size: 9px;
+  font-weight: 900;
+}
+.revenue-toolbar input {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0 12px;
+  color: var(--brown);
+  background: white;
+  font: inherit;
+}
+.revenue-summary {
+  margin-top: 0;
+}
+.revenue-table-wrap {
+  overflow-x: auto;
+  padding: 0 22px 22px;
+}
+.revenue-table {
+  min-width: 1040px;
+}
+.revenue-table td strong {
+  display: block;
+  color: #4b392f;
+  font-size: 10px;
+}
+.revenue-table td small {
+  color: #928176;
+  font-size: 8px;
+}
+.revenue-status {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 6px 10px;
+  color: #7a5b1f;
+  background: #fff1c8;
+  font-size: 8px;
+  font-weight: 900;
+}
+.revenue-status.confirmed { color: #4f7d48; background: #e5f1df; }
+.revenue-status.cancelled,
+.revenue-status.refunded { color: #a65f54; background: #fae4df; }
 .reminders-hero { background: linear-gradient(120deg, #eaf4e2, #fff1dc); }
 .class-reminder-panel { margin-top: 18px; }
 .class-reminder-summary {

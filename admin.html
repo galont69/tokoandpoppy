@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260628-staff-student-edit">
+  <link rel="stylesheet" href="admin.css?v=20260628-branch-revenue-ledger">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -93,6 +93,7 @@
           <i id="branchTeacherPendingBadge">0</i>
         </button>
         <button class="nav-item" type="button" data-admin-view="branches" data-main-admin-only><span>🏫</span> สาขาเฟรนไชน์</button>
+        <button class="nav-item" type="button" data-admin-view="branchRevenue" data-branch-revenue-admin><span>💰</span> รายรับสาขา</button>
         <button class="nav-item" type="button" data-admin-view="progress"><span>📸</span> สมุดพัฒนาการ</button>
         <button class="nav-item" type="button" data-admin-view="lessons" data-main-admin-only><span>📚</span> จัดการบทเรียน</button>
         <button class="nav-item" type="button" data-admin-view="art" data-main-admin-only><span>🎨</span> บทเรียนศิลปะ</button>
@@ -310,6 +311,83 @@
           </div>
           <div class="loading-state" id="classReminderLoadingState" hidden>
             <i></i><span>กำลังโหลดคิวแจ้งเตือน...</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="content admin-view" id="branchRevenueView" hidden>
+        <div class="lesson-admin-hero revenue-hero">
+          <div>
+            <span>BRANCH REVENUE</span>
+            <h2>รายรับจากการเปิดคอร์ส</h2>
+            <p>ตรวจทุกครั้งที่สาขาเปิดสิทธิ์คอร์สให้นักเรียน เพื่อสรุปรายรับและคิดค่าแฟรนไชส์ตามช่วงเวลา</p>
+          </div>
+          <div class="hero-actions">
+            <button class="refresh-button" id="exportRevenueButton" type="button">⬇ Export CSV</button>
+            <button class="refresh-button" id="refreshRevenueButton" type="button">↻ รีเฟรช</button>
+          </div>
+        </div>
+
+        <section class="applications-panel revenue-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>สรุปรายรับสาขา</h2>
+              <p id="revenueScopeText">กรองตามวันที่เปิดคอร์ส สาขา คอร์ส และสถานะ</p>
+            </div>
+          </div>
+          <div class="toolbar learning-toolbar revenue-toolbar">
+            <label>ตั้งแต่
+              <input id="revenueDateFrom" type="date">
+            </label>
+            <label>ถึง
+              <input id="revenueDateTo" type="date">
+            </label>
+            <select id="revenueBranchFilter" class="soft-select">
+              <option value="all">ทุกสาขา</option>
+            </select>
+            <select id="revenueCourseFilter" class="soft-select">
+              <option value="all">ทุกคอร์ส</option>
+              <option value="robot">Robot + Coding</option>
+              <option value="creative_art">Creative Art</option>
+              <option value="water_color">Water Color</option>
+              <option value="clay">ปั้นดินเบา (CLAY)</option>
+              <option value="art">ศิลปะเดิม</option>
+              <option value="pending">ยังไม่ระบุคอร์ส</option>
+            </select>
+            <select id="revenueStatusFilter" class="soft-select">
+              <option value="all">ทุกสถานะ</option>
+              <option value="pending">รอตรวจ</option>
+              <option value="confirmed">ยืนยันแล้ว</option>
+              <option value="cancelled">ยกเลิก</option>
+              <option value="refunded">คืนเงิน</option>
+            </select>
+          </div>
+          <div class="student-management-summary revenue-summary" id="revenueSummary"></div>
+          <div class="revenue-table-wrap">
+            <table class="applications-table revenue-table">
+              <thead>
+                <tr>
+                  <th>วันที่เปิดคอร์ส</th>
+                  <th>สาขา</th>
+                  <th>นักเรียน</th>
+                  <th>คอร์ส</th>
+                  <th>จำนวนครั้ง</th>
+                  <th>ยอดรับจริง</th>
+                  <th>ฐานแฟรนไชส์</th>
+                  <th>สถานะ</th>
+                  <th>ผู้เปิดสิทธิ์</th>
+                </tr>
+              </thead>
+              <tbody id="revenueRows"></tbody>
+            </table>
+          </div>
+          <div class="empty-state" id="revenueEmptyState" hidden>
+            <div>💰</div>
+            <h3>ยังไม่มีรายการรายรับในช่วงนี้</h3>
+            <p>เมื่อมีการเปิดคอร์สใหม่ รายการจะถูกบันทึกอัตโนมัติที่นี่</p>
+          </div>
+          <div class="loading-state" id="revenueLoadingState" hidden>
+            <i></i><span>กำลังโหลดรายรับสาขา...</span>
           </div>
         </section>
       </section>
@@ -1249,6 +1327,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260628-staff-student-edit"></script>
+  <script src="admin.js?v=20260628-branch-revenue-ledger"></script>
 </body>
 </html>

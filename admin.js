@@ -117,6 +117,18 @@ const classReminderRows = document.querySelector("#classReminderRows");
 const classReminderLoadingState = document.querySelector("#classReminderLoadingState");
 const classReminderEmptyState = document.querySelector("#classReminderEmptyState");
 const refreshClassRemindersButton = document.querySelector("#refreshClassRemindersButton");
+const refreshRevenueButton = document.querySelector("#refreshRevenueButton");
+const exportRevenueButton = document.querySelector("#exportRevenueButton");
+const revenueDateFrom = document.querySelector("#revenueDateFrom");
+const revenueDateTo = document.querySelector("#revenueDateTo");
+const revenueBranchFilter = document.querySelector("#revenueBranchFilter");
+const revenueCourseFilter = document.querySelector("#revenueCourseFilter");
+const revenueStatusFilter = document.querySelector("#revenueStatusFilter");
+const revenueScopeText = document.querySelector("#revenueScopeText");
+const revenueSummary = document.querySelector("#revenueSummary");
+const revenueRows = document.querySelector("#revenueRows");
+const revenueEmptyState = document.querySelector("#revenueEmptyState");
+const revenueLoadingState = document.querySelector("#revenueLoadingState");
 const classReminderModal = document.querySelector("#classReminderModal");
 const classReminderTitle = document.querySelector("#classReminderTitle");
 const classReminderSummaryText = document.querySelector("#classReminderSummaryText");
@@ -202,6 +214,7 @@ let activeArtLesson = null;
 let learningEnrollments = [];
 let studentManagementEnrollments = [];
 let classReminderEnrollments = [];
+let branchRevenueEvents = [];
 let classReminderSentKeys = new Set();
 let activeClassReminder = null;
 let activeLearningEnrollment = null;
@@ -712,6 +725,9 @@ function applyAdminPermissions() {
   document.querySelectorAll("[data-branch-staff-admin]").forEach((element) => {
     element.hidden = !canManageBranchStaff();
   });
+  document.querySelectorAll("[data-branch-revenue-admin]").forEach((element) => {
+    element.hidden = branchTeacher;
+  });
   document.querySelector('[data-admin-view="applications"]').hidden = branchTeacher;
   document.querySelector('[data-admin-view="students"]').hidden = false;
   document.querySelector(".admin-profile strong").textContent = mainAdmin
@@ -794,7 +810,7 @@ function showAdminView(viewName) {
   const roleAllowedViews = isBranchTeacher()
     ? ["students", "progress", "classReminders"]
     : isBranchAdmin()
-      ? ["applications", "students", "classReminders", "progress", "branchStaff"]
+      ? ["applications", "students", "classReminders", "branchRevenue", "progress", "branchStaff"]
       : null;
   if (roleAllowedViews && !roleAllowedViews.includes(viewName)) {
     viewName = "applications";
@@ -811,6 +827,7 @@ function showAdminView(viewName) {
     applications: ["ใบสมัครเรียน", "ศูนย์จัดการสมาชิก"],
     students: ["นักเรียน", "STUDENT CENTER"],
     classReminders: ["แจ้งเตือนก่อนวันเรียน", "CLASS REMINDERS"],
+    branchRevenue: ["รายรับสาขา", "BRANCH REVENUE"],
     branchAdmins: ["ผู้ดูแลสาขา", "BRANCH ADMIN ACCESS"],
     branchStaff: ["ทีมสาขา/ครู", "BRANCH TEAM"],
     branches: ["สาขาเฟรนไชน์", "FRANCHISE CENTER"],
@@ -827,6 +844,7 @@ function showAdminView(viewName) {
   if (viewName === "branchAdmins") loadBranchAdminApplications();
   if (viewName === "students") loadStudentManagement();
   if (viewName === "classReminders") loadClassReminders();
+  if (viewName === "branchRevenue") loadBranchRevenue();
   if (viewName === "branchStaff") loadBranchTeacherInvitations();
   if (viewName === "branches") loadBranchesAdmin();
   if (viewName === "progress") loadLearningProgress();
@@ -3610,6 +3628,201 @@ function csvCell(value) {
   return `"${text.replace(/"/g, '""')}"`;
 }
 
+function ensureRevenueDefaultDates() {
+  if (!revenueDateFrom || !revenueDateTo) return;
+  const now = new Date();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  if (!revenueDateFrom.value) revenueDateFrom.value = toLocalDateInputValue(firstDay);
+  if (!revenueDateTo.value) revenueDateTo.value = toLocalDateInputValue(lastDay);
+}
+
+function renderRevenueBranchOptions() {
+  if (!revenueBranchFilter) return;
+  if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
+    revenueBranchFilter.innerHTML = `
+      <option value="${escapeHtml(currentBranchAssignment.branch_id)}">${escapeHtml(getCurrentBranchName())}</option>
+    `;
+    revenueBranchFilter.value = currentBranchAssignment.branch_id;
+    revenueBranchFilter.disabled = true;
+    return;
+  }
+  revenueBranchFilter.disabled = false;
+  const currentValue = revenueBranchFilter.value || "all";
+  const branchOptions = branches
+    .filter((branch) => branch.is_active !== false)
+    .map((branch) => `
+      <option value="${escapeHtml(branch.id)}">${escapeHtml(branch.name)}${branch.code ? ` (${escapeHtml(branch.code)})` : ""}</option>
+    `);
+  revenueBranchFilter.innerHTML = ['<option value="all">ทุกสาขา</option>', ...branchOptions].join("");
+  revenueBranchFilter.value = [...revenueBranchFilter.options].some((option) => option.value === currentValue)
+    ? currentValue
+    : "all";
+}
+
+function getFilteredRevenueEvents() {
+  const branch = revenueBranchFilter?.value || "all";
+  const course = revenueCourseFilter?.value || "all";
+  const status = revenueStatusFilter?.value || "all";
+  return branchRevenueEvents.filter((event) => {
+    const matchesBranch = branch === "all" || event.branch_id === branch;
+    const matchesCourse = course === "all" || event.course_type === course;
+    const matchesStatus = status === "all" || event.status === status;
+    return matchesBranch && matchesCourse && matchesStatus;
+  });
+}
+
+function getRevenueStatusLabel(status) {
+  return {
+    pending: "รอตรวจ",
+    confirmed: "ยืนยันแล้ว",
+    cancelled: "ยกเลิก",
+    refunded: "คืนเงิน"
+  }[status] || status || "-";
+}
+
+function renderBranchRevenue() {
+  if (!revenueRows) return;
+  const rows = getFilteredRevenueEvents();
+  const activeRows = rows.filter((event) => !["cancelled", "refunded"].includes(event.status));
+  const totalActual = activeRows.reduce((sum, event) => sum + Number(event.actual_amount || 0), 0);
+  const totalRoyaltyBase = activeRows.reduce((sum, event) => sum + Number(event.royalty_base_amount || event.actual_amount || 0), 0);
+  const uniqueStudents = new Set(activeRows.map((event) => event.application_id || event.student_name).filter(Boolean)).size;
+  const totalSessions = activeRows.reduce((sum, event) => sum + Number(event.total_sessions || 0), 0);
+
+  if (revenueSummary) {
+    revenueSummary.innerHTML = [
+      ["เด็กที่เปิดคอร์ส", uniqueStudents],
+      ["จำนวนคอร์ส", activeRows.length],
+      ["จำนวนครั้งรวม", totalSessions],
+      ["ยอดรับจริง", `${formatMoney(totalActual)} บาท`],
+      ["ฐานค่าแฟรนไชส์", `${formatMoney(totalRoyaltyBase)} บาท`]
+    ].map(([label, count]) => `
+      <article>
+        <strong>${escapeHtml(count)}</strong>
+        <span>${escapeHtml(label)}</span>
+      </article>
+    `).join("");
+  }
+
+  revenueEmptyState.hidden = rows.length > 0;
+  revenueRows.innerHTML = rows.map((event) => {
+    const branchName = event.branches?.name || event.branch_name || "-";
+    const openedBy = event.opened_by_profile?.email || event.opened_by_email || "-";
+    return `
+      <tr>
+        <td><strong>${escapeHtml(formatDateOnly(event.event_date || event.created_at))}</strong><small>${escapeHtml(toLocalDateTimeValue(event.created_at))}</small></td>
+        <td>${escapeHtml(branchName)}</td>
+        <td><strong>${escapeHtml(event.student_name || "-")}</strong><small>${escapeHtml(event.student_nickname || "")}</small></td>
+        <td>${getCourseIcon(event.course_type)} ${escapeHtml(courseLabels[event.course_type]?.[0] || event.course_type || "-")}</td>
+        <td>${Number(event.total_sessions || 0)}</td>
+        <td>${formatMoney(event.actual_amount || 0)} บาท</td>
+        <td>${formatMoney(event.royalty_base_amount || event.actual_amount || 0)} บาท</td>
+        <td><span class="revenue-status ${escapeHtml(event.status || "pending")}">${escapeHtml(getRevenueStatusLabel(event.status))}</span></td>
+        <td><small>${escapeHtml(openedBy)}</small></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+async function loadBranchRevenue() {
+  if (!revenueRows) return;
+  ensureRevenueDefaultDates();
+  revenueLoadingState.hidden = false;
+  revenueEmptyState.hidden = true;
+  revenueRows.innerHTML = "";
+
+  if (!branches.length && isMainAdmin()) {
+    const { data } = await supabaseClient
+      .from("branches")
+      .select("id,name,code,is_active")
+      .order("name", { ascending: true });
+    branches = data || branches;
+  }
+  renderRevenueBranchOptions();
+
+  const fromDate = revenueDateFrom?.value || "";
+  const toDate = revenueDateTo?.value || "";
+  if (revenueScopeText) {
+    revenueScopeText.textContent = `${fromDate || "ไม่ระบุวันเริ่ม"} ถึง ${toDate || "ไม่ระบุวันสิ้นสุด"}`;
+  }
+
+  let query = supabaseClient
+    .from("course_revenue_events")
+    .select("*, branches(name,code)")
+    .order("event_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (fromDate) query = query.gte("event_date", fromDate);
+  if (toDate) query = query.lte("event_date", toDate);
+  if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
+    query = query.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const { data, error } = await query;
+  revenueLoadingState.hidden = true;
+  if (error) {
+    showToast(`โหลดรายรับสาขาไม่สำเร็จ: ${error.message}`, true);
+    branchRevenueEvents = [];
+    renderBranchRevenue();
+    return;
+  }
+
+  branchRevenueEvents = data || [];
+  renderBranchRevenue();
+}
+
+function exportBranchRevenueCsv() {
+  const rows = getFilteredRevenueEvents();
+  if (!rows.length) {
+    showToast("ไม่มีรายการรายรับให้ Export", true);
+    return;
+  }
+  const headers = [
+    "วันที่เปิดคอร์ส",
+    "สาขา",
+    "นักเรียน",
+    "ชื่อเล่น",
+    "คอร์ส",
+    "จำนวนครั้ง",
+    "ราคาตั้งต้น",
+    "ส่วนลด",
+    "ยอดรับจริง",
+    "ฐานแฟรนไชส์",
+    "สถานะ",
+    "ผู้เปิดสิทธิ์",
+    "หมายเหตุ"
+  ];
+  const lines = [
+    headers.map(csvCell).join(","),
+    ...rows.map((event) => [
+      event.event_date,
+      event.branches?.name || event.branch_name || "",
+      event.student_name,
+      event.student_nickname,
+      courseLabels[event.course_type]?.[0] || event.course_type,
+      event.total_sessions,
+      event.list_price,
+      event.discount_amount,
+      event.actual_amount,
+      event.royalty_base_amount,
+      getRevenueStatusLabel(event.status),
+      event.opened_by_email || "",
+      event.note || ""
+    ].map(csvCell).join(","))
+  ];
+  const blob = new Blob([`\ufeff${lines.join("\n")}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `toko-poppy-branch-revenue-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast(`Export รายรับสำเร็จ ${rows.length} รายการ`);
+}
+
 function exportApplicationsCsv() {
   const filtered = getFilteredApplications();
   if (!filtered.length) {
@@ -6310,6 +6523,23 @@ staffStudentModal?.addEventListener("click", (event) => {
   if (event.target === staffStudentModal) closeStaffStudentModal();
 });
 refreshClassRemindersButton?.addEventListener("click", loadClassReminders);
+refreshRevenueButton?.addEventListener("click", loadBranchRevenue);
+exportRevenueButton?.addEventListener("click", exportBranchRevenueCsv);
+[
+  revenueDateFrom,
+  revenueDateTo,
+  revenueBranchFilter,
+  revenueCourseFilter,
+  revenueStatusFilter
+].forEach((field) => {
+  field?.addEventListener("change", () => {
+    if (field === revenueDateFrom || field === revenueDateTo) {
+      loadBranchRevenue();
+    } else {
+      renderBranchRevenue();
+    }
+  });
+});
 classReminderRows?.addEventListener("click", (event) => {
   const createButton = event.target.closest("[data-create-class-reminder]");
   if (createButton) {
