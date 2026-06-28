@@ -624,10 +624,14 @@ function renderSessionPackageSelect(select, courseType, preferredSessions) {
   const packages = getCoursePricingPackages(courseType);
   select.innerHTML = packages.map((pack) => {
     const sessions = Number(pack.package_sessions || 0);
+    const listPrice = Number(pack.list_price || 0);
     const price = Number(pack.actual_price || pack.list_price || 0);
+    const optionText = courseType === "clay" && listPrice > price
+      ? `${sessions} ครั้ง · ปกติ ${formatMoney(listPrice)} บาท · พร้อมศิลปะ ${formatMoney(price)} บาท`
+      : `${sessions} ครั้ง · ${formatMoney(price)} บาท`;
     return `
-      <option value="${sessions}" data-course-price="${price}">
-        ${sessions} ครั้ง · ${formatMoney(price)} บาท
+      <option value="${sessions}" data-list-price="${listPrice}" data-course-price="${price}">
+        ${optionText}
       </option>
     `;
   }).join("");
@@ -646,14 +650,20 @@ function getSelectedPackagePrice(select) {
   return Number(option?.dataset.coursePrice || 0);
 }
 
-function getSelectedApprovalItems() {
+function getSelectedPackageListPrice(select) {
+  const option = select?.selectedOptions?.[0];
+  return Number(option?.dataset.listPrice || option?.dataset.coursePrice || 0);
+}
+
+function getSelectedApprovalBaseItems() {
   const items = [];
   if (robotAccess?.checked) {
     items.push({
       courseType: "robot",
       label: courseLabels.robot[0],
       sessions: Number(robotSessionCount?.value || 0),
-      amount: getSelectedPackagePrice(robotSessionCount)
+      listAmount: getSelectedPackageListPrice(robotSessionCount),
+      packageAmount: getSelectedPackagePrice(robotSessionCount)
     });
   }
   artProgramControls.forEach((program) => {
@@ -662,15 +672,67 @@ function getSelectedApprovalItems() {
       courseType: program.type,
       label: courseLabels[program.type]?.[0] || program.label,
       sessions: Number(program.input?.value || 0),
-      amount: getSelectedPackagePrice(program.input)
+      listAmount: getSelectedPackageListPrice(program.input),
+      packageAmount: getSelectedPackagePrice(program.input)
     });
   });
   return items;
 }
 
+function calculateApprovalPricing() {
+  const baseItems = getSelectedApprovalBaseItems();
+  const hasVisualArt = baseItems.some((item) =>
+    ["creative_art", "water_color", "art"].includes(item.courseType));
+  const hasRobot = baseItems.some((item) => item.courseType === "robot");
+  const items = baseItems.map((item) => {
+    const listAmount = Number(item.listAmount || item.packageAmount || 0);
+    const packageAmount = Number(item.packageAmount || listAmount);
+    const clayBundleDiscount = item.courseType === "clay" && hasVisualArt;
+    const baseAmount = clayBundleDiscount ? packageAmount : item.courseType === "clay" ? listAmount : packageAmount;
+    const discounts = [];
+    if (listAmount > baseAmount) {
+      discounts.push(clayBundleDiscount ? "ลด Clay พร้อมศิลปะ 20%" : "ส่วนลดแพ็กเกจ");
+    }
+    return {
+      ...item,
+      listAmount,
+      baseAmount,
+      amount: baseAmount,
+      discountAmount: Math.max(0, listAmount - baseAmount),
+      discounts
+    };
+  });
+
+  const robotArtIndexes = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item.courseType === "robot" || ["creative_art", "water_color", "art"].includes(item.courseType))
+    .map(({ index }) => index);
+
+  if (hasRobot && hasVisualArt && robotArtIndexes.length > 1) {
+    const bundleBase = robotArtIndexes.reduce((sum, index) => sum + Number(items[index].amount || 0), 0);
+    let remainingDiscount = Math.round(bundleBase * 0.10);
+    robotArtIndexes.forEach((index, order) => {
+      const item = items[index];
+      const discount = order === robotArtIndexes.length - 1
+        ? remainingDiscount
+        : Math.round((Number(item.amount || 0) / bundleBase) * Math.round(bundleBase * 0.10));
+      remainingDiscount -= discount;
+      item.amount = Math.max(0, item.amount - discount);
+      item.discountAmount += discount;
+      item.discounts.push("ลด Robot + ศิลปะ เพิ่ม 10%");
+    });
+  }
+
+  const subtotal = items.reduce((sum, item) => sum + Number(item.listAmount || 0), 0);
+  const total = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const discount = Math.max(0, subtotal - total);
+  return { items, subtotal, discount, total };
+}
+
 function renderApprovalPriceSummary() {
   if (!approvalPriceSummary) return;
-  const items = getSelectedApprovalItems();
+  const pricing = calculateApprovalPricing();
+  const items = pricing.items;
   if (robotPriceText && robotSessionCount?.selectedOptions?.[0]) {
     robotPriceText.textContent = robotAccess?.checked
       ? robotSessionCount.selectedOptions[0].textContent.trim()
@@ -681,7 +743,7 @@ function renderApprovalPriceSummary() {
     approvalPriceSummary.innerHTML = "";
     return;
   }
-  const expectedTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const expectedTotal = pricing.total;
   const paidAmount = Number(activeApplication?.paid_amount || 0);
   const diff = paidAmount - expectedTotal;
   approvalPriceSummary.hidden = false;
@@ -693,11 +755,20 @@ function renderApprovalPriceSummary() {
     <div class="approval-price-lines">
       ${items.map((item) => `
         <div>
-          <span>${escapeHtml(item.label)} · ${item.sessions} ครั้ง</span>
+          <span>
+            ${escapeHtml(item.label)} · ${item.sessions} ครั้ง
+            ${item.discounts.length ? `<small>${escapeHtml(item.discounts.join(" + "))}</small>` : ""}
+          </span>
           <strong>${formatMoney(item.amount)} บาท</strong>
         </div>
       `).join("")}
     </div>
+    ${pricing.discount > 0 ? `
+      <div class="approval-price-total discount">
+        <span>ส่วนลดรวม</span>
+        <strong>-${formatMoney(pricing.discount)} บาท</strong>
+      </div>
+    ` : ""}
     <div class="approval-price-total">
       <span>รวมราคาคอร์สที่เลือก</span>
       <strong>${formatMoney(expectedTotal)} บาท</strong>
@@ -713,20 +784,43 @@ function renderApprovalPriceSummary() {
 }
 
 function buildApprovalConfirmMessage() {
-  const items = getSelectedApprovalItems();
-  const expectedTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const pricing = calculateApprovalPricing();
+  const items = pricing.items;
+  const expectedTotal = pricing.total;
   const paidAmount = Number(activeApplication?.paid_amount || 0);
   const lines = [
     "ยืนยันอนุมัติและเปิดสิทธิ์การเรียน?",
     "",
-    ...items.map((item) => `- ${item.label} ${item.sessions} ครั้ง: ${formatMoney(item.amount)} บาท`),
+    ...items.map((item) => `- ${item.label} ${item.sessions} ครั้ง: ${formatMoney(item.amount)} บาท${item.discounts.length ? ` (${item.discounts.join(" + ")})` : ""}`),
     "",
+    pricing.discount > 0 ? `ส่วนลดรวม: ${formatMoney(pricing.discount)} บาท` : "",
     `รวมราคาคอร์สที่เลือก: ${formatMoney(expectedTotal)} บาท`,
     `ได้รับชำระแล้ว: ${formatMoney(paidAmount)} บาท`,
     "",
     "กดยืนยันเพื่อบันทึกและเปิดสิทธิ์จริง"
   ];
   return lines.join("\n");
+}
+
+function buildApprovalRevenuePayload() {
+  const pricing = calculateApprovalPricing();
+  return pricing.items.map((item) => ({
+    course_type: item.courseType,
+    sessions: item.sessions,
+    list_amount: item.listAmount,
+    discount_amount: item.discountAmount,
+    actual_amount: item.amount,
+    discount_note: item.discounts.join(" + ")
+  }));
+}
+
+function buildApprovalPricingNote() {
+  const pricing = calculateApprovalPricing();
+  if (!pricing.discount) return null;
+  return pricing.items
+    .filter((item) => item.discounts.length)
+    .map((item) => `${item.label} ${item.sessions} ครั้ง: ${item.discounts.join(" + ")}`)
+    .join(" | ");
 }
 
 function getSessionPackageValue(input, label) {
@@ -4609,6 +4703,8 @@ async function reviewApplication(decision) {
 
   let robotSessions = null;
   const artSessions = {};
+  let approvalRevenuePayload = [];
+  let approvalPricingNote = null;
   if (decision === "approved") {
     try {
       robotSessions = robotAccess.checked
@@ -4619,6 +4715,8 @@ async function reviewApplication(decision) {
           ? getSessionPackageValue(program.input, program.label)
           : null;
       });
+      approvalRevenuePayload = buildApprovalRevenuePayload();
+      approvalPricingNote = buildApprovalPricingNote();
     } catch (error) {
       showToast(error.message, true);
       return;
@@ -4646,9 +4744,16 @@ async function reviewApplication(decision) {
         p_creative_art_sessions: artSessions.creative_art,
         p_water_color_sessions: artSessions.water_color,
         p_clay_sessions: artSessions.clay,
-        p_note: null
+        p_note: approvalPricingNote
       });
       if (packageError) throw packageError;
+
+      const { error: revenuePricingError } = await supabaseClient.rpc("apply_application_revenue_pricing", {
+        p_application_id: activeApplication.id,
+        p_items: approvalRevenuePayload,
+        p_note: approvalPricingNote
+      });
+      if (revenuePricingError) throw revenuePricingError;
     }
   } catch (error) {
     setBusy(false);
