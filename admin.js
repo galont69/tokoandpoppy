@@ -4148,12 +4148,27 @@ function getRevenueStatusLabel(status) {
   }[status] || status || "-";
 }
 
+function getRevenueRoyaltyRate(event) {
+  return Number(event.royalty_rate || 0);
+}
+
+function getRevenueRoyaltyBase(event) {
+  return Number(event.royalty_base_amount || event.actual_amount || 0);
+}
+
+function getRevenueFranchiseFee(event) {
+  const status = event.status || "pending";
+  if (["cancelled", "refunded"].includes(status)) return 0;
+  return getRevenueRoyaltyBase(event) * getRevenueRoyaltyRate(event);
+}
+
 function renderBranchRevenue() {
   if (!revenueRows) return;
   const rows = getFilteredRevenueEvents();
   const activeRows = rows.filter((event) => !["cancelled", "refunded"].includes(event.status));
   const totalActual = activeRows.reduce((sum, event) => sum + Number(event.actual_amount || 0), 0);
-  const totalRoyaltyBase = activeRows.reduce((sum, event) => sum + Number(event.royalty_base_amount || event.actual_amount || 0), 0);
+  const totalRoyaltyBase = activeRows.reduce((sum, event) => sum + getRevenueRoyaltyBase(event), 0);
+  const totalFranchiseFee = activeRows.reduce((sum, event) => sum + getRevenueFranchiseFee(event), 0);
   const uniqueStudents = new Set(activeRows.map((event) => event.application_id || event.student_name).filter(Boolean)).size;
   const totalSessions = activeRows.reduce((sum, event) => sum + Number(event.total_sessions || 0), 0);
 
@@ -4163,9 +4178,10 @@ function renderBranchRevenue() {
       ["จำนวนคอร์ส", activeRows.length],
       ["จำนวนครั้งรวม", totalSessions],
       ["ยอดรับจริง", `${formatMoney(totalActual)} บาท`],
-      ["ฐานค่าแฟรนไชส์", `${formatMoney(totalRoyaltyBase)} บาท`]
-    ].map(([label, count]) => `
-      <article>
+      ["ฐานค่าแฟรนไชส์", `${formatMoney(totalRoyaltyBase)} บาท`],
+      ["ค่าแฟรนไชส์ซีประจำเดือน", `${formatMoney(totalFranchiseFee)} บาท`, "highlight"]
+    ].map(([label, count, tone]) => `
+      <article class="${tone || ""}">
         <strong>${escapeHtml(count)}</strong>
         <span>${escapeHtml(label)}</span>
       </article>
@@ -4176,6 +4192,9 @@ function renderBranchRevenue() {
   revenueRows.innerHTML = rows.map((event) => {
     const branchName = event.branches?.name || event.branch_name || "-";
     const openedBy = event.opened_by_profile?.email || event.opened_by_email || "-";
+    const royaltyBase = getRevenueRoyaltyBase(event);
+    const royaltyRate = getRevenueRoyaltyRate(event);
+    const franchiseFee = getRevenueFranchiseFee(event);
     return `
       <tr>
         <td><strong>${escapeHtml(formatDateOnly(event.event_date || event.created_at))}</strong><small>${escapeHtml(toLocalDateTimeValue(event.created_at))}</small></td>
@@ -4184,7 +4203,9 @@ function renderBranchRevenue() {
         <td>${getCourseIcon(event.course_type)} ${escapeHtml(courseLabels[event.course_type]?.[0] || event.course_type || "-")}</td>
         <td>${Number(event.total_sessions || 0)}</td>
         <td>${formatMoney(event.actual_amount || 0)} บาท</td>
-        <td>${formatMoney(event.royalty_base_amount || event.actual_amount || 0)} บาท</td>
+        <td>${formatMoney(royaltyBase)} บาท</td>
+        <td><strong>${formatMoney(franchiseFee)} บาท</strong></td>
+        <td>${formatMoney(royaltyRate * 100)}%</td>
         <td><span class="revenue-status ${escapeHtml(event.status || "pending")}">${escapeHtml(getRevenueStatusLabel(event.status))}</span></td>
         <td><small>${escapeHtml(openedBy)}</small></td>
       </tr>
@@ -4256,6 +4277,8 @@ function exportBranchRevenueCsv() {
     "ส่วนลด",
     "ยอดรับจริง",
     "ฐานแฟรนไชส์",
+    "อัตราแฟรนไชส์",
+    "ค่าแฟรนไชส์ซี",
     "สถานะ",
     "ผู้เปิดสิทธิ์",
     "หมายเหตุ"
@@ -4272,7 +4295,9 @@ function exportBranchRevenueCsv() {
       event.list_price,
       event.discount_amount,
       event.actual_amount,
-      event.royalty_base_amount,
+      getRevenueRoyaltyBase(event),
+      `${formatMoney(getRevenueRoyaltyRate(event) * 100)}%`,
+      getRevenueFranchiseFee(event),
       getRevenueStatusLabel(event.status),
       event.opened_by_email || "",
       event.note || ""
