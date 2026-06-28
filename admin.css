@@ -3021,3 +3021,687 @@ body { font-size: 16px; }
     grid-template-columns: 1fr;
   }
 }
+
+/* Soft Professional Admin UI pass */
+:root {
+  --admin-bg: #f7f3ea;
+  --admin-bg-soft: #fbf8f0;
+  --admin-surface: #fffdf8;
+  --admin-surface-strong: #ffffff;
+  --admin-text: #4d3b31;
+  --admin-muted: #7f7167;
+  --admin-border: #e8ded1;
+  --admin-border-strong: #d9c9b9;
+  --admin-green: #5f8f53;
+  --admin-green-dark: #3f7241;
+  --admin-green-soft: #eaf4e5;
+  --admin-orange: #d98b62;
+  --admin-orange-soft: #fff0df;
+  --admin-warning: #9a6b20;
+  --admin-warning-soft: #fff4d8;
+  --admin-danger: #bd6e5f;
+  --admin-danger-soft: #fae8e4;
+  --admin-shadow-soft: 0 14px 34px rgba(74, 57, 40, .07);
+  --admin-shadow-card: 0 10px 26px rgba(74, 57, 40, .055);
+  --admin-radius: 20px;
+  --admin-radius-sm: 14px;
+  --admin-control-h: 46px;
+}
+
+body {
+  color: var(--admin-text);
+  background:
+    radial-gradient(circle at 18% 5%, rgba(226, 240, 211, .72), transparent 32%),
+    linear-gradient(180deg, #fbf8f0 0%, var(--admin-bg) 100%);
+}
+
+.admin-shell {
+  grid-template-columns: 260px minmax(0, 1fr);
+  background: var(--admin-bg);
+}
+
+.admin-main {
+  min-width: 0;
+  background:
+    radial-gradient(circle at 88% 2%, rgba(255, 230, 179, .36), transparent 25%),
+    linear-gradient(180deg, rgba(255, 253, 248, .64), rgba(247, 243, 234, .72));
+}
+
+.content {
+  width: 100%;
+  max-width: 1840px;
+  margin: 0 auto;
+  padding: 26px 34px 48px;
+}
+
+.sidebar {
+  width: 260px;
+  padding: 22px 18px;
+  background: rgba(255, 253, 248, .97);
+  border-right: 1px solid var(--admin-border);
+  box-shadow: 8px 0 28px rgba(74, 57, 40, .045);
+}
+
+.admin-brand {
+  gap: 12px;
+  padding: 0 10px 22px;
+}
+
+.admin-brand img {
+  width: 48px;
+  height: 48px;
+}
+
+.admin-brand strong {
+  color: var(--admin-text);
+  font-size: 22px;
+  line-height: 1.18;
+}
+
+.admin-brand small {
+  color: #8aa37e;
+  font-size: 12px;
+}
+
+.sidebar nav {
+  gap: 8px;
+}
+
+.nav-item {
+  min-height: 50px;
+  gap: 12px;
+  border-radius: 16px;
+  padding: 9px 12px;
+  color: #76665d;
+  font-size: 15px;
+  font-weight: 850;
+  transition: background .16s ease, color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.nav-item:hover {
+  color: var(--admin-green-dark);
+  background: #f6f1e8;
+}
+
+.nav-item span {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: #f1ebe2;
+  font-size: 18px;
+}
+
+.nav-item.active {
+  color: var(--admin-green-dark);
+  background: linear-gradient(135deg, #edf7e8 0%, #fff6df 100%);
+  box-shadow: inset 0 0 0 1px #d9e8cf, 0 8px 22px rgba(95, 143, 83, .08);
+}
+
+.nav-item.active span {
+  background: var(--admin-surface-strong);
+  box-shadow: 0 6px 16px rgba(74, 57, 40, .08);
+}
+
+.nav-item i {
+  min-width: 28px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--admin-danger);
+  font-size: 13px;
+  line-height: 26px;
+}
+
+.topbar {
+  min-height: 74px;
+  padding: 12px 34px;
+  background: rgba(255, 253, 248, .92);
+  border-bottom: 1px solid var(--admin-border);
+  box-shadow: 0 6px 20px rgba(74, 57, 40, .035);
+}
+
+.page-kicker {
+  color: var(--admin-orange);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.topbar h1,
+.lesson-admin-hero h1 {
+  margin-top: 0;
+  color: var(--admin-text);
+  font-size: 30px;
+  line-height: 1.18;
+}
+
+.profile-avatar {
+  width: 42px;
+  height: 42px;
+  background: var(--admin-green);
+  box-shadow: 0 8px 18px rgba(95, 143, 83, .18);
+}
+
+.admin-profile {
+  gap: 11px;
+}
+
+.admin-profile strong {
+  color: var(--admin-text);
+  font-size: 15px;
+}
+
+.admin-profile small {
+  max-width: 260px;
+  color: var(--admin-muted);
+  font-size: 13px;
+}
+
+.welcome-strip,
+.lesson-admin-hero {
+  border: 1px solid rgba(232, 222, 209, .72);
+  border-radius: 24px;
+  box-shadow: var(--admin-shadow-soft);
+}
+
+.lesson-admin-hero,
+.revenue-hero,
+.students-hero,
+.reminders-hero {
+  padding: 28px 34px;
+  background: linear-gradient(120deg, #e9f3df 0%, #fff3d2 100%);
+}
+
+.lesson-admin-hero span,
+.welcome-strip span {
+  color: var(--admin-orange);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.lesson-admin-hero p,
+.welcome-strip p {
+  color: var(--admin-muted);
+  font-size: 15px;
+}
+
+.applications-panel,
+.branch-form,
+.branch-card,
+.course-pricing-card,
+.branch-admin-request-card,
+.learning-student-card,
+.learning-record-card,
+.course-schedule-card,
+.student-management-card,
+.free-admin-card,
+.free-lead-panel {
+  border-color: var(--admin-border);
+  background: var(--admin-surface);
+  box-shadow: var(--admin-shadow-card);
+}
+
+.applications-panel,
+.branch-form,
+.free-admin-card,
+.free-lead-panel {
+  border-radius: 24px;
+}
+
+.panel-heading {
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px 24px 16px;
+}
+
+.panel-heading h2,
+.editor-heading h2 {
+  color: var(--admin-text);
+  font-size: 26px;
+  line-height: 1.22;
+}
+
+.panel-heading p {
+  margin-top: 5px;
+  color: var(--admin-muted);
+  font-size: 14px;
+}
+
+.toolbar,
+.advanced-filters,
+.learning-toolbar,
+.revenue-toolbar,
+.panel-actions {
+  gap: 12px;
+}
+
+.toolbar,
+.advanced-filters {
+  padding-inline: 24px;
+}
+
+.search-box,
+.advanced-filters select,
+.advanced-filters input,
+.revenue-toolbar input,
+.revenue-toolbar select,
+.branch-form input,
+.branch-form select,
+.panel-actions input[type="search"],
+.panel-actions select,
+.lesson-editor input,
+.lesson-editor textarea,
+.lesson-editor select,
+.account-link-search input,
+.session-package-field input,
+.session-package-field select,
+.reason-field textarea {
+  min-height: var(--admin-control-h);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm);
+  color: var(--admin-text);
+  background: #fffefa;
+  font-size: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+
+.search-box input {
+  min-height: calc(var(--admin-control-h) - 2px);
+  padding: 0;
+  font-size: 14px;
+}
+
+.search-box:focus-within,
+.advanced-filters select:focus,
+.advanced-filters input:focus,
+.revenue-toolbar input:focus,
+.revenue-toolbar select:focus,
+.branch-form input:focus,
+.branch-form select:focus,
+.panel-actions input[type="search"]:focus,
+.panel-actions select:focus,
+.lesson-editor input:focus,
+.lesson-editor textarea:focus,
+.lesson-editor select:focus,
+.account-link-search input:focus,
+.session-package-field input:focus,
+.session-package-field select:focus,
+.reason-field textarea:focus {
+  outline: none;
+  border-color: var(--admin-green);
+  box-shadow: 0 0 0 3px rgba(95, 143, 83, .16);
+}
+
+.filter-tabs {
+  min-height: var(--admin-control-h);
+  align-items: center;
+  background: #f2ebe2;
+}
+
+.filter-tabs button {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.refresh-button,
+.export-button,
+.clear-filter-button,
+.text-button,
+.slip-button,
+.review-button,
+.branch-card button,
+.branch-admin-request-actions button,
+.revenue-actions button,
+.learning-student-primary-action,
+.learning-detail-toggle,
+.learning-record-button {
+  min-height: 40px;
+  border-radius: 12px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.refresh-button,
+.clear-filter-button {
+  border-color: var(--admin-border);
+  color: var(--admin-green-dark);
+  background: var(--admin-surface-strong);
+}
+
+.export-button,
+.review-button,
+.branch-card button,
+.branch-admin-request-actions button,
+.revenue-actions button,
+.approve-button {
+  background: linear-gradient(135deg, #6a985b, #4f8049);
+  box-shadow: 0 8px 18px rgba(95, 143, 83, .14);
+}
+
+.revenue-actions button.danger,
+.reject-button {
+  background: var(--admin-danger);
+  box-shadow: 0 8px 18px rgba(189, 110, 95, .12);
+}
+
+.stats-grid,
+.student-management-summary,
+.class-reminder-summary,
+.revenue-summary,
+.free-lead-summary-grid {
+  gap: 14px;
+}
+
+.stat-card,
+.student-management-summary article,
+.class-reminder-summary article,
+.revenue-summary article,
+.free-lead-summary-grid article {
+  min-height: 100px;
+  border: 1px solid var(--admin-border);
+  border-radius: 18px;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #fffaf0 100%);
+  box-shadow: var(--admin-shadow-card);
+}
+
+.revenue-summary article.highlight,
+.student-management-summary article.highlight,
+.class-reminder-summary article.highlight {
+  border-color: #c9e2bb;
+  background: linear-gradient(135deg, #eff8ea 0%, #fff9df 100%);
+  box-shadow: 0 12px 28px rgba(95, 143, 83, .105);
+}
+
+.revenue-summary article.warning {
+  border-color: #f0d39b;
+  background: linear-gradient(135deg, #fff9e7 0%, #fffaf2 100%);
+}
+
+.stat-card strong,
+.student-management-summary strong,
+.class-reminder-summary strong,
+.revenue-summary strong,
+.free-lead-summary-grid strong {
+  color: var(--admin-green-dark);
+  font-size: 30px;
+  line-height: 1.15;
+}
+
+.stat-card small,
+.student-management-summary span,
+.class-reminder-summary span,
+.revenue-summary span,
+.free-lead-summary-grid span {
+  color: var(--admin-muted);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.table-wrap,
+.revenue-table-wrap,
+.free-leads-table-wrap {
+  overflow-x: auto;
+  border-top: 1px solid var(--admin-border);
+  -webkit-overflow-scrolling: touch;
+}
+
+.revenue-table-wrap {
+  padding: 0 24px 24px;
+}
+
+table,
+.student-table,
+.applications-table,
+.revenue-table,
+.free-leads-table,
+.free-lead-table {
+  min-width: 980px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.revenue-table {
+  min-width: 1320px;
+}
+
+th,
+.student-table th,
+.applications-table th,
+.revenue-table th,
+.free-leads-table th,
+.free-lead-table th {
+  position: sticky;
+  top: 74px;
+  z-index: 3;
+  padding: 16px 18px;
+  color: #78685e;
+  background: #fffaf2;
+  border-bottom: 1px solid var(--admin-border);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
+td,
+.student-table td,
+.applications-table td,
+.revenue-table td,
+.free-leads-table td,
+.free-lead-table td {
+  padding: 17px 18px;
+  border-top: 1px solid #eee6dc;
+  color: var(--admin-text);
+  font-size: 14px;
+  line-height: 1.55;
+  vertical-align: middle;
+}
+
+tbody tr {
+  transition: background .14s ease;
+}
+
+tbody tr:hover td {
+  background: #fffdf6;
+}
+
+.student-cell {
+  gap: 12px;
+}
+
+.student-avatar {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--admin-green-soft);
+  font-size: 20px;
+}
+
+.student-cell strong,
+.course-cell strong,
+.date-cell strong,
+.revenue-table td strong,
+.free-lead-table td strong {
+  color: var(--admin-text);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.35;
+}
+
+.student-cell small,
+.course-cell small,
+.date-cell small,
+.revenue-table td small,
+.free-lead-table td small,
+.payment-mini {
+  color: var(--admin-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.status-pill,
+.revenue-status,
+.learning-status-badge {
+  min-height: 30px;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.status-pill.pending,
+.revenue-status.pending {
+  color: var(--admin-warning);
+  background: var(--admin-warning-soft);
+}
+
+.status-pill.approved,
+.revenue-status.confirmed,
+.learning-status-badge.active {
+  color: var(--admin-green-dark);
+  background: var(--admin-green-soft);
+}
+
+.status-pill.rejected,
+.revenue-status.cancelled,
+.revenue-status.refunded,
+.learning-status-badge.inactive {
+  color: #9f574b;
+  background: var(--admin-danger-soft);
+}
+
+.revenue-actions,
+.branch-card-actions,
+.branch-admin-request-actions {
+  gap: 8px;
+}
+
+.revenue-actions button,
+.branch-card-actions button,
+.branch-admin-request-actions button {
+  min-width: 76px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.slip-button {
+  border-color: #ead7a8;
+  color: #8d6423;
+  background: #fff8e4;
+}
+
+.empty-state,
+.loading-state {
+  color: var(--admin-muted);
+  font-size: 14px;
+}
+
+.modal-close {
+  background: #eee6dc;
+}
+
+.review-modal {
+  border-color: rgba(255, 255, 255, .82);
+  background: var(--admin-bg-soft);
+}
+
+.review-header {
+  background: rgba(255, 253, 248, .82);
+}
+
+.student-details div,
+.session-package-field,
+.approval-price-summary,
+.account-link-panel,
+.access-option {
+  border-color: var(--admin-border);
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(74, 57, 40, .035);
+}
+
+@media (max-width: 1180px) {
+  .content {
+    padding-inline: 24px;
+  }
+
+  .admin-shell {
+    grid-template-columns: 248px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    width: 248px;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    width: min(286px, 86vw);
+  }
+
+  .topbar {
+    min-height: 68px;
+    padding: 10px 16px;
+  }
+
+  th,
+  .student-table th,
+  .applications-table th,
+  .revenue-table th,
+  .free-leads-table th,
+  .free-lead-table th {
+    top: 68px;
+  }
+
+  .content {
+    padding: 20px 16px 40px;
+  }
+
+  .lesson-admin-hero,
+  .welcome-strip {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 24px;
+  }
+}
+
+@media (max-width: 640px) {
+  .advanced-filters,
+  .revenue-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar,
+  .panel-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .panel-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .student-management-summary,
+  .class-reminder-summary,
+  .revenue-summary,
+  .free-lead-summary-grid,
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .panel-heading {
+    flex-direction: column;
+  }
+}
