@@ -1569,10 +1569,11 @@ async function renderClassReminderCard(enrollment, message) {
   const width = classReminderCanvas.width;
   const height = classReminderCanvas.height;
   const dateInfo = getClassReminderDateInfo();
-  const [logoImage, locationImage, courseImage, sparkleImage] = await Promise.all([
+  const [logoImage, locationImage, courseImage, calendarImage, sparkleImage] = await Promise.all([
     loadSummaryCardImage(summaryCardAssets.logo),
     loadSummaryCardImage(summaryCardAssets.location),
     loadSummaryCardImage(summaryCardAssets.course[enrollment.course_type] || summaryCardAssets.course.creative_art),
+    loadSummaryCardImage(summaryCardAssets.calendar),
     loadSummaryCardImage(summaryCardAssets.star)
   ]);
   const studentName = getLearningStudentDisplayName(enrollment);
@@ -1592,43 +1593,44 @@ async function renderClassReminderCard(enrollment, message) {
   context.clearRect(0, 0, width, height);
   context.fillStyle = "#FAF6EF";
   context.fillRect(0, 0, width, height);
-  drawCardImage(context, logoImage, 80, 62, 320, 92);
+  drawCardImage(context, logoImage, 70, 20, 640, 184);
   drawCardImage(context, sparkleImage, 888, 102, 62, 62, 0.68);
 
-  drawCardShadow(context, 70, 182, 940, 245, 34, "#FFFFFF", "#E9DCCB");
+  drawCardShadow(context, 70, 208, 940, 245, 34, "#FFFFFF", "#E9DCCB");
+  drawCardImage(context, courseImage, 128, 250, 146, 146);
   context.fillStyle = "#F05B3E";
   context.font = "900 38px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText("พรุ่งนี้มีเรียน", 130, 258);
+  context.fillText("พรุ่งนี้มีเรียน", 312, 284);
   context.fillStyle = "#4A372E";
   context.font = "900 56px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, `น้อง${studentName.replace(/^น้อง/, "")}`, 130, 328, 560, 62, 1);
-  drawCardImage(context, courseImage, 750, 226, 128, 128);
+  wrapCanvasText(context, `น้อง${studentName.replace(/^น้อง/, "")}`, 312, 354, 560, 62, 1);
   context.fillStyle = "#4F7D48";
   context.font = "900 28px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText(sessionText, 130, 386);
+  context.fillText(sessionText, 312, 412);
 
-  drawCardShadow(context, 70, 462, 940, 278, 32, "#F2F8EC", "#9BBE86");
+  drawCardShadow(context, 70, 484, 940, 270, 32, "#F2F8EC", "#9BBE86");
+  drawCardImage(context, calendarImage, 126, 562, 74, 74);
   context.fillStyle = "#4F7D48";
   context.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, getCourseEnrollmentLabel(enrollment), 130, 538, 760, 40, 1);
+  wrapCanvasText(context, getCourseEnrollmentLabel(enrollment), 224, 556, 690, 40, 1);
   context.fillStyle = "#4A372E";
   context.font = "800 44px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, `${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel}`, 130, 612, 760, 50, 1);
+  wrapCanvasText(context, `${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel}`, 224, 630, 690, 50, 1);
   context.fillStyle = "#F05B3E";
   context.font = "900 50px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText(timeLabel || "ตามเวลาที่แจ้งไว้", 130, 678);
+  context.fillText(timeLabel || "ตามเวลาที่แจ้งไว้", 224, 696);
   context.fillStyle = "#4F7D48";
   context.font = "900 26px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText(sessionText, 130, 716);
+  context.fillText(sessionText, 224, 734);
 
-  drawCardShadow(context, 70, 770, 940, 184, 30, "#FFFFFF", "#E9DCCB");
-  drawCardImage(context, locationImage, 132, 816, 34, 34);
+  drawCardShadow(context, 70, 782, 940, 172, 30, "#FFFFFF", "#E9DCCB");
+  drawCardImage(context, locationImage, 128, 824, 74, 74);
   context.fillStyle = "#4A372E";
   context.font = "800 31px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, `สาขา ${branchName}`, 186, 846, 650, 36, 1);
+  wrapCanvasText(context, `สาขา ${branchName}`, 224, 854, 650, 36, 1);
   context.fillStyle = "#8A7668";
   context.font = "700 24px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, "หากไม่สะดวกหรือต้องการเปลี่ยนวันและเวลา แจ้งได้เลยนะคะ", 130, 902, 790, 32, 2);
+  wrapCanvasText(context, "หากไม่สะดวกหรือต้องการเปลี่ยนวันและเวลา แจ้งได้เลยนะคะ", 130, 914, 790, 32, 2);
 
   context.fillStyle = "#6EA154";
   context.font = "900 26px Kanit, 'Noto Sans Thai', sans-serif";
