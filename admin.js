@@ -1609,28 +1609,28 @@ async function renderClassReminderCard(enrollment, message) {
   context.fillText(sessionText, 312, 412);
 
   drawCardShadow(context, 70, 484, 940, 270, 32, "#F2F8EC", "#9BBE86");
-  drawCardImage(context, calendarImage, 126, 562, 74, 74);
+  drawCardImage(context, calendarImage, 128, 546, 146, 146);
   context.fillStyle = "#4F7D48";
   context.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, getCourseEnrollmentLabel(enrollment), 224, 556, 690, 40, 1);
+  wrapCanvasText(context, getCourseEnrollmentLabel(enrollment), 312, 556, 610, 40, 1);
   context.fillStyle = "#4A372E";
   context.font = "800 44px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, `${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel}`, 224, 630, 690, 50, 1);
+  wrapCanvasText(context, `${weekdayLabels[dateInfo.weekday]} ${dateInfo.dateLabel}`, 312, 630, 610, 50, 1);
   context.fillStyle = "#F05B3E";
   context.font = "900 50px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText(timeLabel || "ตามเวลาที่แจ้งไว้", 224, 696);
+  context.fillText(timeLabel || "ตามเวลาที่แจ้งไว้", 312, 696);
   context.fillStyle = "#4F7D48";
   context.font = "900 26px Kanit, 'Noto Sans Thai', sans-serif";
-  context.fillText(sessionText, 224, 734);
+  context.fillText(sessionText, 312, 734);
 
   drawCardShadow(context, 70, 782, 940, 172, 30, "#FFFFFF", "#E9DCCB");
-  drawCardImage(context, locationImage, 128, 824, 74, 74);
+  drawCardImage(context, locationImage, 128, 795, 146, 146);
   context.fillStyle = "#4A372E";
   context.font = "800 31px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, `สาขา ${branchName}`, 224, 854, 650, 36, 1);
+  wrapCanvasText(context, `สาขา ${branchName}`, 312, 854, 610, 36, 1);
   context.fillStyle = "#8A7668";
   context.font = "700 24px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasText(context, "หากไม่สะดวกหรือต้องการเปลี่ยนวันและเวลา แจ้งได้เลยนะคะ", 130, 914, 790, 32, 2);
+  wrapCanvasText(context, "หากไม่สะดวกหรือต้องการเปลี่ยนวันและเวลา แจ้งได้เลยนะคะ", 312, 914, 610, 32, 2);
 
   context.fillStyle = "#6EA154";
   context.font = "900 26px Kanit, 'Noto Sans Thai', sans-serif";
