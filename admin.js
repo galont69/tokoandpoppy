@@ -48,6 +48,8 @@ const waterColorSessionCount = document.querySelector("#waterColorSessionCount")
 const claySessionCount = document.querySelector("#claySessionCount");
 const robotSessionsField = document.querySelector("#robotSessionsField");
 const artSessionsField = document.querySelector("#artSessionsField");
+const robotPriceText = document.querySelector("#robotPriceText");
+const approvalPriceSummary = document.querySelector("#approvalPriceSummary");
 const rejectionReason = document.querySelector("#rejectionReason");
 const approveButton = document.querySelector("#approveButton");
 const rejectButton = document.querySelector("#rejectButton");
@@ -421,7 +423,7 @@ const artProgramControls = [
     type: "clay",
     checkbox: clayProgram,
     input: claySessionCount,
-    defaultSessions: 4,
+    defaultSessions: 10,
     label: "ปั้นดินเบา (CLAY)"
   }
 ];
@@ -574,6 +576,7 @@ function updateSessionPackageFields() {
   });
   robotSessionsField?.classList.toggle("muted", !robotEnabled);
   artSessionsField?.classList.toggle("muted", !artEnabled);
+  renderApprovalPriceSummary();
 }
 
 function setArtProgramsEnabled(enabled) {
@@ -581,6 +584,149 @@ function setArtProgramsEnabled(enabled) {
     artProgramControls[0].checkbox.checked = true;
   }
   updateSessionPackageFields();
+}
+
+function getDefaultPricingPackages(courseType) {
+  const course = coursePricingCatalog.find((item) => item.type === courseType);
+  return (course?.packages || []).map((pack) => ({
+    course_type: courseType,
+    package_sessions: pack.sessions,
+    label: `${courseLabels[courseType]?.[0] || courseType} ${pack.sessions} ครั้ง`,
+    list_price: pack.listPrice,
+    discount_amount: pack.discount,
+    actual_price: pack.actualPrice,
+    is_active: true
+  }));
+}
+
+function getCoursePricingPackages(courseType) {
+  const stored = coursePricing
+    .filter((item) => item.course_type === courseType && item.is_active !== false)
+    .sort((a, b) => Number(a.package_sessions || 0) - Number(b.package_sessions || 0));
+  return stored.length ? stored : getDefaultPricingPackages(courseType);
+}
+
+async function ensureReviewCoursePricing() {
+  if (!supabaseClient) return;
+  if (coursePricing.length) return;
+  const { data, error } = await supabaseClient
+    .from("course_pricing")
+    .select("*")
+    .in("course_type", coursePricingCatalog.map((course) => course.type))
+    .eq("is_active", true)
+    .order("course_type", { ascending: true })
+    .order("package_sessions", { ascending: true });
+  if (!error) coursePricing = data || [];
+}
+
+function renderSessionPackageSelect(select, courseType, preferredSessions) {
+  if (!select) return;
+  const packages = getCoursePricingPackages(courseType);
+  select.innerHTML = packages.map((pack) => {
+    const sessions = Number(pack.package_sessions || 0);
+    const price = Number(pack.actual_price || pack.list_price || 0);
+    return `
+      <option value="${sessions}" data-course-price="${price}">
+        ${sessions} ครั้ง · ${formatMoney(price)} บาท
+      </option>
+    `;
+  }).join("");
+  const wanted = Number(preferredSessions || 0);
+  const hasWanted = [...select.options].some((option) => Number(option.value) === wanted);
+  if (hasWanted) {
+    select.value = String(wanted);
+  } else if (select.options.length) {
+    const defaultSessions = getDefaultPricingItem(courseType, wanted)?.sessions || select.options[select.options.length - 1].value;
+    select.value = String(defaultSessions);
+  }
+}
+
+function getSelectedPackagePrice(select) {
+  const option = select?.selectedOptions?.[0];
+  return Number(option?.dataset.coursePrice || 0);
+}
+
+function getSelectedApprovalItems() {
+  const items = [];
+  if (robotAccess?.checked) {
+    items.push({
+      courseType: "robot",
+      label: courseLabels.robot[0],
+      sessions: Number(robotSessionCount?.value || 0),
+      amount: getSelectedPackagePrice(robotSessionCount)
+    });
+  }
+  artProgramControls.forEach((program) => {
+    if (!artAccess?.checked || !program.checkbox?.checked) return;
+    items.push({
+      courseType: program.type,
+      label: courseLabels[program.type]?.[0] || program.label,
+      sessions: Number(program.input?.value || 0),
+      amount: getSelectedPackagePrice(program.input)
+    });
+  });
+  return items;
+}
+
+function renderApprovalPriceSummary() {
+  if (!approvalPriceSummary) return;
+  const items = getSelectedApprovalItems();
+  if (robotPriceText && robotSessionCount?.selectedOptions?.[0]) {
+    robotPriceText.textContent = robotAccess?.checked
+      ? robotSessionCount.selectedOptions[0].textContent.trim()
+      : "เลือกแพ็กเกจที่มีราคาในระบบ";
+  }
+  if (!items.length) {
+    approvalPriceSummary.hidden = true;
+    approvalPriceSummary.innerHTML = "";
+    return;
+  }
+  const expectedTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const paidAmount = Number(activeApplication?.paid_amount || 0);
+  const diff = paidAmount - expectedTotal;
+  approvalPriceSummary.hidden = false;
+  approvalPriceSummary.innerHTML = `
+    <div class="approval-price-heading">
+      <strong>สรุปยอดก่อนเปิดสิทธิ์</strong>
+      <span>ชำระแล้ว ${formatMoney(paidAmount)} บาท</span>
+    </div>
+    <div class="approval-price-lines">
+      ${items.map((item) => `
+        <div>
+          <span>${escapeHtml(item.label)} · ${item.sessions} ครั้ง</span>
+          <strong>${formatMoney(item.amount)} บาท</strong>
+        </div>
+      `).join("")}
+    </div>
+    <div class="approval-price-total">
+      <span>รวมราคาคอร์สที่เลือก</span>
+      <strong>${formatMoney(expectedTotal)} บาท</strong>
+    </div>
+    <small class="${diff < 0 ? "warning" : ""}">
+      ${diff === 0
+        ? "ยอดชำระตรงกับราคาคอร์สที่เลือก"
+        : diff > 0
+          ? `ยอดชำระมากกว่าราคาคอร์ส ${formatMoney(diff)} บาท`
+          : `ยอดชำระน้อยกว่าราคาคอร์ส ${formatMoney(Math.abs(diff))} บาท`}
+    </small>
+  `;
+}
+
+function buildApprovalConfirmMessage() {
+  const items = getSelectedApprovalItems();
+  const expectedTotal = items.reduce((sum, item) => sum + Number(item.amount || 0), 0);
+  const paidAmount = Number(activeApplication?.paid_amount || 0);
+  const lines = [
+    "ยืนยันอนุมัติและเปิดสิทธิ์การเรียน?",
+    "",
+    ...items.map((item) => `- ${item.label} ${item.sessions} ครั้ง: ${formatMoney(item.amount)} บาท`),
+    "",
+    `รวมราคาคอร์สที่เลือก: ${formatMoney(expectedTotal)} บาท`,
+    `ได้รับชำระแล้ว: ${formatMoney(paidAmount)} บาท`,
+    "",
+    "กดยืนยันเพื่อบันทึกและเปิดสิทธิ์จริง"
+  ];
+  return lines.join("\n");
 }
 
 function getSessionPackageValue(input, label) {
@@ -4220,8 +4366,9 @@ async function openReview(applicationId) {
     ? pendingCourses.some((course) => ["art", "creative_art", "water_color", "clay"].includes(course)) ||
       ["art", "both"].includes(pendingCourse)
     : activeApplication.art_access;
+  await ensureReviewCoursePricing();
   const packages = await loadApplicationCoursePackages(activeApplication.id);
-  if (robotSessionCount) robotSessionCount.value = packages.robot || 30;
+  renderSessionPackageSelect(robotSessionCount, "robot", packages.robot || 30);
   if (artSessionCount) artSessionCount.value = packages.art || 12;
   const hasStoredArtPackage = packages.selectedArtPrograms.size > 0;
   artProgramControls.forEach((program) => {
@@ -4229,7 +4376,7 @@ async function openReview(applicationId) {
       ? packages.selectedArtPrograms.has(program.type)
       : pendingCourses.includes(program.type) || program.type === pendingCourse;
     if (program.checkbox) program.checkbox.checked = artAccess.checked && selected;
-    if (program.input) program.input.value = packages[program.type] || program.defaultSessions;
+    renderSessionPackageSelect(program.input, program.type, packages[program.type] || program.defaultSessions);
   });
   if (artAccess.checked && !artProgramControls.some((program) => program.checkbox?.checked)) {
     artProgramControls[0].checkbox.checked = true;
@@ -4264,13 +4411,21 @@ async function openReview(applicationId) {
     return;
   }
 
+  const normalizedSlipPath = normalizeSlipPathForStorage(activeApplication.slip_path);
   const { data, error } = await supabaseClient.storage
     .from("payment-slips")
-    .createSignedUrl(activeApplication.slip_path, 300);
+    .createSignedUrl(normalizedSlipPath, 300);
 
   if (error) {
-    slipFrame.innerHTML =
-      `<div class="slip-loading">เปิดสลิปไม่สำเร็จ<br>${escapeHtml(error.message)}</div>`;
+    slipFrame.innerHTML = `
+      <div class="slip-loading">
+        เปิดสลิปไม่สำเร็จ<br>
+        ${escapeHtml(error.message)}<br>
+        <small>path: ${escapeHtml(normalizedSlipPath || activeApplication.slip_path)}</small><br>
+        <small>หากเป็นใบสมัคร LINE กรุณารัน SQL ล่าสุดในไฟล์ supabase-liff-enrollment-schema.sql</small>
+      </div>
+    `;
+    openSlipLink.removeAttribute("href");
     return;
   }
 
@@ -4341,6 +4496,25 @@ function renderParentAccountResults(accounts) {
       </div>
     `;
   }).join("");
+}
+
+function normalizeSlipPathForStorage(path) {
+  const rawPath = String(path || "").trim();
+  if (!rawPath) return "";
+  try {
+    const url = new URL(rawPath);
+    const marker = "/payment-slips/";
+    const markerIndex = url.pathname.indexOf(marker);
+    if (markerIndex >= 0) {
+      return decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
+    }
+  } catch (error) {
+    // Not a URL, keep normal path cleanup below.
+  }
+  return rawPath
+    .replace(/^\/+/, "")
+    .replace(/^payment-slips\//, "")
+    .replace(/^storage\/v1\/object\/(?:sign|public)\/payment-slips\//, "");
 }
 
 async function searchParentAccounts() {
@@ -4449,6 +4623,8 @@ async function reviewApplication(decision) {
       showToast(error.message, true);
       return;
     }
+    const confirmApproval = window.confirm(buildApprovalConfirmMessage());
+    if (!confirmApproval) return;
   }
 
   setBusy(true);
@@ -6930,6 +7106,7 @@ parentAccountResults?.addEventListener("click", (event) => {
   if (button) linkParentAccount(button.dataset.linkParentId);
 });
 robotAccess?.addEventListener("change", updateSessionPackageFields);
+robotSessionCount?.addEventListener("change", renderApprovalPriceSummary);
 artAccess?.addEventListener("change", () => setArtProgramsEnabled(Boolean(artAccess.checked)));
 artProgramControls.forEach((program) => {
   program.checkbox?.addEventListener("change", () => {
@@ -6937,6 +7114,7 @@ artProgramControls.forEach((program) => {
     if (artAccess) artAccess.checked = hasSelectedArtProgram;
     updateSessionPackageFields();
   });
+  program.input?.addEventListener("change", renderApprovalPriceSummary);
 });
 document.querySelector("#menuButton").addEventListener("click", () =>
   document.querySelector(".sidebar").classList.toggle("open"));

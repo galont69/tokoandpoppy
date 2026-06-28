@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260628-branch-edit-fix">
+  <link rel="stylesheet" href="admin.css?v=20260628-review-pricing-confirm">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -1301,8 +1301,8 @@
           <div class="session-package-grid">
             <label class="session-package-field" id="robotSessionsField">
               จำนวนครั้งโรบอท
-              <input id="robotSessionCount" type="number" min="1" max="120" step="1" value="30">
-              <small>ระบุตามแพ็กเกจที่ผู้ปกครองซื้อ เช่น 4, 8 หรือ 30 ครั้ง</small>
+              <select id="robotSessionCount"></select>
+              <small id="robotPriceText">เลือกแพ็กเกจที่มีราคาในระบบ</small>
             </label>
             <div class="session-package-field art-program-package" id="artSessionsField">
               <div class="art-program-heading">
@@ -1312,24 +1312,25 @@
               <label class="art-program-row">
                 <input id="creativeArtProgram" type="checkbox">
                 <span>🎨 Creative Art</span>
-                <input id="creativeArtSessionCount" type="number" min="1" max="120" step="1" value="12">
+                <select id="creativeArtSessionCount"></select>
                 <small>ครั้ง</small>
               </label>
               <label class="art-program-row">
                 <input id="waterColorProgram" type="checkbox">
                 <span>💧 Water Color</span>
-                <input id="waterColorSessionCount" type="number" min="1" max="120" step="1" value="8">
+                <select id="waterColorSessionCount"></select>
                 <small>ครั้ง</small>
               </label>
               <label class="art-program-row">
                 <input id="clayProgram" type="checkbox">
                 <span>🧱 ปั้นดินเบา (CLAY)</span>
-                <input id="claySessionCount" type="number" min="1" max="120" step="1" value="4">
+                <select id="claySessionCount"></select>
                 <small>ครั้ง</small>
               </label>
               <input id="artSessionCount" type="hidden" value="12">
             </div>
           </div>
+          <section class="approval-price-summary" id="approvalPriceSummary" hidden></section>
           <label class="reason-field" id="reasonField">
             เหตุผลกรณีไม่อนุมัติ
             <textarea id="rejectionReason" rows="3" placeholder="ระบุสาเหตุเพื่อให้ทีมงานติดตาม"></textarea>
@@ -1347,6 +1348,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260628-branch-edit-fix"></script>
+  <script src="admin.js?v=20260628-review-pricing-confirm"></script>
 </body>
 </html>

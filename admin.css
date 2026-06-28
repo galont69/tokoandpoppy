@@ -449,9 +449,22 @@ td { border-top: 1px solid #f0eae3; padding: 14px 16px; vertical-align: middle; 
 .session-package-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
 .session-package-field { display: grid; gap: 7px; border: 1px solid #e7dacd; border-radius: 14px; padding: 12px; background: #fffdf8; color: #5c493d; font-size: 10px; font-weight: 800; }
 .session-package-field.muted { opacity: .55; }
-.session-package-field input { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: white; color: var(--brown); font: inherit; }
-.session-package-field input:disabled { cursor: not-allowed; background: #f2eee7; }
+.session-package-field input,
+.session-package-field select { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; background: white; color: var(--brown); font: inherit; }
+.session-package-field input:disabled,
+.session-package-field select:disabled { cursor: not-allowed; background: #f2eee7; }
 .session-package-field small { color: #9c887b; font-size: 8px; line-height: 1.45; }
+.approval-price-summary { display: grid; gap: 10px; margin-top: 15px; border: 1px solid #d7e7c8; border-radius: 16px; padding: 14px; background: #f6fbf0; color: var(--brown); }
+.approval-price-heading,
+.approval-price-lines div,
+.approval-price-total { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.approval-price-heading strong { font-size: 15px; }
+.approval-price-heading span { color: #648b55; font-size: 13px; font-weight: 900; }
+.approval-price-lines { display: grid; gap: 7px; }
+.approval-price-lines div { border-bottom: 1px dashed #d8e4cb; padding-bottom: 7px; font-size: 13px; font-weight: 800; }
+.approval-price-total { border-top: 1px solid #d8e4cb; padding-top: 8px; font-weight: 900; }
+.approval-price-summary small { color: #638554; font-weight: 900; }
+.approval-price-summary small.warning { color: #bd6b54; }
 .reason-field { display: grid; gap: 7px; margin-top: 17px; font-size: 9px; font-weight: 700; }
 .reason-field textarea { width: 100%; resize: vertical; outline: none; border: 1px solid var(--line); border-radius: 12px; padding: 10px; color: var(--brown); background: white; font-size: 9px; }
 .reason-field textarea:focus { border-color: #cb8270; box-shadow: 0 0 0 3px rgba(203,130,112,.1); }
@@ -2701,7 +2714,8 @@ body { font-size: 16px; }
   accent-color: #6b9658;
 }
 
-.art-program-row > input[type="number"] {
+.art-program-row > input[type="number"],
+.art-program-row > select {
   width: 100%;
 }
 
