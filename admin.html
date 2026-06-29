@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260628-staff-created-course-open-fix">
+  <link rel="stylesheet" href="admin.css?v=20260629-teacher-liff-hotfix">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -515,6 +515,23 @@
             </div>
             <div class="branch-admin-requests" id="teacherInviteRows">
               <div class="loading-state"><i></i><span>กำลังโหลดทีมสาขา...</span></div>
+            </div>
+          </section>
+
+          <section class="applications-panel branch-list-panel teacher-liff-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>คำขอครูจาก LINE LIFF</h2>
+                <p>ครูสมัครจากเมนู LINE OA เลือกสาขา แล้วรอแอดมินสาขาอนุมัติก่อนใช้งานบนมือถือ</p>
+              </div>
+            </div>
+            <div class="teacher-liff-link-box">
+              <span>ลิงก์ LIFF ครู</span>
+              <code id="teacherLiffLinkText">teacher-liff.html</code>
+              <button type="button" id="copyTeacherLiffLinkButton">คัดลอก</button>
+            </div>
+            <div class="branch-admin-requests" id="teacherLiffRows">
+              <div class="loading-state"><i></i><span>กำลังโหลดคำขอจาก LINE...</span></div>
             </div>
           </section>
         </div>
@@ -1349,7 +1366,7 @@
   <div class="toast" id="adminToast" role="status"></div>
 
   <script src="supabase.js?v=2"></script>
-  <script src="supabase-config.js?v=20260624-learning-groups"></script>
-  <script src="admin.js?v=20260628-staff-created-course-open-fix"></script>
+  <script src="supabase-config.js?v=20260629-teacher-liff-hotfix"></script>
+  <script src="admin.js?v=20260629-teacher-liff-hotfix"></script>
 </body>
 </html>
