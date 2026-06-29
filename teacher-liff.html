@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#fff7ed" />
+  <title>Teacher LIFF | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260629-teacher-liff" />
+</head>
+<body>
+  <main class="teacher-app">
+    <section class="hero-card">
+      <img src="logo.png" alt="Toko & Poppy" />
+      <div>
+        <p>Teacher LIFF</p>
+        <h1>เครื่องมือคุณครู</h1>
+        <span id="lineStatus">กำลังเชื่อมต่อ LINE...</span>
+      </div>
+    </section>
+
+    <section class="notice-card" id="messageCard" hidden></section>
+
+    <section class="register-card" id="registerView" hidden>
+      <div class="section-title">
+        <p>สมัครใช้งาน</p>
+        <h2>ขอสิทธิ์คุณครูผ่าน LINE</h2>
+        <span>เลือกสาขาที่สอน แล้วรอแอดมินสาขาอนุมัติครั้งแรก</span>
+      </div>
+      <form id="teacherRegisterForm" class="stack-form">
+        <label>
+          ชื่อครู
+          <input id="teacherNameInput" name="teacherName" type="text" maxlength="150" required placeholder="เช่น ครูพลอย" />
+        </label>
+        <label>
+          เบอร์โทร
+          <input id="teacherPhoneInput" name="teacherPhone" type="tel" maxlength="40" placeholder="ไม่บังคับ" />
+        </label>
+        <label>
+          สาขา
+          <select id="branchSelect" name="branchId" required>
+            <option value="">กำลังโหลดสาขา...</option>
+          </select>
+        </label>
+        <button class="primary-button" id="registerButton" type="submit">ส่งคำขอให้แอดมินอนุมัติ</button>
+      </form>
+    </section>
+
+    <section class="pending-card" id="pendingView" hidden>
+      <div class="pending-icon">⏳</div>
+      <p id="pendingEyebrow">รออนุมัติ</p>
+      <h2 id="pendingTitle">ส่งคำขอแล้ว</h2>
+      <span id="pendingText">เมื่อแอดมินสาขาอนุมัติ ครั้งต่อไปที่เปิดจาก LINE จะเข้าใช้งานได้ทันที</span>
+      <button class="ghost-button" id="refreshButton" type="button">รีเฟรชสถานะ</button>
+    </section>
+
+    <section class="dashboard" id="dashboardView" hidden>
+      <section class="teacher-summary">
+        <div>
+          <p id="teacherBranchLabel">สาขา</p>
+          <h2 id="teacherNameLabel">คุณครู</h2>
+          <span id="teacherMetaLabel">พร้อมใช้งาน</span>
+        </div>
+        <button class="ghost-button" id="reloadDashboardButton" type="button">รีเฟรช</button>
+      </section>
+
+      <nav class="tab-bar" aria-label="เมนูคุณครู">
+        <button class="active" type="button" data-tab="reminders">แจ้งเตือน</button>
+        <button type="button" data-tab="sessions">หลังเรียน</button>
+      </nav>
+
+      <section class="tab-panel" id="remindersPanel">
+        <div class="section-title">
+          <p>Tomorrow Reminders</p>
+          <h2>คิวแจ้งเตือนพรุ่งนี้</h2>
+          <span id="reminderDateLabel">-</span>
+        </div>
+        <div class="summary-grid">
+          <article><strong id="reminderTotal">0</strong><span>ต้องแจ้ง</span></article>
+          <article><strong id="reminderPending">0</strong><span>รอแจ้ง</span></article>
+          <article><strong id="reminderSent">0</strong><span>แจ้งแล้ว</span></article>
+        </div>
+        <div class="mobile-list" id="reminderList"></div>
+      </section>
+
+      <section class="tab-panel" id="sessionsPanel" hidden>
+        <div class="section-title">
+          <p>After Class</p>
+          <h2>บันทึกหลังเรียน</h2>
+          <span>เลือกเด็ก กรอกบันทึก สร้างการ์ด แล้วคัดลอกข้อความส่งผู้ปกครอง</span>
+        </div>
+        <div class="mobile-list" id="sessionList"></div>
+      </section>
+    </section>
+  </main>
+
+  <section class="bottom-sheet" id="shareSheet" hidden aria-modal="true" role="dialog" aria-labelledby="shareTitle">
+    <div class="sheet-backdrop" data-close-sheet></div>
+    <div class="sheet-card">
+      <button class="close-button" type="button" data-close-sheet aria-label="ปิด">×</button>
+      <p class="sheet-eyebrow" id="shareEyebrow">Preview</p>
+      <h2 id="shareTitle">สร้างการ์ด</h2>
+      <p id="shareSubtitle">ตรวจทานก่อนส่งให้ผู้ปกครอง</p>
+      <canvas id="shareCanvas" width="1080" height="1080"></canvas>
+      <label class="textarea-label">
+        ข้อความสำหรับส่งผู้ปกครอง
+        <textarea id="shareText" rows="8" readonly></textarea>
+      </label>
+      <div class="sheet-actions">
+        <button class="ghost-button" id="copyShareTextButton" type="button">คัดลอกข้อความ</button>
+        <button class="primary-button" id="downloadShareCardButton" type="button">ดาวน์โหลดการ์ด</button>
+        <button class="primary-button" id="markReminderSentButton" type="button" hidden>บันทึกว่าแจ้งแล้ว</button>
+        <button class="primary-button" id="confirmSessionSaveButton" type="button" hidden>บันทึกหลังเรียนจริง</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="bottom-sheet" id="recordSheet" hidden aria-modal="true" role="dialog" aria-labelledby="recordTitle">
+    <div class="sheet-backdrop" data-close-record></div>
+    <div class="sheet-card">
+      <button class="close-button" type="button" data-close-record aria-label="ปิด">×</button>
+      <p class="sheet-eyebrow">Record Session</p>
+      <h2 id="recordTitle">บันทึกหลังเรียน</h2>
+      <p id="recordSubtitle">-</p>
+      <form id="recordForm" class="stack-form">
+        <div class="form-row">
+          <label>
+            ครั้งที่
+            <input id="sessionNumberInput" type="number" min="1" required />
+          </label>
+          <label>
+            วันที่เรียน
+            <input id="sessionDateInput" type="date" required />
+          </label>
+        </div>
+        <label>
+          บทเรียน / กิจกรรม
+          <input id="lessonTitleInput" type="text" maxlength="160" placeholder="เช่น วาดสัตว์จากนิทาน" />
+        </label>
+        <label>
+          คอมเมนต์คุณครู
+          <textarea id="teacherCommentInput" rows="4" maxlength="700" placeholder="วันนี้ตั้งใจดีมาก กล้าเล่าไอเดียมากขึ้น..."></textarea>
+        </label>
+        <label>
+          รูปผลงาน
+          <input id="sessionPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+        </label>
+        <div class="photo-preview" id="photoPreview" hidden></div>
+        <button class="primary-button" id="previewSessionButton" type="submit">สร้าง Preview ก่อนบันทึก</button>
+      </form>
+      <div class="sheet-actions" id="recordConfirmActions" hidden>
+        <button class="ghost-button" id="copySessionDraftButton" type="button">คัดลอกข้อความ</button>
+        <button class="primary-button" id="saveSessionButton" type="button">บันทึกจริง</button>
+      </div>
+    </div>
+  </section>
+
+  <script src="supabase.js?v=2"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="supabase-config.js?v=20260629-teacher-liff"></script>
+  <script src="teacher-liff.js?v=20260629-teacher-liff"></script>
+</body>
+</html>

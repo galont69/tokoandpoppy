@@ -227,6 +227,41 @@ button { cursor: pointer; }
   background: #eaf2e2;
   font: 800 11px Nunito, sans-serif;
 }
+.teacher-liff-panel {
+  grid-column: 1 / -1;
+}
+.teacher-liff-link-box {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  margin: 12px 0 18px;
+  border: 1px dashed #cdbd9f;
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, .78);
+}
+.teacher-liff-link-box span {
+  color: #7d6b5f;
+  font-size: 12px;
+  font-weight: 900;
+}
+.teacher-liff-link-box code {
+  min-width: 0;
+  overflow: hidden;
+  color: #715e52;
+  font: 800 12px Nunito, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.teacher-liff-link-box button {
+  border: 0;
+  border-radius: 12px;
+  padding: 9px 12px;
+  color: #ffffff;
+  background: var(--green);
+  font-weight: 900;
+}
 .request-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .request-meta span {
   border-radius: 99px;
@@ -3514,13 +3549,15 @@ td,
   vertical-align: middle;
 }
 
-#applicationsView .table-wrap th {
+#applicationsView .table-wrap th,
+.revenue-table-wrap th {
   position: static;
   top: auto;
   z-index: auto;
 }
 
-#applicationsView .table-wrap thead {
+#applicationsView .table-wrap thead,
+.revenue-table-wrap thead {
   position: relative;
   z-index: 1;
 }
