@@ -100,6 +100,9 @@ const studentManagementLoadingState = document.querySelector("#studentManagement
 const studentManagementEmptyState = document.querySelector("#studentManagementEmptyState");
 const studentManagementSummary = document.querySelector("#studentManagementSummary");
 const studentManagementScopeText = document.querySelector("#studentManagementScopeText");
+const studentDeleteRequestPanel = document.querySelector("#studentDeleteRequestPanel");
+const studentDeleteRequestRows = document.querySelector("#studentDeleteRequestRows");
+const studentDeleteRequestScope = document.querySelector("#studentDeleteRequestScope");
 const studentSearchInput = document.querySelector("#studentSearchInput");
 const studentCourseFilter = document.querySelector("#studentCourseFilter");
 const studentStatusFilter = document.querySelector("#studentStatusFilter");
@@ -228,6 +231,7 @@ let activeArtLesson = null;
 let learningEnrollments = [];
 let studentManagementEnrollments = [];
 let studentRevenueEvents = [];
+let studentDeleteRequests = [];
 const expandedStudentManagementDetails = new Set();
 let classReminderEnrollments = [];
 let branchRevenueEvents = [];
@@ -1486,6 +1490,54 @@ function getStudentGroupSummaryState(activeEnrollments = []) {
   return ["active", "กำลังเรียน"];
 }
 
+function getPendingStudentDeleteRequest(applicationId) {
+  return studentDeleteRequests.find((request) =>
+    request.application_id === applicationId && request.status === "pending");
+}
+
+function renderStudentDeleteRequests() {
+  if (!studentDeleteRequestPanel || !studentDeleteRequestRows) return;
+  const visibleRequests = studentDeleteRequests.filter((request) =>
+    request.status === "pending" || isMainAdmin());
+  studentDeleteRequestPanel.hidden = visibleRequests.length === 0;
+  if (studentDeleteRequestScope) {
+    studentDeleteRequestScope.textContent = isMainAdmin()
+      ? "แอดมินหลักยืนยันลบจริงหรือปฏิเสธคำขอได้"
+      : "ส่งคำขอแล้ว รอแอดมินหลักตรวจสอบก่อนลบจริง";
+  }
+  if (!visibleRequests.length) {
+    studentDeleteRequestRows.innerHTML = "";
+    return;
+  }
+
+  studentDeleteRequestRows.innerHTML = visibleRequests.map((request) => {
+    const branchName = request.branches?.name || "-";
+    const requestedBy = request.requested_by_email || "-";
+    const status = request.status || "pending";
+    return `
+      <article class="student-delete-request-card ${escapeHtml(status)}">
+        <div>
+          <span class="revenue-status ${escapeHtml(status)}">${escapeHtml(status === "approved" ? "ลบแล้ว" : status === "rejected" ? "ปฏิเสธ" : "รออนุมัติ")}</span>
+          <strong>${escapeHtml(request.student_name || "ไม่ระบุนักเรียน")}</strong>
+          <small>${escapeHtml([
+            request.student_nickname ? `ชื่อเล่น ${request.student_nickname}` : "",
+            `สาขา ${branchName}`,
+            `ส่งโดย ${requestedBy}`,
+            `ส่งเมื่อ ${formatDateOnly(request.requested_at || request.created_at)}`
+          ].filter(Boolean).join(" · "))}</small>
+          ${request.reason ? `<p>${escapeHtml(request.reason)}</p>` : ""}
+        </div>
+        ${isMainAdmin() && status === "pending" ? `
+          <div class="student-delete-request-actions">
+            <button type="button" data-review-student-delete="${request.id}" data-decision="rejected">ปฏิเสธ</button>
+            <button class="danger" type="button" data-review-student-delete="${request.id}" data-decision="approved">ยืนยันลบ</button>
+          </div>
+        ` : ""}
+      </article>
+    `;
+  }).join("");
+}
+
 function renderStudentManagementSummary(groups) {
   if (!studentManagementSummary) return;
   const totals = studentManagementEnrollments.reduce((summary, enrollment) => {
@@ -1564,6 +1616,7 @@ function renderStudentManagement() {
     const sourceText = group.registrationSource === "staff_created"
       ? "เพิ่มโดยทีมงาน · รอผูกบัญชีผู้ปกครองได้ภายหลัง"
       : "ข้อมูลจากใบสมัครที่อนุมัติแล้ว";
+    const pendingDeleteRequest = getPendingStudentDeleteRequest(group.applicationId);
     const canDelete = Boolean(group.applicationId) && !isBranchTeacher();
     const courseListHtml = courses || `
       <li class="profile-only-course">
@@ -1615,9 +1668,13 @@ function renderStudentManagement() {
               แก้ไขข้อมูล
             </button>
           ` : ""}
-          ${canDelete ? `
+          ${pendingDeleteRequest ? `
+            <button class="delete-student-button" type="button" disabled>
+              รออนุมัติลบ
+            </button>
+          ` : canDelete ? `
             <button class="delete-student-button" type="button" data-delete-student-application="${group.applicationId}" data-student-name="${escapeHtml(group.studentName)}">
-              ลบนักเรียน
+              ${isMainAdmin() ? "ลบนักเรียน" : "ขอลบนักเรียน"}
             </button>
           ` : ""}
         </div>
@@ -1682,28 +1739,41 @@ async function loadStudentManagement() {
       .order("event_date", { ascending: false })
       .order("created_at", { ascending: false })
     : null;
+  let deleteRequestQuery = (isMainAdmin() || isBranchAdmin())
+    ? supabaseClient
+      .from("student_delete_requests")
+      .select("*, branches(name,code)")
+      .order("requested_at", { ascending: false })
+    : null;
 
   if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
     enrollmentQuery = enrollmentQuery.eq("branch_id", currentBranchAssignment.branch_id);
     applicationQuery = applicationQuery.eq("branch_id", currentBranchAssignment.branch_id);
     if (revenueQuery) revenueQuery = revenueQuery.eq("branch_id", currentBranchAssignment.branch_id);
+    if (deleteRequestQuery) deleteRequestQuery = deleteRequestQuery.eq("branch_id", currentBranchAssignment.branch_id);
   }
 
-  const requests = [enrollmentQuery, applicationQuery];
-  if (revenueQuery) requests.push(revenueQuery);
   const [
     { data, error },
     { data: profileApplications, error: profileError },
-    revenueResult
-  ] = await Promise.all(requests);
+    revenueResult,
+    deleteRequestResult
+  ] = await Promise.all([
+    enrollmentQuery,
+    applicationQuery,
+    revenueQuery || Promise.resolve({ data: [], error: null }),
+    deleteRequestQuery || Promise.resolve({ data: [], error: null })
+  ]);
   studentManagementLoadingState.hidden = true;
-  if (error || profileError || revenueResult?.error) {
-    showToast(`โหลดรายชื่อนักเรียนไม่สำเร็จ: ${(error || profileError || revenueResult.error).message}`, true);
+  if (error || profileError || revenueResult?.error || deleteRequestResult?.error) {
+    showToast(`โหลดรายชื่อนักเรียนไม่สำเร็จ: ${(error || profileError || revenueResult?.error || deleteRequestResult?.error).message}`, true);
     studentManagementRows.innerHTML = "";
     studentManagementEmptyState.hidden = false;
     return;
   }
   studentRevenueEvents = revenueResult?.data || [];
+  studentDeleteRequests = deleteRequestResult?.data || [];
+  renderStudentDeleteRequests();
 
   const enrollmentRows = (data || []).filter((enrollment) => {
     const app = getStudentApplication(enrollment);
@@ -1738,6 +1808,37 @@ async function loadStudentManagement() {
 
 async function deleteStudentRecord(applicationId, studentName) {
   if (!applicationId || isBranchTeacher()) return;
+  if (isBranchAdmin()) {
+    const reason = window.prompt(
+      `ส่งคำขอลบนักเรียน "${studentName || "รายการนี้"}" ให้แอดมินหลักอนุมัติ\n\nกรุณาระบุเหตุผล เช่น ย้ายสาขา สมัครผิด หรือข้อมูลซ้ำ`
+    );
+    if (!reason || !reason.trim()) return;
+
+    const button = studentManagementRows?.querySelector(`[data-delete-student-application="${CSS.escape(applicationId)}"]`);
+    if (button) {
+      button.disabled = true;
+      button.textContent = "กำลังส่งคำขอ...";
+    }
+
+    const { error } = await supabaseClient.rpc("request_student_delete", {
+      p_application_id: applicationId,
+      p_reason: reason.trim()
+    });
+
+    if (error) {
+      showToast(`ส่งคำขอลบไม่สำเร็จ: ${error.message}`, true);
+      if (button) {
+        button.disabled = false;
+        button.textContent = "ขอลบนักเรียน";
+      }
+      return;
+    }
+
+    showToast("ส่งคำขอลบนักเรียนเรียบร้อย รอแอดมินหลักอนุมัติ");
+    await loadStudentManagement();
+    return;
+  }
+
   const confirmed = window.confirm(
     `ต้องการลบนักเรียน "${studentName || "รายการนี้"}" ใช่ไหม?\n\nระบบจะลบใบสมัครที่อนุมัติแล้ว คอร์สที่เปิดสิทธิ์ และประวัติครั้งเรียนของนักเรียนคนนี้ เพื่อให้สมัครใหม่ได้`
   );
@@ -1769,6 +1870,36 @@ async function deleteStudentRecord(applicationId, studentName) {
   ]);
   learningEnrollments = learningEnrollments.filter((enrollment) => enrollment.application_id !== applicationId);
   renderLearningProgress();
+}
+
+async function reviewStudentDeleteRequest(requestId, decision) {
+  if (!isMainAdmin() || !requestId) return;
+  let note = "";
+  if (decision === "rejected") {
+    note = window.prompt("ระบุเหตุผลที่ปฏิเสธคำขอลบ") || "";
+    if (!note.trim()) return;
+  } else {
+    const request = studentDeleteRequests.find((item) => item.id === requestId);
+    const confirmed = window.confirm(
+      `ยืนยันลบนักเรียน "${request?.student_name || "รายการนี้"}" ใช่ไหม?\n\nเมื่อลบแล้วจะลบคอร์ส ประวัติเรียน และข้อมูลที่เกี่ยวข้องกับใบสมัครนี้`
+    );
+    if (!confirmed) return;
+    note = "ยืนยันลบโดยแอดมินหลัก";
+  }
+
+  const { error } = await supabaseClient.rpc("review_student_delete_request", {
+    p_request_id: requestId,
+    p_decision: decision,
+    p_review_note: note.trim() || null
+  });
+
+  if (error) {
+    showToast(`บันทึกคำขอลบไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  showToast(decision === "approved" ? "ยืนยันลบนักเรียนเรียบร้อยแล้ว" : "ปฏิเสธคำขอลบแล้ว");
+  await Promise.all([loadStudentManagement(), loadApplications()]);
 }
 
 async function loadStaffStudentBranches() {
@@ -7516,6 +7647,11 @@ classReminderModal?.addEventListener("click", (event) => {
 studentSearchInput?.addEventListener("input", renderStudentManagement);
 studentCourseFilter?.addEventListener("change", renderStudentManagement);
 studentStatusFilter?.addEventListener("change", renderStudentManagement);
+studentDeleteRequestRows?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-review-student-delete]");
+  if (!button) return;
+  reviewStudentDeleteRequest(button.dataset.reviewStudentDelete, button.dataset.decision);
+});
 studentManagementRows?.addEventListener("click", async (event) => {
   const detailButton = event.target.closest("[data-student-management-detail]");
   if (detailButton) {

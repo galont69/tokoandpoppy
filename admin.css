@@ -3906,6 +3906,95 @@ tbody tr:hover td {
   font-size: 34px;
 }
 
+.student-delete-requests {
+  margin: 0 24px 18px;
+  border: 1px solid #f0d2ca;
+  border-radius: 20px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fffaf7, #fff4ef);
+}
+
+.student-delete-requests-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.student-delete-requests-heading strong {
+  display: block;
+  color: #71463e;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.student-delete-requests-heading span {
+  display: block;
+  color: #8d766d;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.student-delete-request-list {
+  display: grid;
+  gap: 10px;
+}
+
+.student-delete-request-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  border: 1px solid rgba(216, 132, 116, .25);
+  border-radius: 16px;
+  padding: 13px;
+  background: rgba(255, 255, 255, .82);
+}
+
+.student-delete-request-card strong,
+.student-delete-request-card small,
+.student-delete-request-card p {
+  display: block;
+}
+
+.student-delete-request-card strong {
+  margin-top: 6px;
+  color: #4d3b31;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.student-delete-request-card small,
+.student-delete-request-card p {
+  margin: 4px 0 0;
+  color: #806f63;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.student-delete-request-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.student-delete-request-actions button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 13px;
+  padding: 10px 14px;
+  color: #4f7d48;
+  background: #e5f1df;
+  font-weight: 900;
+}
+
+.student-delete-request-actions button.danger {
+  color: #ffffff;
+  background: #bd6557;
+}
+
 .student-management-course-ledger {
   display: grid;
   gap: 14px;

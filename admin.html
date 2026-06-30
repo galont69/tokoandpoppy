@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260630-student-card-collapse">
+  <link rel="stylesheet" href="admin.css?v=20260630-student-delete-approval">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -247,6 +247,16 @@
           </div>
 
           <div class="student-management-summary" id="studentManagementSummary"></div>
+
+          <div class="student-delete-requests" id="studentDeleteRequestPanel" hidden>
+            <div class="student-delete-requests-heading">
+              <div>
+                <strong>คำขอลบนักเรียน</strong>
+                <span id="studentDeleteRequestScope">รอแอดมินหลักตรวจสอบก่อนลบจริง</span>
+              </div>
+            </div>
+            <div class="student-delete-request-list" id="studentDeleteRequestRows"></div>
+          </div>
 
           <div class="toolbar learning-toolbar">
             <label class="search-box">
@@ -1366,7 +1376,7 @@
   <div class="toast" id="adminToast" role="status"></div>
 
   <script src="supabase.js?v=2"></script>
-  <script src="supabase-config.js?v=20260630-student-card-collapse"></script>
-  <script src="admin.js?v=20260630-student-card-collapse"></script>
+  <script src="supabase-config.js?v=20260630-student-delete-approval"></script>
+  <script src="admin.js?v=20260630-student-delete-approval"></script>
 </body>
 </html>
