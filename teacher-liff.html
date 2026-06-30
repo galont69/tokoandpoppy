@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260630-today-center" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260630-liff-card-save" />
 </head>
 <body>
   <main class="teacher-app">
@@ -134,6 +134,8 @@
       <h2 id="shareTitle">สร้างการ์ด</h2>
       <p id="shareSubtitle">ตรวจทานก่อนส่งให้ผู้ปกครอง</p>
       <canvas id="shareCanvas" width="1080" height="1080"></canvas>
+      <img class="share-image-preview" id="shareImagePreview" alt="การ์ดสำหรับบันทึกรูปภาพ" hidden>
+      <p class="save-card-hint" id="saveCardHint" hidden>เปิดรูปแล้วกดค้างเพื่อบันทึกลงเครื่อง หรือแชร์ต่อใน LINE</p>
       <label class="textarea-label">
         ข้อความสำหรับส่งผู้ปกครอง
         <textarea id="shareText" rows="8" readonly></textarea>
@@ -190,6 +192,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260630-today-center"></script>
+  <script src="teacher-liff.js?v=20260630-liff-card-save"></script>
 </body>
 </html>

@@ -36,6 +36,8 @@ const shareEyebrow = document.querySelector("#shareEyebrow");
 const shareTitle = document.querySelector("#shareTitle");
 const shareSubtitle = document.querySelector("#shareSubtitle");
 const shareCanvas = document.querySelector("#shareCanvas");
+const shareImagePreview = document.querySelector("#shareImagePreview");
+const saveCardHint = document.querySelector("#saveCardHint");
 const shareText = document.querySelector("#shareText");
 const copyShareTextButton = document.querySelector("#copyShareTextButton");
 const downloadShareCardButton = document.querySelector("#downloadShareCardButton");
@@ -63,6 +65,8 @@ let portalData = null;
 let activeReminder = null;
 let activeSessionEnrollment = null;
 let activeShareData = null;
+let activeShareCardUrl = "";
+let activeShareCardBlob = null;
 let activePhotoObjectUrl = "";
 let pendingSessionInput = null;
 
@@ -630,8 +634,59 @@ async function drawShareCard(data) {
   ctx.textAlign = "start";
 }
 
+function revokeActiveShareCardUrl() {
+  if (activeShareCardUrl) URL.revokeObjectURL(activeShareCardUrl);
+  activeShareCardUrl = "";
+  activeShareCardBlob = null;
+  if (shareImagePreview) {
+    shareImagePreview.removeAttribute("src");
+    shareImagePreview.hidden = true;
+  }
+  if (saveCardHint) saveCardHint.hidden = true;
+}
+
+function canvasToPngBlob() {
+  return new Promise((resolve, reject) => {
+    shareCanvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("สร้างรูปการ์ดไม่สำเร็จ"));
+    }, "image/png");
+  });
+}
+
+function getShareCardFileName() {
+  const safeName = (activeShareData?.childLabel || "student")
+    .replace(/[^\wก-๙-]+/g, "-")
+    .slice(0, 50) || "student";
+  return `toko-poppy-${activeShareData?.mode || "card"}-${safeName}.png`;
+}
+
+function isLineOrIosWebView() {
+  const ua = navigator.userAgent || "";
+  return Boolean(window.liff?.isInClient?.()) || /Line\//i.test(ua) || /iPhone|iPad|iPod/i.test(ua);
+}
+
+async function refreshShareCardImage(data) {
+  downloadShareCardButton.disabled = true;
+  downloadShareCardButton.textContent = "กำลังสร้างรูป...";
+  try {
+    await drawShareCard(data);
+    const blob = await canvasToPngBlob();
+    revokeActiveShareCardUrl();
+    activeShareCardBlob = blob;
+    activeShareCardUrl = URL.createObjectURL(blob);
+    if (shareImagePreview) shareImagePreview.src = activeShareCardUrl;
+  } catch (error) {
+    setMessage(`สร้างรูปการ์ดไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    downloadShareCardButton.disabled = false;
+    downloadShareCardButton.textContent = isLineOrIosWebView() ? "เปิดรูปเพื่อบันทึก" : "ดาวน์โหลดการ์ด";
+  }
+}
+
 function openShareSheet(data) {
   activeShareData = data;
+  revokeActiveShareCardUrl();
   shareEyebrow.textContent = data.mode === "reminder" ? "Class Reminder" : "After Class";
   shareTitle.textContent = data.title;
   shareSubtitle.textContent = data.subtitle;
@@ -640,7 +695,8 @@ function openShareSheet(data) {
   if (confirmSessionSaveButton) confirmSessionSaveButton.hidden = data.mode !== "session";
   shareSheet.hidden = false;
   document.body.style.overflow = "hidden";
-  drawShareCard(data);
+  downloadShareCardButton.textContent = isLineOrIosWebView() ? "เปิดรูปเพื่อบันทึก" : "ดาวน์โหลดการ์ด";
+  refreshShareCardImage(data);
 }
 
 function closeShareSheet() {
@@ -650,6 +706,7 @@ function closeShareSheet() {
     recordSheet.hidden = false;
     document.body.style.overflow = "hidden";
   }
+  revokeActiveShareCardUrl();
   activeShareData = null;
   activeReminder = null;
 }
@@ -848,13 +905,40 @@ async function copyText(text) {
   }
 }
 
-function downloadCard() {
+async function downloadCard() {
   if (!activeShareData) return;
+  if (!activeShareCardUrl || !activeShareCardBlob) {
+    await refreshShareCardImage(activeShareData);
+  }
+  if (!activeShareCardUrl || !activeShareCardBlob) return;
+
+  const fileName = getShareCardFileName();
+  const file = new File([activeShareCardBlob], fileName, { type: "image/png" });
+
+  if (isLineOrIosWebView()) {
+    if (navigator.canShare?.({ files: [file] }) && navigator.share) {
+      try {
+        await navigator.share({ files: [file], title: "Toko & Poppy Card" });
+        return;
+      } catch {
+        // Fall through to the long-press image preview when native sharing is cancelled or unavailable.
+      }
+    }
+    if (shareImagePreview) {
+      shareImagePreview.hidden = false;
+      shareImagePreview.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    if (saveCardHint) saveCardHint.hidden = false;
+    setMessage("กดค้างที่รูปการ์ด แล้วเลือกบันทึกรูปภาพหรือแชร์ต่อใน LINE");
+    return;
+  }
+
   const link = document.createElement("a");
-  const safeName = activeShareData.childLabel.replace(/[^\wก-๙-]+/g, "-").slice(0, 50);
-  link.download = `toko-poppy-${activeShareData.mode}-${safeName}.png`;
-  link.href = shareCanvas.toDataURL("image/png");
+  link.download = fileName;
+  link.href = activeShareCardUrl;
+  document.body.appendChild(link);
   link.click();
+  link.remove();
 }
 
 async function submitRegistration(event) {

@@ -534,6 +534,28 @@ button { cursor: pointer; }
   box-shadow: 0 12px 30px rgba(75, 55, 42, .12);
 }
 
+.share-image-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 14px 0;
+  border: 8px solid #ffffff;
+  border-radius: 24px;
+  background: #faf6ef;
+  box-shadow: 0 12px 30px rgba(75, 55, 42, .12);
+  -webkit-touch-callout: default;
+  user-select: auto;
+}
+
+.save-card-hint {
+  margin: -2px 0 14px;
+  color: #6b9258;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .sheet-actions {
   display: grid;
   gap: 10px;
