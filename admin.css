@@ -3912,6 +3912,106 @@ tbody tr:hover td {
   min-width: 0;
 }
 
+.student-management-quick-status {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
+.student-management-quick-status em {
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #5f7d47;
+  background: #eaf3e4;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.student-management-quick-status em.not_started {
+  color: #9a6a28;
+  background: #fff1cf;
+}
+
+.student-management-quick-status em.completed {
+  color: #55794b;
+  background: #dff0d7;
+}
+
+.student-management-quick-status em.almost_done {
+  color: #a45c42;
+  background: #fff0e5;
+}
+
+.student-management-quick-status small {
+  overflow: hidden;
+  color: #7d6f65;
+  font-size: 13px;
+  font-weight: 750;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-management-detail {
+  grid-column: 1 / -1;
+  border-top: 1px solid #eadfce;
+  padding-top: 18px;
+}
+
+.student-management-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.student-management-detail-grid section {
+  border: 1px solid #e8decf;
+  border-radius: 16px;
+  padding: 13px;
+  background: #fffdf8;
+}
+
+.student-management-detail-grid small,
+.student-management-detail-grid span,
+.student-management-detail-heading span {
+  display: block;
+  color: #806f63;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.student-management-detail-grid strong {
+  display: block;
+  margin: 3px 0;
+  color: #4d3b31;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.student-management-detail-heading {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.student-management-detail-heading strong {
+  color: #4d3b31;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.student-management-actions .detail-toggle[aria-expanded="true"] {
+  color: #4f7d48;
+  background: #e5f1df;
+}
+
 .student-ledger {
   border: 1px solid #e8decf;
   border-radius: 16px;
@@ -4003,6 +4103,7 @@ tbody tr:hover td {
     grid-template-columns: minmax(300px, 1fr) minmax(200px, .7fr);
   }
 
+  .student-management-quick-status,
   .student-management-course-ledger,
   .student-management-actions {
     grid-column: 1 / -1;
@@ -4022,6 +4123,11 @@ tbody tr:hover td {
     grid-template-columns: 1fr;
   }
 
+  .student-management-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .student-management-quick-status,
   .student-management-course-ledger,
   .student-management-actions {
     grid-column: auto;

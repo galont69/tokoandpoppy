@@ -228,6 +228,7 @@ let activeArtLesson = null;
 let learningEnrollments = [];
 let studentManagementEnrollments = [];
 let studentRevenueEvents = [];
+const expandedStudentManagementDetails = new Set();
 let classReminderEnrollments = [];
 let branchRevenueEvents = [];
 let classReminderSentKeys = new Set();
@@ -1469,6 +1470,22 @@ function renderStudentLedger(group) {
   `;
 }
 
+function getStudentManagementDetailId(groupKey) {
+  return `student-detail-${String(groupKey || "").replace(/[^a-zA-Z0-9_-]/g, "-")}`;
+}
+
+function getStudentGroupSummaryState(activeEnrollments = []) {
+  if (!activeEnrollments.length) {
+    return ["not_started", "รอเปิดสิทธิ์"];
+  }
+  const states = activeEnrollments.map((enrollment) => getLearningEnrollmentState(enrollment));
+  if (states.some((state) => state.urgency === "critical")) return ["almost_done", "ใกล้หมดมาก"];
+  if (states.some((state) => state.urgency === "almost")) return ["almost_done", "ใกล้หมด"];
+  if (states.every((state) => state.key === "completed")) return ["completed", "จบคอร์สแล้ว"];
+  if (states.some((state) => state.key === "not_started")) return ["not_started", "ยังไม่เริ่มบันทึก"];
+  return ["active", "กำลังเรียน"];
+}
+
 function renderStudentManagementSummary(groups) {
   if (!studentManagementSummary) return;
   const totals = studentManagementEnrollments.reduce((summary, enrollment) => {
@@ -1556,6 +1573,9 @@ function renderStudentManagement() {
       </li>
     `;
     const ledgerHtml = renderStudentLedger(group);
+    const detailId = getStudentManagementDetailId(group.key);
+    const isDetailOpen = expandedStudentManagementDetails.has(group.key);
+    const [summaryStateKey, summaryStateLabel] = getStudentGroupSummaryState(activeEnrollments);
     return `
       <article class="student-management-card">
         <div class="student-management-main">
@@ -1564,11 +1584,9 @@ function renderStudentManagement() {
             <strong>${escapeHtml(group.studentName)}</strong>
             <small>${escapeHtml([
               group.nickname ? `ชื่อเล่น ${group.nickname}` : "",
-              group.parentName ? `ผู้ปกครอง ${group.parentName}` : "",
               group.branchName ? `สาขา ${group.branchName}` : ""
             ].filter(Boolean).join(" · ") || sourceText)}</small>
-            <small>${escapeHtml(contact)}</small>
-            ${group.registrationSource === "staff_created" ? `<small>${escapeHtml(sourceText)}</small>` : ""}
+            <small>${escapeHtml(group.parentName ? `ผู้ปกครอง ${group.parentName}` : sourceText)}</small>
           </div>
         </div>
         <div class="student-management-metrics">
@@ -1576,9 +1594,9 @@ function renderStudentManagement() {
           <span><strong>${completedTotal}/${sessionTotal}</strong> ครั้ง</span>
           <span><strong>${remainingTotal}</strong> คงเหลือ</span>
         </div>
-        <div class="student-management-course-ledger">
-          <ul class="student-management-courses">${courseListHtml}</ul>
-          ${ledgerHtml}
+        <div class="student-management-quick-status">
+          <em class="${escapeHtml(summaryStateKey)}">${escapeHtml(summaryStateLabel)}</em>
+          <small>${escapeHtml(contact)}</small>
         </div>
         <div class="student-management-actions">
           ${activeEnrollments[0] ? `
@@ -1586,6 +1604,12 @@ function renderStudentManagement() {
               เปิดสมุดพัฒนาการ
             </button>
           ` : ""}
+          <button class="review-button detail-toggle" type="button"
+            data-student-management-detail="${escapeHtml(group.key)}"
+            aria-controls="${escapeHtml(detailId)}"
+            aria-expanded="${isDetailOpen ? "true" : "false"}">
+            ${isDetailOpen ? "ซ่อนรายละเอียด" : "ดูรายละเอียด"}
+          </button>
           ${group.applicationId ? `
             <button class="review-button" type="button" data-edit-staff-student="${group.applicationId}">
               แก้ไขข้อมูล
@@ -1596,6 +1620,35 @@ function renderStudentManagement() {
               ลบนักเรียน
             </button>
           ` : ""}
+        </div>
+        <div class="student-management-detail" id="${escapeHtml(detailId)}" ${isDetailOpen ? "" : "hidden"}>
+          <div class="student-management-detail-grid">
+            <section>
+              <small>ข้อมูลผู้ปกครอง</small>
+              <strong>${escapeHtml(group.parentName || "ยังไม่ระบุ")}</strong>
+              <span>${escapeHtml(contact)}</span>
+              ${group.registrationSource === "staff_created" ? `<span>${escapeHtml(sourceText)}</span>` : ""}
+            </section>
+            <section>
+              <small>ข้อมูลนักเรียน</small>
+              <strong>${escapeHtml(group.nickname ? `ชื่อเล่น ${group.nickname}` : group.studentName)}</strong>
+              <span>${escapeHtml([
+                group.birthDate ? `วันเกิด ${formatDateOnly(group.birthDate)}` : "",
+                group.ageYears ? `อายุ ${group.ageYears}` : "",
+                group.branchName ? `สาขา ${group.branchName}` : ""
+              ].filter(Boolean).join(" · ") || "ยังไม่มีข้อมูลเพิ่มเติม")}</span>
+            </section>
+          </div>
+          <div class="student-management-course-ledger">
+            <div>
+              <div class="student-management-detail-heading">
+                <strong>คอร์สเรียน</strong>
+                <span>${activeEnrollments.length} คอร์ส</span>
+              </div>
+              <ul class="student-management-courses">${courseListHtml}</ul>
+            </div>
+            ${ledgerHtml}
+          </div>
         </div>
       </article>
     `;
@@ -7464,6 +7517,23 @@ studentSearchInput?.addEventListener("input", renderStudentManagement);
 studentCourseFilter?.addEventListener("change", renderStudentManagement);
 studentStatusFilter?.addEventListener("change", renderStudentManagement);
 studentManagementRows?.addEventListener("click", async (event) => {
+  const detailButton = event.target.closest("[data-student-management-detail]");
+  if (detailButton) {
+    const groupKey = detailButton.dataset.studentManagementDetail;
+    const detailPanel = document.getElementById(detailButton.getAttribute("aria-controls"));
+    if (!detailPanel) return;
+    const isOpening = detailPanel.hidden;
+    detailPanel.hidden = !isOpening;
+    detailButton.setAttribute("aria-expanded", String(isOpening));
+    detailButton.textContent = isOpening ? "ซ่อนรายละเอียด" : "ดูรายละเอียด";
+    if (isOpening) {
+      expandedStudentManagementDetails.add(groupKey);
+    } else {
+      expandedStudentManagementDetails.delete(groupKey);
+    }
+    return;
+  }
+
   const scheduleButton = event.target.closest("[data-edit-course-schedule]");
   if (scheduleButton) {
     openCourseSchedule(scheduleButton.dataset.editCourseSchedule);
