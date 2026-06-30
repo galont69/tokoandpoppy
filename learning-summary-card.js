@@ -123,6 +123,14 @@ function drawCoverImage(context, image, x, y, width, height, radius) {
   context.restore();
 }
 
+function drawContainImage(context, image, x, y, width, height) {
+  if (!image) return;
+  const ratio = Math.min(width / image.width, height / image.height);
+  const drawWidth = image.width * ratio;
+  const drawHeight = image.height * ratio;
+  context.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+}
+
 function drawCardBox(context, x, y, width, height, radius, fill = "#FFFFFF", stroke = "#E9DCCB") {
   context.save();
   context.shadowColor = "rgba(74,55,46,.08)";
@@ -200,7 +208,7 @@ async function exportSummaryCard() {
     const remaining = Math.max(totalSessions - sessionNumber, 0);
     const studentName = String(data.get("studentName") || "โลมา").trim().slice(0, 12);
     const [logo, location, sun, photo, courseIcon, book, noteHeart, heart, trophy, sparkle] = await Promise.all([
-      loadExportImage("assets/card/01_logo_short.png"),
+      loadExportImage("assets/card/logo-card.svg?v=20260630-logo-split"),
       loadExportImage("assets/card/icon_location.png"),
       loadExportImage("assets/card/deco_sun_rays_yellow.png"),
       loadExportImage(card.querySelector('[data-field="photo"]').src),
@@ -217,11 +225,11 @@ async function exportSummaryCard() {
     const context = canvas.getContext("2d");
     context.fillStyle = "#FAF6EF";
     context.fillRect(0, 0, 1080, 1350);
-    context.drawImage(logo, 58, 55, 330, 94);
+    drawContainImage(context, logo, 58, 36, 140, 140);
     context.strokeStyle = "#D7B99C";
     context.beginPath();
-    context.moveTo(404, 62);
-    context.lineTo(404, 150);
+    context.moveTo(220, 62);
+    context.lineTo(220, 150);
     context.stroke();
     drawCardBox(context, 778, 50, 254, 60, 30, "#FFFFFF", "#DFBF9F");
     context.drawImage(location, 804, 63, 34, 34);

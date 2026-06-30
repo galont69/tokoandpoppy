@@ -255,7 +255,7 @@ let freeResourceLeads = [];
 let partnerLeads = [];
 
 const summaryCardAssets = {
-  logo: "assets/card/01_logo_short.png",
+  logo: "assets/card/logo-card.svg?v=20260630-logo-split",
   sun: "assets/card/deco_sun_rays_yellow.png",
   location: "assets/card/icon_location.png",
   star: "assets/card/doodle_sparkle_yellow.png",
@@ -2554,7 +2554,7 @@ async function renderClassReminderCard(enrollment, message) {
   context.clearRect(0, 0, width, height);
   context.fillStyle = "#FAF6EF";
   context.fillRect(0, 0, width, height);
-  drawCardImage(context, logoImage, 70, 20, 640, 184);
+  drawCardImage(context, logoImage, 70, 10, 230, 230, 1, "contain");
   drawCardImage(context, sparkleImage, 888, 102, 62, 62, 0.68);
 
   drawCardShadow(context, 70, 208, 940, 245, 34, "#FFFFFF", "#E9DCCB");
@@ -3545,11 +3545,18 @@ function loadSummaryCardImage(url) {
   return summaryCardImageCache.get(url);
 }
 
-function drawCardImage(context, image, x, y, width, height, alpha = 1) {
+function drawCardImage(context, image, x, y, width, height, alpha = 1, fit = "stretch") {
   if (!image) return;
   context.save();
   context.globalAlpha = alpha;
-  context.drawImage(image, x, y, width, height);
+  if (fit === "contain") {
+    const ratio = Math.min(width / image.width, height / image.height);
+    const drawWidth = image.width * ratio;
+    const drawHeight = image.height * ratio;
+    context.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+  } else {
+    context.drawImage(image, x, y, width, height);
+  }
   context.restore();
 }
 
@@ -3757,12 +3764,12 @@ async function renderSessionShareCard(data) {
     context.fillRect(x - 12, y - 3, 24, 6);
   });
 
-  drawCardImage(context, logoImage, 58, 55, 326, 93);
+  drawCardImage(context, logoImage, 54, 34, 140, 140, 1, "contain");
   context.strokeStyle = "#D7B99C";
   context.lineWidth = 2;
   context.beginPath();
-  context.moveTo(404, 62);
-  context.lineTo(404, 150);
+  context.moveTo(220, 62);
+  context.lineTo(220, 150);
   context.stroke();
 
   if (data.branchName) {

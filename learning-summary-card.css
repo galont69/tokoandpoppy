@@ -122,12 +122,13 @@ body {
   inset: 50px 48px auto;
   display: flex;
   align-items: center;
-  height: 100px;
+  height: 112px;
 }
 
 .summary-logo {
-  width: 330px;
-  height: auto;
+  width: 112px;
+  height: 112px;
+  object-fit: contain;
 }
 
 .header-divider {

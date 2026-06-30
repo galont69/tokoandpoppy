@@ -598,6 +598,14 @@ function drawCoverImage(ctx, image, x, y, width, height) {
   ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
 }
 
+function drawContainImage(ctx, image, x, y, width, height) {
+  if (!image) return;
+  const ratio = Math.min(width / image.width, height / image.height);
+  const drawWidth = image.width * ratio;
+  const drawHeight = image.height * ratio;
+  ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+}
+
 async function loadCanvasImage(url) {
   if (!url) return null;
   return new Promise((resolve) => {
@@ -613,7 +621,7 @@ async function drawShareCard(data) {
   const ctx = shareCanvas.getContext("2d");
   const width = shareCanvas.width;
   const height = shareCanvas.height;
-  const logo = await loadCanvasImage("logo.png");
+  const logo = await loadCanvasImage("assets/card/logo-card.svg?v=20260630-logo-split");
   const photo = await loadCanvasImage(data.photoUrl);
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#FAF6EF";
@@ -624,7 +632,7 @@ async function drawShareCard(data) {
     roundedRect(ctx, 42, 42, 996, 210, 42);
     ctx.fill();
 
-    if (logo) ctx.drawImage(logo, 78, 78, 245, 76);
+    drawContainImage(ctx, logo, 78, 62, 150, 150);
 
     ctx.fillStyle = "#E98567";
     ctx.font = "900 28px Kanit, sans-serif";
@@ -682,7 +690,7 @@ async function drawShareCard(data) {
     return;
   }
 
-  if (logo) ctx.drawImage(logo, 72, 58, 332, 104);
+  drawContainImage(ctx, logo, 72, 36, 170, 170);
   ctx.fillStyle = "#F3BE38";
   ctx.font = "900 64px Kanit, sans-serif";
   ctx.fillText(data.mode === "reminder" ? "พรุ่งนี้มีเรียน" : "วันนี้เรียนอะไรบ้าง", 82, 238);
