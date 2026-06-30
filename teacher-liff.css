@@ -656,8 +656,8 @@ button { cursor: pointer; }
 .crop-stage {
   position: relative;
   overflow: hidden;
-  width: min(100%, 360px);
-  aspect-ratio: 1 / 1;
+  width: min(100%, 430px);
+  aspect-ratio: 5 / 3;
   margin: 0 auto 16px;
   border: 10px solid #ffffff;
   border-radius: 28px;
@@ -710,7 +710,7 @@ button { cursor: pointer; }
 .crop-zoom-label {
   display: grid;
   gap: 8px;
-  width: min(100%, 360px);
+  width: min(100%, 430px);
   margin: 0 auto 14px;
   color: #5a463b;
   font-weight: 900;

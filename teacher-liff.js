@@ -91,17 +91,35 @@ const courseMeta = {
 };
 
 const afterClassAssets = {
-  logo: "assets/after-class/11_logo2.svg?v=20260630-after-class-hero-card-2",
-  palette: "assets/after-class/01_icon_palette.svg?v=20260630-after-class-hero-card-2",
-  pencil: "assets/after-class/02_icon_pencil_cute.svg?v=20260630-after-class-hero-card-2",
-  flower: "assets/after-class/03_icon_flower_small.svg?v=20260630-after-class-hero-card-2",
-  star: "assets/after-class/04_deco_star_yellow.svg?v=20260630-after-class-hero-card-2",
-  heartOutline: "assets/after-class/05_deco_heart_green_outline.svg?v=20260630-after-class-hero-card-2",
-  heartFill: "assets/after-class/06_deco_heart_orange_fill.svg?v=20260630-after-class-hero-card-2",
-  squiggle: "assets/after-class/07_deco_squiggle_green.svg?v=20260630-after-class-hero-card-2",
-  spark: "assets/after-class/08_deco_spark_green.svg?v=20260630-after-class-hero-card-2",
-  leaf: "assets/after-class/09_deco_leaf_pair.svg?v=20260630-after-class-hero-card-2",
-  placeholder: "assets/after-class/10_photo_placeholder_square.svg?v=20260630-after-class-hero-card-2"
+  logo: "assets/after-class/11_logo2.svg?v=20260630-after-class-web-card",
+  palette: "assets/after-class/01_icon_palette.svg?v=20260630-after-class-web-card",
+  pencil: "assets/after-class/02_icon_pencil_cute.svg?v=20260630-after-class-web-card",
+  flower: "assets/after-class/03_icon_flower_small.svg?v=20260630-after-class-web-card",
+  star: "assets/after-class/04_deco_star_yellow.svg?v=20260630-after-class-web-card",
+  heartOutline: "assets/after-class/05_deco_heart_green_outline.svg?v=20260630-after-class-web-card",
+  heartFill: "assets/after-class/06_deco_heart_orange_fill.svg?v=20260630-after-class-web-card",
+  squiggle: "assets/after-class/07_deco_squiggle_green.svg?v=20260630-after-class-web-card",
+  spark: "assets/after-class/08_deco_spark_green.svg?v=20260630-after-class-web-card",
+  leaf: "assets/after-class/09_deco_leaf_pair.svg?v=20260630-after-class-web-card",
+  placeholder: "assets/after-class/10_photo_placeholder_square.svg?v=20260630-after-class-web-card"
+};
+
+const sessionSummaryAssets = {
+  logo: "assets/card/logo-card.svg?v=20260630-logo-split",
+  sun: "assets/card/deco_sun_rays_yellow.png",
+  location: "assets/card/icon_location.png",
+  star: "assets/card/doodle_sparkle_yellow.png",
+  teacherHeart: "assets/card/icon_teacher_note_heart.png",
+  heart: "assets/card/icon_heart.png",
+  trophy: "assets/card/icon_trophy.png",
+  book: "assets/card/icon_book.png",
+  course: {
+    robot: "assets/card/icon_robot.png",
+    art: "assets/card/3.png",
+    creative_art: "assets/card/3.png",
+    water_color: "assets/card/icon_watercolor_set.png",
+    clay: "assets/card/icon_clay.png"
+  }
 };
 
 function normalizeText(value) {
@@ -672,6 +690,158 @@ function drawContainImage(ctx, image, x, y, width, height) {
   ctx.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
 }
 
+function drawCardImage(ctx, image, x, y, width, height, alpha = 1, fit = "stretch") {
+  if (!image) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  if (fit === "contain") {
+    drawContainImage(ctx, image, x, y, width, height);
+  } else if (fit === "cover") {
+    drawCoverImage(ctx, image, x, y, width, height);
+  } else {
+    ctx.drawImage(image, x, y, width, height);
+  }
+  ctx.restore();
+}
+
+function drawCardShadow(ctx, x, y, width, height, radius, fill = "#ffffff", stroke = "#E9DCCB") {
+  ctx.save();
+  ctx.shadowColor = "rgba(74, 55, 46, 0.08)";
+  ctx.shadowBlur = 18;
+  ctx.shadowOffsetY = 8;
+  ctx.fillStyle = fill;
+  roundedRect(ctx, x, y, width, height, radius);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 2;
+  roundedRect(ctx, x, y, width, height, radius);
+  ctx.stroke();
+}
+
+function wrapCanvasTextByChar(ctx, text, x, y, maxWidth, lineHeight, maxLines = 4) {
+  const normalized = String(text || "").replace(/\s+/g, " ").trim();
+  if (!normalized) return y;
+  const segments = normalized.split(" ").flatMap((word) => {
+    if (ctx.measureText(word).width <= maxWidth) return [word];
+    const chunks = [];
+    let chunk = "";
+    Array.from(word).forEach((char) => {
+      const testChunk = `${chunk}${char}`;
+      if (!chunk || ctx.measureText(testChunk).width <= maxWidth) {
+        chunk = testChunk;
+        return;
+      }
+      chunks.push(chunk);
+      chunk = char;
+    });
+    if (chunk) chunks.push(chunk);
+    return chunks;
+  });
+  const lines = [];
+  let currentLine = "";
+  segments.forEach((segment) => {
+    const testLine = currentLine ? `${currentLine} ${segment}` : segment;
+    if (ctx.measureText(testLine).width <= maxWidth || !currentLine) {
+      currentLine = testLine;
+      return;
+    }
+    lines.push(currentLine);
+    currentLine = segment;
+  });
+  if (currentLine) lines.push(currentLine);
+  lines.slice(0, maxLines).forEach((line, index) => {
+    const clipped = index === maxLines - 1 && lines.length > maxLines
+      ? `${Array.from(line).slice(0, -2).join("")}...`
+      : line;
+    ctx.fillText(clipped, x, y + index * lineHeight);
+  });
+  return y + Math.min(lines.length, maxLines) * lineHeight;
+}
+
+function drawCardText(ctx, text, x, y, maxWidth, lineHeight, maxLines, options = {}) {
+  ctx.save();
+  ctx.fillStyle = options.color || "#4A372E";
+  ctx.font = options.font || "600 32px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.textAlign = options.align || "start";
+  ctx.textBaseline = "alphabetic";
+  const finalY = wrapCanvasTextByChar(ctx, text, x, y, maxWidth, lineHeight, maxLines);
+  ctx.restore();
+  return finalY;
+}
+
+function drawSessionSummaryTitle(ctx, childLabel) {
+  const startX = 124;
+  const y = 210;
+  const safeChild = `น้อง${String(childLabel || "น้อง").replace(/^น้อง/, "")}`.slice(0, 18);
+  let fontSize = 58;
+  const getWidth = () => {
+    ctx.font = `900 ${fontSize}px Kanit, 'Noto Sans Thai', sans-serif`;
+    return ctx.measureText("วันนี้ ").width +
+      ctx.measureText(safeChild).width +
+      ctx.measureText(" เรียนอะไรบ้าง?").width;
+  };
+  while (fontSize > 44 && getWidth() > 890) fontSize -= 2;
+  ctx.font = `900 ${fontSize}px Kanit, 'Noto Sans Thai', sans-serif`;
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#4A372E";
+  ctx.fillText("วันนี้ ", startX, y);
+  const firstWidth = ctx.measureText("วันนี้ ").width;
+  ctx.fillStyle = "#F05B3E";
+  ctx.fillText(safeChild, startX + firstWidth, y);
+  const childWidth = ctx.measureText(safeChild).width;
+  ctx.fillStyle = "#4A372E";
+  ctx.fillText(" เรียนอะไรบ้าง?", startX + firstWidth + childWidth, y);
+}
+
+function drawSessionInfoColumn(ctx, { icon, title, subtitle, accent, big, iconSize = 46, titleFont, subtitleFont }, x, y, width, height) {
+  const safeIconSize = big ? 0 : iconSize;
+  if (icon) drawCardImage(ctx, icon, x + 24, y + (height - safeIconSize) / 2, safeIconSize, safeIconSize, 1, "contain");
+  const textX = icon ? x + safeIconSize + 40 : x + 24;
+  const textWidth = width - (icon ? safeIconSize + 54 : 44);
+  if (big) {
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "800 22px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText(title, x + 30, y + 42);
+    ctx.fillStyle = "#F05B3E";
+    ctx.font = "900 45px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText(subtitle, x + 30, y + 88);
+    return;
+  }
+  ctx.fillStyle = accent || "#4A372E";
+  ctx.font = titleFont || "800 24px Kanit, 'Noto Sans Thai', sans-serif";
+  if (!subtitle) {
+    wrapCanvasTextByChar(ctx, title, textX, y + 73, textWidth, 28, 1);
+    return;
+  }
+  wrapCanvasTextByChar(ctx, title, textX, y + 50, textWidth, 28, 1);
+  ctx.fillStyle = "#4A372E";
+  ctx.font = subtitleFont || "700 21px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasTextByChar(ctx, subtitle, textX, y + 82, textWidth, 25, 1);
+}
+
+function drawProgressBar(ctx, completed, total, x, y, width, height) {
+  const safeTotal = Math.max(Number(total || 0), 1);
+  const safeCompleted = Math.max(Math.min(Number(completed || 0), safeTotal), 0);
+  const ratio = safeCompleted / safeTotal;
+  roundedRect(ctx, x, y, width, height, height / 2);
+  ctx.fillStyle = "#DDEED2";
+  ctx.fill();
+  ctx.strokeStyle = "#9BBE86";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  if (ratio > 0) {
+    roundedRect(ctx, x, y, Math.max(width * ratio, height), height, height / 2);
+    ctx.fillStyle = "#6EA154";
+    ctx.fill();
+  }
+  ctx.fillStyle = "#4A372E";
+  ctx.font = "800 18px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`${safeCompleted}/${safeTotal}`, x + width / 2, y + height + 24);
+  ctx.textAlign = "start";
+}
+
 async function loadCanvasImage(url) {
   if (!url) return null;
   return new Promise((resolve) => {
@@ -685,21 +855,23 @@ async function loadCanvasImage(url) {
 
 function updateCropTransform() {
   if (!cropState || !cropImage || !cropStage) return;
-  const box = cropStage.clientWidth || 320;
+  const stageWidth = cropStage.clientWidth || 430;
+  const stageHeight = cropStage.clientHeight || Math.round(stageWidth * 0.6);
+  const stageRatio = stageWidth / stageHeight;
   const naturalRatio = cropState.image.naturalWidth / cropState.image.naturalHeight;
-  let baseWidth = box;
-  let baseHeight = box;
-  if (naturalRatio > 1) {
-    baseHeight = box;
-    baseWidth = box * naturalRatio;
+  let baseWidth = stageWidth;
+  let baseHeight = stageHeight;
+  if (naturalRatio > stageRatio) {
+    baseHeight = stageHeight;
+    baseWidth = stageHeight * naturalRatio;
   } else {
-    baseWidth = box;
-    baseHeight = box / naturalRatio;
+    baseWidth = stageWidth;
+    baseHeight = stageWidth / naturalRatio;
   }
   const width = baseWidth * cropState.zoom;
   const height = baseHeight * cropState.zoom;
-  const maxX = Math.max((width - box) / 2, 0);
-  const maxY = Math.max((height - box) / 2, 0);
+  const maxX = Math.max((width - stageWidth) / 2, 0);
+  const maxY = Math.max((height - stageHeight) / 2, 0);
   cropState.offsetX = Math.max(Math.min(cropState.offsetX, maxX), -maxX);
   cropState.offsetY = Math.max(Math.min(cropState.offsetY, maxY), -maxY);
   cropImage.style.width = `${width}px`;
@@ -711,17 +883,17 @@ function getDefaultCropPreset(image) {
   const ratio = image?.naturalWidth && image?.naturalHeight
     ? image.naturalWidth / image.naturalHeight
     : 1;
-  if (ratio < 0.82) return { zoom: 1.48, offsetYRatio: 0.11 };
-  if (ratio > 1.18) return { zoom: 1.28, offsetYRatio: 0.03 };
-  return { zoom: 1.34, offsetYRatio: 0.06 };
+  if (ratio < 0.82) return { zoom: 1.12, offsetYRatio: 0.1 };
+  if (ratio > 1.18) return { zoom: 1.05, offsetYRatio: 0.02 };
+  return { zoom: 1.08, offsetYRatio: 0.06 };
 }
 
 function resetCropPosition() {
   if (!cropState) return;
-  const box = cropStage?.clientWidth || 320;
+  const stageHeight = cropStage?.clientHeight || Math.round((cropStage?.clientWidth || 430) * 0.6);
   const preset = getDefaultCropPreset(cropImage);
   cropState.offsetX = 0;
-  cropState.offsetY = box * preset.offsetYRatio;
+  cropState.offsetY = stageHeight * preset.offsetYRatio;
   cropState.zoom = preset.zoom;
   if (cropZoomInput) cropZoomInput.value = String(preset.zoom);
   updateCropTransform();
@@ -767,7 +939,7 @@ function openCropModal(file) {
     image: cropImage,
     offsetX: 0,
     offsetY: 0,
-    zoom: 1.4,
+    zoom: 1.1,
     isDragging: false,
     startX: 0,
     startY: 0,
@@ -776,7 +948,7 @@ function openCropModal(file) {
   };
   cropImage.onload = () => resetCropPosition();
   cropImage.src = objectUrl;
-  if (cropZoomInput) cropZoomInput.value = "1.4";
+  if (cropZoomInput) cropZoomInput.value = "1.1";
   photoCropModal.hidden = false;
 }
 
@@ -786,26 +958,29 @@ function createCroppedPhotoBlob() {
       reject(new Error("ยังไม่มีรูปสำหรับครอป"));
       return;
     }
-    const box = cropStage.clientWidth || 320;
-    const displayWidth = Number.parseFloat(cropImage.style.width) || box;
-    const displayHeight = Number.parseFloat(cropImage.style.height) || box;
-    const visibleLeft = displayWidth / 2 - cropState.offsetX - box / 2;
-    const visibleTop = displayHeight / 2 - cropState.offsetY - box / 2;
-    const sx = Math.max(0, visibleLeft * cropImage.naturalWidth / displayWidth);
-    const sy = Math.max(0, visibleTop * cropImage.naturalHeight / displayHeight);
-    const sourceSize = Math.min(
-      box * cropImage.naturalWidth / displayWidth,
-      box * cropImage.naturalHeight / displayHeight,
-      cropImage.naturalWidth - sx,
-      cropImage.naturalHeight - sy
-    );
+    const stageWidth = cropStage.clientWidth || 430;
+    const stageHeight = cropStage.clientHeight || Math.round(stageWidth * 0.6);
+    const displayWidth = Number.parseFloat(cropImage.style.width) || stageWidth;
+    const displayHeight = Number.parseFloat(cropImage.style.height) || stageHeight;
+    const visibleLeft = displayWidth / 2 - cropState.offsetX - stageWidth / 2;
+    const visibleTop = displayHeight / 2 - cropState.offsetY - stageHeight / 2;
+    const sourceWidth = stageWidth * cropImage.naturalWidth / displayWidth;
+    const sourceHeight = stageHeight * cropImage.naturalHeight / displayHeight;
+    const sx = Math.max(0, Math.min(
+      visibleLeft * cropImage.naturalWidth / displayWidth,
+      cropImage.naturalWidth - sourceWidth
+    ));
+    const sy = Math.max(0, Math.min(
+      visibleTop * cropImage.naturalHeight / displayHeight,
+      cropImage.naturalHeight - sourceHeight
+    ));
     const canvas = document.createElement("canvas");
-    canvas.width = 1200;
-    canvas.height = 1200;
+    canvas.width = 1600;
+    canvas.height = 960;
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "#FBF7F0";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(cropImage, sx, sy, sourceSize, sourceSize, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(cropImage, sx, sy, sourceWidth, sourceHeight, 0, 0, canvas.width, canvas.height);
     canvas.toBlob((blob) => {
       if (blob) resolve(blob);
       else reject(new Error("สร้างรูปที่ครอปไม่สำเร็จ"));
@@ -824,7 +999,7 @@ async function confirmCropPhoto() {
     activeCroppedPhotoName = cropState.fileName.replace(/\.[^.]+$/, "") || "after-class-photo";
     activeCroppedPhotoUrl = URL.createObjectURL(blob);
     photoPreview.hidden = false;
-    photoPreview.innerHTML = `<img src="${activeCroppedPhotoUrl}" alt="รูปที่ครอปแล้ว"><span>ครอปเป็นภาพจัตุรัสสำหรับการ์ดแล้ว</span>`;
+    photoPreview.innerHTML = `<img src="${activeCroppedPhotoUrl}" alt="รูปที่ครอปแล้ว"><span>ครอปเป็นภาพแนวนอนสำหรับการ์ดแล้ว</span>`;
     closeCropModal(false);
   } catch (error) {
     setMessage(`ครอปรูปไม่สำเร็จ: ${error.message}`, true);
@@ -849,137 +1024,168 @@ async function drawShareCard(data) {
   if (data.mode === "session") {
     const [
       cardLogo,
-      paletteIcon,
-      pencilIcon,
-      flowerIcon,
-      starIcon,
-      heartOutline,
-      heartFill,
-      squiggleIcon,
-      sparkIcon,
-      leafIcon,
-      placeholderPhoto
+      locationIcon,
+      sunIcon,
+      sparkleIcon,
+      teacherHeartIcon,
+      heartIcon,
+      trophyIcon,
+      bookIcon,
+      courseIcon
     ] = await Promise.all([
-      loadCanvasImage(afterClassAssets.logo),
-      loadCanvasImage(afterClassAssets.palette),
-      loadCanvasImage(afterClassAssets.pencil),
-      loadCanvasImage(afterClassAssets.flower),
-      loadCanvasImage(afterClassAssets.star),
-      loadCanvasImage(afterClassAssets.heartOutline),
-      loadCanvasImage(afterClassAssets.heartFill),
-      loadCanvasImage(afterClassAssets.squiggle),
-      loadCanvasImage(afterClassAssets.spark),
-      loadCanvasImage(afterClassAssets.leaf),
-      loadCanvasImage(afterClassAssets.placeholder)
+      loadCanvasImage(sessionSummaryAssets.logo),
+      loadCanvasImage(sessionSummaryAssets.location),
+      loadCanvasImage(sessionSummaryAssets.sun),
+      loadCanvasImage(sessionSummaryAssets.star),
+      loadCanvasImage(sessionSummaryAssets.teacherHeart),
+      loadCanvasImage(sessionSummaryAssets.heart),
+      loadCanvasImage(sessionSummaryAssets.trophy),
+      loadCanvasImage(sessionSummaryAssets.book),
+      loadCanvasImage(sessionSummaryAssets.course[data.courseType] || sessionSummaryAssets.course.creative_art)
     ]);
+    const childLabel = String(data.childLabel || "น้อง").replace(/^น้อง/, "").slice(0, 14);
+    const lessonTitle = data.lessonTitle || data.primaryLine || "กิจกรรมสร้างสรรค์";
+    const teacherNote = data.teacherComment || data.note || "วันนี้ตั้งใจเรียนดีมาก เก็บผลงานไว้เป็นกำลังใจนะคะ/ครับ";
+    const sessionNumber = Number(data.sessionNumber || 0);
+    const totalSessions = Number(data.totalSessions || 0);
+    const completed = Number(data.completedAfter || sessionNumber || 0);
+    const remaining = totalSessions ? Math.max(totalSessions - completed, 0) : 0;
+    const displayTotal = totalSessions || Math.max(sessionNumber, completed, 4);
 
-    ctx.fillStyle = "#FBF7F0";
+    ctx.fillStyle = "#FAF6EF";
     ctx.fillRect(0, 0, width, height);
 
-    ctx.save();
-    ctx.globalAlpha = 0.88;
-    drawContainImage(ctx, heartOutline, 70, 350, 58, 58);
-    drawContainImage(ctx, squiggleIcon, 912, 552, 80, 112);
-    drawContainImage(ctx, sparkIcon, 110, 858, 48, 48);
-    ctx.restore();
+    const glow = ctx.createRadialGradient(550, 250, 80, 550, 250, 760);
+    glow.addColorStop(0, "rgba(255, 255, 255, 0.88)");
+    glow.addColorStop(1, "rgba(250, 246, 239, 0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = "#EAF7E8";
-    roundedRect(ctx, 56, 36, 968, 185, 34);
-    ctx.fill();
+    [
+      ["#F4C64E", 502, 66],
+      ["#F05B3E", 598, 50],
+      ["#6EA154", 448, 118],
+      ["#F8B7C8", 1030, 214],
+      ["#F4C64E", 960, 156],
+      ["#6EA154", 560, 112],
+      ["#F05B3E", 840, 92]
+    ].forEach(([color, x, y]) => {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(x - 3, y - 12, 6, 24);
+      ctx.fillRect(x - 12, y - 3, 24, 6);
+    });
 
-    drawContainImage(ctx, cardLogo, 70, 52, 228, 120);
-    ctx.fillStyle = "#F47E5F";
-    ctx.font = "900 30px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("AFTER CLASS", 88, 190);
-
-    ctx.save();
-    ctx.strokeStyle = "rgba(107, 166, 94, .38)";
+    drawCardImage(ctx, cardLogo, 54, 34, 140, 140, 1, "contain");
+    ctx.strokeStyle = "#D7B99C";
     ctx.lineWidth = 2;
-    ctx.setLineDash([9, 12]);
     ctx.beginPath();
-    ctx.moveTo(330, 72);
-    ctx.lineTo(330, 180);
+    ctx.moveTo(220, 62);
+    ctx.lineTo(220, 150);
     ctx.stroke();
-    ctx.restore();
 
-    drawContainImage(ctx, starIcon, 914, 60, 56, 56);
-    drawContainImage(ctx, heartFill, 878, 134, 40, 40);
-    ctx.fillStyle = "#4A3A30";
-    ctx.font = "900 62px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("สรุปหลังเรียน", 370, 112);
-    ctx.fillStyle = "#4F8A49";
-    ctx.font = "900 68px Kanit, 'Noto Sans Thai', sans-serif";
-    wrapText(ctx, data.childLabel, 370, 188, 520, 70, 1);
+    if (data.branchName) {
+      drawCardShadow(ctx, 778, 50, 254, 60, 30, "#FFFFFF", "#DFBF9F");
+      drawCardImage(ctx, locationIcon, 804, 63, 34, 34, 1, "contain");
+      ctx.fillStyle = "#4F8B37";
+      ctx.font = "800 26px Kanit, 'Noto Sans Thai', sans-serif";
+      wrapCanvasTextByChar(ctx, `สาขา ${data.branchName}`, 848, 89, 150, 30, 1);
+    }
 
-    ctx.save();
-    ctx.shadowColor = "rgba(74, 58, 48, .10)";
-    ctx.shadowBlur = 28;
-    ctx.shadowOffsetY = 10;
+    drawCardImage(ctx, sunIcon, 42, 136, 78, 78, 1, "contain");
+    drawSessionSummaryTitle(ctx, `น้อง${childLabel}`);
+    ctx.fillStyle = "#876F5F";
+    ctx.font = "700 24px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText(formatThaiDate(data.sessionDate), 124, 248);
+
+    const photoX = 48;
+    const photoY = 270;
+    const photoW = 984;
+    const photoH = 594;
+    drawCardShadow(ctx, photoX, photoY, photoW, photoH, 38, "#FFFFFF", "#F1DEC8");
+    if (photo) {
+      drawRoundImage(ctx, photo, photoX + 14, photoY + 14, photoW - 28, photoH - 28, 26, "cover");
+    } else {
+      ctx.fillStyle = "#F5EFE4";
+      roundedRect(ctx, photoX + 14, photoY + 14, photoW - 28, photoH - 28, 26);
+      ctx.fill();
+      ctx.fillStyle = "#8B7668";
+      ctx.font = "800 42px Kanit, 'Noto Sans Thai', sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("เลือกรูปผลงานครั้งนี้", width / 2, photoY + photoH / 2);
+      ctx.textAlign = "start";
+    }
+
+    ctx.fillStyle = "#62A742";
+    roundedRect(ctx, 78, 304, 218, 54, 8);
+    ctx.fill();
     ctx.fillStyle = "#FFFFFF";
-    roundedRect(ctx, 180, 248, 720, 720, 36);
-    ctx.fill();
-    ctx.restore();
-    ctx.strokeStyle = "#E8D8C7";
-    ctx.lineWidth = 2;
-    roundedRect(ctx, 180, 248, 720, 720, 36);
-    ctx.stroke();
-    ctx.save();
-    ctx.strokeStyle = "rgba(244, 126, 95, .34)";
-    ctx.setLineDash([10, 12]);
-    ctx.lineWidth = 2;
-    roundedRect(ctx, 198, 266, 684, 684, 26);
-    ctx.stroke();
-    ctx.restore();
-    drawRoundImage(ctx, photo || placeholderPhoto, 206, 274, 668, 668, 24, photo ? "cover" : "contain");
+    ctx.font = "900 25px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("★  ผลงานวันนี้", 96, 339);
 
-    drawPanel(ctx, 78, 982, 924, 150, "#FFFFFF", "#8CC47E");
-    drawContainImage(ctx, paletteIcon, 118, 1008, 56, 56);
-    ctx.fillStyle = "#4F8A49";
-    ctx.font = "900 36px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText(truncateCanvasText(ctx, data.courseName, 478), 188, 1043);
-    drawCardBadge(ctx, 708, 1001, 252, 64, data.accentLine);
-    ctx.save();
-    ctx.strokeStyle = "rgba(140, 196, 126, .24)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(118, 1074);
-    ctx.lineTo(962, 1074);
-    ctx.stroke();
-    ctx.restore();
-    drawContainImage(ctx, flowerIcon, 118, 1089, 42, 42);
-    ctx.fillStyle = "#4A3A30";
-    ctx.font = "900 40px Kanit, 'Noto Sans Thai', sans-serif";
-    wrapText(ctx, data.primaryLine || "กิจกรรมสร้างสรรค์", 176, 1122, 746, 42, 1);
+    const infoY = 895;
+    drawCardShadow(ctx, 48, infoY, 984, 126, 26, "#FFFFFF", "#F1DEC8");
+    [224, 770].forEach((x) => {
+      ctx.strokeStyle = "#D7B99C";
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x, infoY + 26);
+      ctx.lineTo(x, infoY + 102);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+    drawCardImage(ctx, courseIcon, 110, infoY + 31, 64, 64, 1, "contain");
+    drawSessionInfoColumn(ctx, {
+      icon: bookIcon,
+      title: `บทที่ ${sessionNumber || "-"}`,
+      subtitle: lessonTitle,
+      accent: "#4A372E",
+      iconSize: 54,
+      titleFont: "800 32px Kanit, 'Noto Sans Thai', sans-serif",
+      subtitleFont: "700 27px Kanit, 'Noto Sans Thai', sans-serif"
+    }, 252, infoY, 490, 126);
+    drawSessionInfoColumn(ctx, {
+      title: "ครั้งที่",
+      subtitle: totalSessions ? `${sessionNumber}/${totalSessions}` : String(sessionNumber || "-"),
+      big: true
+    }, 820, infoY, 176, 126);
 
-    drawPanel(ctx, 78, 1148, 924, 150, "#FFFFFF", "#E8D8C7");
-    ctx.fillStyle = "#FFF0EA";
-    roundedRect(ctx, 116, 1184, 88, 88, 28);
-    ctx.fill();
-    drawContainImage(ctx, pencilIcon, 132, 1198, 56, 56);
-    ctx.fillStyle = "#4A3A30";
-    ctx.font = "900 32px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("คอมเมนต์คุณครู", 232, 1200);
-    ctx.fillStyle = "#4A3A30";
-    ctx.font = "700 30px Kanit, 'Noto Sans Thai', sans-serif";
-    wrapText(ctx, data.note, 232, 1244, 700, 36, 2);
+    const noteY = 1044;
+    drawCardShadow(ctx, 48, noteY, 984, 174, 26, "#FFFFFF", "#F1DEC8");
+    drawCardImage(ctx, teacherHeartIcon, 72, noteY + 44, 88, 88, 1, "contain");
+    drawCardImage(ctx, heartIcon, 856, noteY + 50, 108, 108, 0.38, "contain");
+    ctx.fillStyle = "#F05B3E";
+    ctx.font = "900 31px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("ข้อความจากคุณครู", 188, noteY + 61);
+    drawCardText(ctx, teacherNote, 188, noteY + 104, 610, 34, 3, {
+      color: "#4A372E",
+      font: "700 25px Kanit, 'Noto Sans Thai', sans-serif"
+    });
 
+    const progressY = 1238;
+    drawCardShadow(ctx, 48, progressY, 984, 102, 28, "#F2F8EC", "#93B985");
+    drawCardImage(ctx, trophyIcon, 70, progressY + 15, 72, 72, 1, "contain");
     ctx.save();
-    ctx.strokeStyle = "rgba(107, 166, 94, .18)";
-    ctx.setLineDash([8, 10]);
-    ctx.beginPath();
-    ctx.moveTo(368, 1318);
-    ctx.lineTo(456, 1318);
-    ctx.moveTo(624, 1318);
-    ctx.lineTo(712, 1318);
-    ctx.stroke();
-    ctx.restore();
-    drawContainImage(ctx, leafIcon, 386, 1306, 50, 24);
-    ctx.fillStyle = "#6BA65E";
+    ctx.fillStyle = "#4A372E";
     ctx.font = "900 30px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("Toko & Poppy", width / 2, 1328);
-    drawContainImage(ctx, leafIcon, 646, 1306, 50, 24);
-    ctx.textAlign = "start";
+    ctx.fillText(`เรียนแล้ว ${completed || sessionNumber || 0} ครั้ง`, 178, progressY + 46);
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "500 20px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("เก่งขึ้นทุกครั้งเลยนะ!", 178, progressY + 78);
+    drawProgressBar(ctx, completed || sessionNumber, displayTotal, 430, progressY + 34, 300, 28);
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "900 27px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("คงเหลือ", 786, progressY + 60);
+    ctx.fillStyle = "#18743D";
+    ctx.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText(`${remaining}`, 888, progressY + 60);
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "900 27px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("ครั้ง", 930, progressY + 60);
+    drawCardImage(ctx, sparkleIcon, 960, progressY + 18, 54, 54, 1, "contain");
+    ctx.restore();
     return;
   }
 
@@ -1214,6 +1420,7 @@ function buildSessionShareData(input, photoUrl = "") {
     title: `หลังเรียน ${getChildLabel(item)}`,
     subtitle: `${getCourseLabel(item)} · ครั้งที่ ${input.sessionNumber}`,
     childLabel: getChildLabel(item),
+    courseType: item.course_type || "creative_art",
     courseIcon: getCourseMeta(item.course_type).icon,
     courseName: getCourseLabel(item),
     primaryLine: input.lessonTitle || "กิจกรรมสร้างสรรค์",
@@ -1225,6 +1432,7 @@ function buildSessionShareData(input, photoUrl = "") {
     lessonTitle: input.lessonTitle,
     teacherComment: input.teacherComment,
     totalSessions: total,
+    completedAfter,
     remainingAfter: total ? Math.max(total - completedAfter, 0) : 0,
     photoUrl
   };
