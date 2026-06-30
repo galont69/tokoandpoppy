@@ -562,6 +562,25 @@ button { cursor: pointer; }
   margin-top: 12px;
 }
 
+.sheet-save-status {
+  margin: 14px 0 0;
+  border: 1px solid #d8e9cf;
+  border-radius: 18px;
+  padding: 14px 16px;
+  color: #4f7d48;
+  background: #f3faef;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.sheet-save-status.error {
+  border-color: #f2d1cb;
+  color: #9a5148;
+  background: #fff0ed;
+}
+
 .photo-preview {
   overflow: hidden;
   border: 1px solid var(--line);

@@ -43,6 +43,7 @@ const copyShareTextButton = document.querySelector("#copyShareTextButton");
 const downloadShareCardButton = document.querySelector("#downloadShareCardButton");
 const markReminderSentButton = document.querySelector("#markReminderSentButton");
 const confirmSessionSaveButton = document.querySelector("#confirmSessionSaveButton");
+const shareSaveStatus = document.querySelector("#shareSaveStatus");
 const recordSheet = document.querySelector("#recordSheet");
 const recordForm = document.querySelector("#recordForm");
 const recordTitle = document.querySelector("#recordTitle");
@@ -97,6 +98,13 @@ function setMessage(message, isError = false) {
   messageCard.hidden = !message;
   messageCard.textContent = message || "";
   messageCard.classList.toggle("error", isError);
+}
+
+function setSheetStatus(message, isError = false) {
+  if (!shareSaveStatus) return;
+  shareSaveStatus.hidden = !message;
+  shareSaveStatus.textContent = message || "";
+  shareSaveStatus.classList.toggle("error", isError);
 }
 
 function showOnly(view) {
@@ -687,6 +695,7 @@ async function refreshShareCardImage(data) {
 function openShareSheet(data) {
   activeShareData = data;
   revokeActiveShareCardUrl();
+  setSheetStatus("");
   shareEyebrow.textContent = data.mode === "reminder" ? "Class Reminder" : "After Class";
   shareTitle.textContent = data.title;
   shareSubtitle.textContent = data.subtitle;
@@ -702,6 +711,7 @@ function openShareSheet(data) {
 function closeShareSheet() {
   shareSheet.hidden = true;
   document.body.style.overflow = "";
+  setSheetStatus("");
   if (activeShareData?.mode === "session" && activeSessionEnrollment) {
     recordSheet.hidden = false;
     document.body.style.overflow = "hidden";
@@ -865,13 +875,31 @@ async function uploadLearningPhoto(enrollmentId) {
   return path;
 }
 
+function setSessionSavingState(isSaving, message = "", isError = false) {
+  [saveSessionButton, confirmSessionSaveButton].forEach((button) => {
+    if (!button) return;
+    button.disabled = isSaving;
+  });
+  if (saveSessionButton) saveSessionButton.textContent = isSaving ? "กำลังบันทึก..." : "บันทึกจริง";
+  if (confirmSessionSaveButton) confirmSessionSaveButton.textContent = isSaving ? "กำลังบันทึก..." : "บันทึกหลังเรียนจริง";
+  if (message || isSaving) setSheetStatus(message, isError);
+}
+
 async function saveSession() {
   const input = pendingSessionInput || getSessionInput();
-  if (!input || !activeSessionEnrollment) return;
-  saveSessionButton.disabled = true;
-  saveSessionButton.textContent = "กำลังบันทึก...";
+  if (!input || !activeSessionEnrollment) {
+    setSheetStatus("ไม่พบข้อมูลคอร์สที่กำลังบันทึก กรุณาปิดแล้วลองใหม่อีกครั้ง", true);
+    return;
+  }
+  if (!lineUserId) {
+    setSheetStatus("ไม่พบ LINE user id กรุณาเปิดจาก LINE OA อีกครั้ง", true);
+    return;
+  }
+  setSessionSavingState(true, "กำลังบันทึกหลังเรียน...");
   try {
+    if (sessionPhotoInput.files?.[0]) setSheetStatus("กำลังอัปโหลดรูปผลงาน...");
     const photoPath = await uploadLearningPhoto(activeSessionEnrollment.id);
+    setSheetStatus("กำลังบันทึกข้อมูลครั้งเรียน...");
     const { error } = await supabaseClient.rpc("record_teacher_liff_session", {
       p_line_user_id: lineUserId,
       p_course_enrollment_id: activeSessionEnrollment.id,
@@ -882,15 +910,16 @@ async function saveSession() {
       p_photo_path: photoPath
     });
     if (error) throw error;
+    setSheetStatus("บันทึกหลังเรียนเรียบร้อยแล้ว");
     setMessage("บันทึกหลังเรียนเรียบร้อยแล้ว");
     closeShareSheet();
     closeRecordSheet();
     await loadPortal();
   } catch (error) {
+    setSheetStatus(`บันทึกไม่สำเร็จ: ${error.message}`, true);
     setMessage(`บันทึกหลังเรียนไม่สำเร็จ: ${error.message}`, true);
   } finally {
-    saveSessionButton.disabled = false;
-    saveSessionButton.textContent = "บันทึกจริง";
+    setSessionSavingState(false);
   }
 }
 
