@@ -91,17 +91,17 @@ const courseMeta = {
 };
 
 const afterClassAssets = {
-  logo: "assets/after-class/11_logo2.svg?v=20260630-after-class-square-card",
-  palette: "assets/after-class/01_icon_palette.svg?v=20260630-after-class-square-card",
-  pencil: "assets/after-class/02_icon_pencil_cute.svg?v=20260630-after-class-square-card",
-  flower: "assets/after-class/03_icon_flower_small.svg?v=20260630-after-class-square-card",
-  star: "assets/after-class/04_deco_star_yellow.svg?v=20260630-after-class-square-card",
-  heartOutline: "assets/after-class/05_deco_heart_green_outline.svg?v=20260630-after-class-square-card",
-  heartFill: "assets/after-class/06_deco_heart_orange_fill.svg?v=20260630-after-class-square-card",
-  squiggle: "assets/after-class/07_deco_squiggle_green.svg?v=20260630-after-class-square-card",
-  spark: "assets/after-class/08_deco_spark_green.svg?v=20260630-after-class-square-card",
-  leaf: "assets/after-class/09_deco_leaf_pair.svg?v=20260630-after-class-square-card",
-  placeholder: "assets/after-class/10_photo_placeholder_square.svg?v=20260630-after-class-square-card"
+  logo: "assets/after-class/11_logo2.svg?v=20260630-after-class-hero-card",
+  palette: "assets/after-class/01_icon_palette.svg?v=20260630-after-class-hero-card",
+  pencil: "assets/after-class/02_icon_pencil_cute.svg?v=20260630-after-class-hero-card",
+  flower: "assets/after-class/03_icon_flower_small.svg?v=20260630-after-class-hero-card",
+  star: "assets/after-class/04_deco_star_yellow.svg?v=20260630-after-class-hero-card",
+  heartOutline: "assets/after-class/05_deco_heart_green_outline.svg?v=20260630-after-class-hero-card",
+  heartFill: "assets/after-class/06_deco_heart_orange_fill.svg?v=20260630-after-class-hero-card",
+  squiggle: "assets/after-class/07_deco_squiggle_green.svg?v=20260630-after-class-hero-card",
+  spark: "assets/after-class/08_deco_spark_green.svg?v=20260630-after-class-hero-card",
+  leaf: "assets/after-class/09_deco_leaf_pair.svg?v=20260630-after-class-hero-card",
+  placeholder: "assets/after-class/10_photo_placeholder_square.svg?v=20260630-after-class-hero-card"
 };
 
 function normalizeText(value) {
@@ -168,7 +168,8 @@ function getCourseMeta(type) {
 
 function getCourseLabel(item = {}) {
   const meta = getCourseMeta(item.course_type);
-  if (item.level_label) return `${meta.label} · ${item.level_label}`;
+  const levelLabel = normalizeText(item.level_label);
+  if (levelLabel && levelLabel.toLowerCase() !== meta.label.toLowerCase()) return `${meta.label} · ${levelLabel}`;
   return meta.label;
 }
 
@@ -706,12 +707,23 @@ function updateCropTransform() {
   cropImage.style.transform = `translate(calc(-50% + ${cropState.offsetX}px), calc(-50% + ${cropState.offsetY}px))`;
 }
 
+function getDefaultCropPreset(image) {
+  const ratio = image?.naturalWidth && image?.naturalHeight
+    ? image.naturalWidth / image.naturalHeight
+    : 1;
+  if (ratio < 0.82) return { zoom: 1.34, offsetYRatio: 0.08 };
+  if (ratio > 1.18) return { zoom: 1.18, offsetYRatio: 0.02 };
+  return { zoom: 1.2, offsetYRatio: 0.04 };
+}
+
 function resetCropPosition() {
   if (!cropState) return;
+  const box = cropStage?.clientWidth || 320;
+  const preset = getDefaultCropPreset(cropImage);
   cropState.offsetX = 0;
-  cropState.offsetY = 0;
-  cropState.zoom = 1;
-  if (cropZoomInput) cropZoomInput.value = "1";
+  cropState.offsetY = box * preset.offsetYRatio;
+  cropState.zoom = preset.zoom;
+  if (cropZoomInput) cropZoomInput.value = String(preset.zoom);
   updateCropTransform();
 }
 
@@ -721,6 +733,18 @@ function closeCropModal(clearInput = false) {
   cropState = null;
   if (cropImage) cropImage.removeAttribute("src");
   if (clearInput && sessionPhotoInput) sessionPhotoInput.value = "";
+}
+
+function cancelCropSelection() {
+  closeCropModal(true);
+  if (activeCroppedPhotoUrl) URL.revokeObjectURL(activeCroppedPhotoUrl);
+  activeCroppedPhotoUrl = "";
+  activeCroppedPhotoBlob = null;
+  activeCroppedPhotoName = "";
+  if (photoPreview) {
+    photoPreview.hidden = true;
+    photoPreview.innerHTML = "";
+  }
 }
 
 function openCropModal(file) {
@@ -743,7 +767,7 @@ function openCropModal(file) {
     image: cropImage,
     offsetX: 0,
     offsetY: 0,
-    zoom: 1,
+    zoom: 1.25,
     isDragging: false,
     startX: 0,
     startY: 0,
@@ -752,7 +776,7 @@ function openCropModal(file) {
   };
   cropImage.onload = () => resetCropPosition();
   cropImage.src = objectUrl;
-  if (cropZoomInput) cropZoomInput.value = "1";
+  if (cropZoomInput) cropZoomInput.value = "1.25";
   photoCropModal.hidden = false;
 }
 
@@ -853,90 +877,108 @@ async function drawShareCard(data) {
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
-    ctx.globalAlpha = 0.95;
-    drawContainImage(ctx, starIcon, 912, 58, 58, 58);
-    drawContainImage(ctx, heartFill, 862, 172, 42, 42);
-    drawContainImage(ctx, heartOutline, 80, 306, 54, 54);
-    drawContainImage(ctx, squiggleIcon, 914, 512, 74, 120);
-    drawContainImage(ctx, sparkIcon, 104, 890, 52, 52);
+    ctx.globalAlpha = 0.88;
+    drawContainImage(ctx, heartOutline, 70, 350, 58, 58);
+    drawContainImage(ctx, squiggleIcon, 912, 552, 80, 112);
+    drawContainImage(ctx, sparkIcon, 110, 858, 48, 48);
     ctx.restore();
 
     ctx.fillStyle = "#EAF7E8";
-    roundedRect(ctx, 56, 36, 968, 200, 36);
+    roundedRect(ctx, 56, 36, 968, 185, 34);
     ctx.fill();
 
-    drawContainImage(ctx, cardLogo, 88, 54, 150, 118);
+    drawContainImage(ctx, cardLogo, 86, 54, 184, 118);
     ctx.fillStyle = "#F47E5F";
-    ctx.font = "900 28px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("AFTER CLASS", 94, 202);
+    ctx.font = "900 30px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("AFTER CLASS", 88, 190);
 
     ctx.save();
-    ctx.strokeStyle = "rgba(107, 166, 94, .55)";
-    ctx.lineWidth = 3;
-    ctx.setLineDash([10, 12]);
+    ctx.strokeStyle = "rgba(107, 166, 94, .38)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([9, 12]);
     ctx.beginPath();
-    ctx.moveTo(300, 70);
-    ctx.lineTo(300, 202);
+    ctx.moveTo(312, 70);
+    ctx.lineTo(312, 182);
     ctx.stroke();
     ctx.restore();
 
+    drawContainImage(ctx, starIcon, 914, 60, 56, 56);
+    drawContainImage(ctx, heartFill, 878, 134, 40, 40);
     ctx.fillStyle = "#4A3A30";
     ctx.font = "900 62px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("สรุปหลังเรียน", 344, 114);
+    ctx.fillText("สรุปหลังเรียน", 356, 112);
     ctx.fillStyle = "#4F8A49";
     ctx.font = "900 68px Kanit, 'Noto Sans Thai', sans-serif";
-    wrapText(ctx, data.childLabel, 344, 194, 570, 70, 1);
+    wrapText(ctx, data.childLabel, 356, 188, 540, 70, 1);
 
     ctx.save();
     ctx.shadowColor = "rgba(74, 58, 48, .10)";
-    ctx.shadowBlur = 24;
-    ctx.shadowOffsetY = 8;
+    ctx.shadowBlur = 28;
+    ctx.shadowOffsetY = 10;
     ctx.fillStyle = "#FFFFFF";
-    roundedRect(ctx, 190, 270, 700, 700, 34);
+    roundedRect(ctx, 180, 248, 720, 720, 36);
     ctx.fill();
     ctx.restore();
     ctx.strokeStyle = "#E8D8C7";
     ctx.lineWidth = 2;
-    roundedRect(ctx, 190, 270, 700, 700, 34);
+    roundedRect(ctx, 180, 248, 720, 720, 36);
     ctx.stroke();
     ctx.save();
     ctx.strokeStyle = "rgba(244, 126, 95, .34)";
     ctx.setLineDash([10, 12]);
     ctx.lineWidth = 2;
-    roundedRect(ctx, 208, 288, 664, 664, 24);
+    roundedRect(ctx, 198, 266, 684, 684, 26);
     ctx.stroke();
     ctx.restore();
-    drawRoundImage(ctx, photo || placeholderPhoto, 214, 294, 652, 652, 22, photo ? "cover" : "contain");
+    drawRoundImage(ctx, photo || placeholderPhoto, 206, 274, 668, 668, 24, photo ? "cover" : "contain");
 
-    drawPanel(ctx, 82, 988, 916, 148, "#FFFFFF", "#8CC47E");
-    drawContainImage(ctx, paletteIcon, 122, 1016, 48, 48);
+    drawPanel(ctx, 78, 988, 924, 154, "#FFFFFF", "#8CC47E");
+    drawContainImage(ctx, paletteIcon, 118, 1014, 56, 56);
     ctx.fillStyle = "#4F8A49";
     ctx.font = "900 36px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText(truncateCanvasText(ctx, data.courseName, 500), 184, 1048);
-    drawCardBadge(ctx, 728, 1010, 232, 58, data.accentLine);
-    drawContainImage(ctx, flowerIcon, 122, 1078, 38, 38);
+    ctx.fillText(truncateCanvasText(ctx, data.courseName, 478), 188, 1049);
+    drawCardBadge(ctx, 708, 1007, 252, 64, data.accentLine);
+    ctx.save();
+    ctx.strokeStyle = "rgba(140, 196, 126, .24)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(118, 1082);
+    ctx.lineTo(962, 1082);
+    ctx.stroke();
+    ctx.restore();
+    drawContainImage(ctx, flowerIcon, 118, 1097, 42, 42);
     ctx.fillStyle = "#4A3A30";
-    ctx.font = "900 38px Kanit, 'Noto Sans Thai', sans-serif";
-    wrapText(ctx, data.primaryLine || "กิจกรรมสร้างสรรค์", 176, 1112, 710, 42, 1);
+    ctx.font = "900 40px Kanit, 'Noto Sans Thai', sans-serif";
+    wrapText(ctx, data.primaryLine || "กิจกรรมสร้างสรรค์", 176, 1130, 746, 42, 1);
 
-    drawPanel(ctx, 82, 1152, 916, 138, "#FFFFFF", "#E8D8C7");
+    drawPanel(ctx, 78, 1158, 924, 160, "#FFFFFF", "#E8D8C7");
     ctx.fillStyle = "#FFF0EA";
-    roundedRect(ctx, 120, 1181, 82, 82, 28);
+    roundedRect(ctx, 116, 1194, 92, 92, 30);
     ctx.fill();
-    drawContainImage(ctx, pencilIcon, 136, 1197, 50, 50);
+    drawContainImage(ctx, pencilIcon, 132, 1208, 60, 60);
     ctx.fillStyle = "#4A3A30";
-    ctx.font = "900 30px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("คอมเมนต์คุณครู", 230, 1206);
+    ctx.font = "900 32px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("คอมเมนต์คุณครู", 236, 1212);
     ctx.fillStyle = "#4A3A30";
-    ctx.font = "700 29px Kanit, 'Noto Sans Thai', sans-serif";
-    wrapText(ctx, data.note, 230, 1250, 690, 35, 2);
+    ctx.font = "700 30px Kanit, 'Noto Sans Thai', sans-serif";
+    wrapText(ctx, data.note, 236, 1258, 690, 36, 2);
 
-    drawContainImage(ctx, leafIcon, 390, 1302, 54, 28);
+    ctx.save();
+    ctx.strokeStyle = "rgba(107, 166, 94, .18)";
+    ctx.setLineDash([8, 10]);
+    ctx.beginPath();
+    ctx.moveTo(368, 1330);
+    ctx.lineTo(456, 1330);
+    ctx.moveTo(624, 1330);
+    ctx.lineTo(712, 1330);
+    ctx.stroke();
+    ctx.restore();
+    drawContainImage(ctx, leafIcon, 386, 1317, 50, 24);
     ctx.fillStyle = "#6BA65E";
     ctx.font = "900 30px Kanit, 'Noto Sans Thai', sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("Toko & Poppy", width / 2, 1326);
-    drawContainImage(ctx, leafIcon, 638, 1302, 54, 28);
+    ctx.fillText("Toko & Poppy", width / 2, 1338);
+    drawContainImage(ctx, leafIcon, 646, 1317, 50, 24);
     ctx.textAlign = "start";
     return;
   }
@@ -1417,7 +1459,7 @@ function bindEvents() {
   resetCropButton?.addEventListener("click", resetCropPosition);
   confirmCropButton?.addEventListener("click", confirmCropPhoto);
   document.querySelectorAll("[data-cancel-crop]").forEach((element) => {
-    element.addEventListener("click", () => closeCropModal(true));
+    element.addEventListener("click", cancelCropSelection);
   });
   cropStage?.addEventListener("pointerdown", (event) => {
     if (!cropState) return;
