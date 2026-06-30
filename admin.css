@@ -3637,6 +3637,102 @@ tbody tr:hover td {
   background: var(--admin-danger-soft);
 }
 
+.revenue-close-panel {
+  margin: 0 24px 22px;
+  border: 1px solid #d9e9cf;
+  border-radius: 18px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f6fbf2 0%, #fffaf0 100%);
+  box-shadow: 0 10px 24px rgba(95, 143, 83, .08);
+}
+
+.revenue-close-heading strong {
+  display: block;
+  color: var(--admin-green-dark);
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.revenue-close-heading span {
+  display: block;
+  margin-top: 4px;
+  color: var(--admin-muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.revenue-close-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.revenue-close-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid #e7ddce;
+  border-radius: 14px;
+  padding: 13px 14px;
+  background: rgba(255, 255, 255, .72);
+}
+
+.revenue-close-card strong,
+.revenue-close-card span,
+.revenue-close-card small {
+  display: block;
+}
+
+.revenue-close-card strong {
+  color: var(--admin-text);
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.revenue-close-card span {
+  margin-top: 4px;
+  color: var(--admin-muted);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.revenue-close-card small {
+  margin-top: 3px;
+  color: #9c897d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.revenue-lock-pill,
+.revenue-lock-text {
+  color: #8d6423;
+  font-weight: 950;
+}
+
+.revenue-lock-pill {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #fff1c8;
+  font-size: 13px;
+}
+
+.revenue-table tr.is-locked td {
+  background: #fffaf0;
+}
+
+.revenue-table tr.is-locked:hover td {
+  background: #fff6e5;
+}
+
+.revenue-actions button.locked {
+  min-width: 128px;
+  background: #8a7668;
+  box-shadow: 0 8px 18px rgba(138, 118, 104, .12);
+}
+
 .revenue-actions,
 .branch-card-actions,
 .branch-admin-request-actions {

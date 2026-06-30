@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260630-student-delete-approval">
+  <link rel="stylesheet" href="admin.css?v=20260630-revenue-month-close">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -333,6 +333,7 @@
             <p>ตรวจทุกครั้งที่สาขาเปิดสิทธิ์คอร์สให้นักเรียน เพื่อสรุปรายรับและคิดค่าแฟรนไชส์ตามช่วงเวลา</p>
           </div>
           <div class="hero-actions">
+            <button class="refresh-button" id="closeRevenueMonthButton" type="button">🔒 ปิดงวดเดือนนี้</button>
             <button class="refresh-button" id="exportRevenueButton" type="button">⬇ Export CSV</button>
             <button class="refresh-button" id="refreshRevenueButton" type="button">↻ รีเฟรช</button>
           </div>
@@ -373,6 +374,15 @@
             </select>
           </div>
           <div class="student-management-summary revenue-summary" id="revenueSummary"></div>
+          <div class="revenue-close-panel" id="revenueClosePanel" hidden>
+            <div class="revenue-close-heading">
+              <div>
+                <strong>งวดรายรับที่ปิดแล้ว</strong>
+                <span>รายการในงวดที่ปิดแล้วจะแสดงสถานะล็อก และการแก้ไขภายหลังต้องมีเหตุผลใน audit log</span>
+              </div>
+            </div>
+            <div class="revenue-close-list" id="revenueCloseRows"></div>
+          </div>
           <div class="revenue-table-wrap">
             <table class="applications-table revenue-table">
               <thead>
@@ -1377,6 +1387,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260630-student-delete-approval"></script>
-  <script src="admin.js?v=20260630-student-delete-approval"></script>
+  <script src="admin.js?v=20260630-revenue-month-close"></script>
 </body>
 </html>

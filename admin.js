@@ -133,6 +133,7 @@ const classReminderEmptyState = document.querySelector("#classReminderEmptyState
 const refreshClassRemindersButton = document.querySelector("#refreshClassRemindersButton");
 const refreshRevenueButton = document.querySelector("#refreshRevenueButton");
 const exportRevenueButton = document.querySelector("#exportRevenueButton");
+const closeRevenueMonthButton = document.querySelector("#closeRevenueMonthButton");
 const revenueDateFrom = document.querySelector("#revenueDateFrom");
 const revenueDateTo = document.querySelector("#revenueDateTo");
 const revenueBranchFilter = document.querySelector("#revenueBranchFilter");
@@ -141,6 +142,8 @@ const revenueStatusFilter = document.querySelector("#revenueStatusFilter");
 const revenueScopeText = document.querySelector("#revenueScopeText");
 const revenueSummary = document.querySelector("#revenueSummary");
 const revenueRows = document.querySelector("#revenueRows");
+const revenueClosePanel = document.querySelector("#revenueClosePanel");
+const revenueCloseRows = document.querySelector("#revenueCloseRows");
 const revenueEmptyState = document.querySelector("#revenueEmptyState");
 const revenueLoadingState = document.querySelector("#revenueLoadingState");
 const classReminderModal = document.querySelector("#classReminderModal");
@@ -235,6 +238,7 @@ let studentDeleteRequests = [];
 const expandedStudentManagementDetails = new Set();
 let classReminderEnrollments = [];
 let branchRevenueEvents = [];
+let branchRevenueClosures = [];
 let classReminderSentKeys = new Set();
 let activeClassReminder = null;
 let activeLearningEnrollment = null;
@@ -4463,8 +4467,56 @@ function getRevenueFranchiseFee(event) {
   return getRevenueRoyaltyBase(event) * getRevenueRoyaltyRate(event);
 }
 
+function getMonthKey(value) {
+  if (!value) return "";
+  const date = new Date(`${String(value).slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return "";
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+function getRevenueSelectedMonth() {
+  return getMonthKey(revenueDateFrom?.value || new Date().toISOString().slice(0, 10));
+}
+
+function getRevenueClosure(event) {
+  const monthKey = getMonthKey(event.event_date || event.created_at);
+  return branchRevenueClosures.find((closure) =>
+    closure.branch_id === event.branch_id &&
+    getMonthKey(closure.period_month) === monthKey &&
+    closure.status === "closed");
+}
+
+function isRevenueEventLocked(event) {
+  return Boolean(getRevenueClosure(event));
+}
+
+function renderRevenueClosures() {
+  if (!revenueClosePanel || !revenueCloseRows) return;
+  const visibleClosures = branchRevenueClosures.filter((closure) => closure.status === "closed");
+  revenueClosePanel.hidden = visibleClosures.length === 0;
+  if (!visibleClosures.length) {
+    revenueCloseRows.innerHTML = "";
+    return;
+  }
+
+  revenueCloseRows.innerHTML = visibleClosures.map((closure) => {
+    const branchName = closure.branches?.name || "-";
+    return `
+      <article class="revenue-close-card">
+        <div>
+          <strong>${escapeHtml(branchName)} · ${escapeHtml(formatDateOnly(closure.period_month))}</strong>
+          <span>${Number(closure.total_events || 0)} รายการ · ยอดรับ ${formatMoney(closure.confirmed_actual_amount || 0)} บาท · ค่าแฟรนไชส์ ${formatMoney(closure.franchise_fee_amount || 0)} บาท</span>
+          <small>ปิดโดย ${escapeHtml(closure.closed_by_email || "-")} · ${escapeHtml(formatDate(closure.closed_at || closure.created_at))}</small>
+        </div>
+        <span class="revenue-lock-pill">ล็อกแล้ว</span>
+      </article>
+    `;
+  }).join("");
+}
+
 function renderBranchRevenue() {
   if (!revenueRows) return;
+  renderRevenueClosures();
   const rows = getFilteredRevenueEvents();
   const activeRows = rows.filter((event) => !["cancelled", "refunded"].includes(event.status));
   const pendingRows = activeRows.filter((event) => (event.status || "pending") === "pending");
@@ -4472,6 +4524,7 @@ function renderBranchRevenue() {
   const totalConfirmedActual = confirmedRows.reduce((sum, event) => sum + Number(event.actual_amount || 0), 0);
   const totalConfirmedRoyaltyBase = confirmedRows.reduce((sum, event) => sum + getRevenueRoyaltyBase(event), 0);
   const totalConfirmedFranchiseFee = confirmedRows.reduce((sum, event) => sum + getRevenueFranchiseFee(event), 0);
+  const lockedRows = rows.filter((event) => isRevenueEventLocked(event));
   const uniqueStudents = new Set(activeRows.map((event) => event.application_id || event.student_name).filter(Boolean)).size;
   const totalSessions = activeRows.reduce((sum, event) => sum + Number(event.total_sessions || 0), 0);
 
@@ -4480,6 +4533,7 @@ function renderBranchRevenue() {
       ["เด็กที่เปิดคอร์ส", uniqueStudents],
       ["รายการรอตรวจ", pendingRows.length, pendingRows.length ? "warning" : ""],
       ["รายการยืนยันแล้ว", confirmedRows.length],
+      ["รายการล็อกงวดแล้ว", lockedRows.length, lockedRows.length ? "highlight" : ""],
       ["จำนวนครั้งรวม", totalSessions],
       ["ยอดรับที่ยืนยันแล้ว", `${formatMoney(totalConfirmedActual)} บาท`],
       ["ฐานแฟรนไชส์ที่ยืนยันแล้ว", `${formatMoney(totalConfirmedRoyaltyBase)} บาท`],
@@ -4499,12 +4553,13 @@ function renderBranchRevenue() {
     const royaltyBase = getRevenueRoyaltyBase(event);
     const royaltyRate = getRevenueRoyaltyRate(event);
     const franchiseFee = getRevenueFranchiseFee(event);
+    const locked = isRevenueEventLocked(event);
     const reviewedBy = event.reviewed_by_email
       ? `<small>ตรวจโดย ${escapeHtml(event.reviewed_by_email)}</small>`
       : "";
     return `
-      <tr>
-        <td><strong>${escapeHtml(formatDateOnly(event.event_date || event.created_at))}</strong><small>${escapeHtml(toLocalDateTimeValue(event.created_at))}</small></td>
+      <tr class="${locked ? "is-locked" : ""}">
+        <td><strong>${escapeHtml(formatDateOnly(event.event_date || event.created_at))}</strong><small>${escapeHtml(toLocalDateTimeValue(event.created_at))}</small>${locked ? '<small class="revenue-lock-text">🔒 ปิดงวดแล้ว</small>' : ""}</td>
         <td>${escapeHtml(branchName)}</td>
         <td><strong>${escapeHtml(event.student_name || "-")}</strong><small>${escapeHtml(event.student_nickname || "")}</small></td>
         <td>${getCourseIcon(event.course_type)} ${escapeHtml(courseLabels[event.course_type]?.[0] || event.course_type || "-")}</td>
@@ -4524,7 +4579,9 @@ function renderBranchRevenue() {
 function renderRevenueActions(event) {
   if (!isMainAdmin()) return '<small class="muted-text">ดูได้อย่างเดียว</small>';
   const status = event.status || "pending";
+  const locked = isRevenueEventLocked(event);
   if (status === "pending") {
+    if (locked) return '<small class="muted-text">ล็อกงวดแล้ว</small>';
     return `
       <div class="revenue-actions">
         <button type="button" data-revenue-status="${event.id}" data-status="confirmed">ยืนยัน</button>
@@ -4535,7 +4592,7 @@ function renderRevenueActions(event) {
   if (status === "confirmed") {
     return `
       <div class="revenue-actions">
-        <button class="danger" type="button" data-revenue-status="${event.id}" data-status="refunded">คืนเงิน</button>
+        <button class="danger ${locked ? "locked" : ""}" type="button" data-revenue-status="${event.id}" data-status="refunded">${locked ? "คืนเงินหลังปิดงวด" : "คืนเงิน"}</button>
       </div>
     `;
   }
@@ -4551,8 +4608,12 @@ async function updateRevenueEventStatus(eventId, nextStatus) {
   if (!event) return;
 
   const statusText = getRevenueStatusLabel(nextStatus);
+  const locked = isRevenueEventLocked(event);
   let note = "";
-  if (["cancelled", "refunded"].includes(nextStatus)) {
+  if (locked) {
+    note = window.prompt(`รายการนี้อยู่ในงวดที่ปิดแล้ว กรุณาระบุเหตุผลในการเปลี่ยนเป็น "${statusText}"`) || "";
+    if (!note.trim()) return;
+  } else if (["cancelled", "refunded"].includes(nextStatus)) {
     note = window.prompt(`ระบุหมายเหตุสำหรับสถานะ "${statusText}"`) || "";
     if (!note.trim()) return;
   } else {
@@ -4574,6 +4635,70 @@ async function updateRevenueEventStatus(eventId, nextStatus) {
   }
 
   showToast(`อัปเดตสถานะเป็น "${statusText}" แล้ว`);
+  await loadBranchRevenue();
+}
+
+async function closeRevenueMonth() {
+  if (!isMainAdmin()) {
+    showToast("เฉพาะแอดมินหลักเท่านั้นที่ปิดงวดรายรับได้", true);
+    return;
+  }
+  ensureRevenueDefaultDates();
+  const periodMonth = getRevenueSelectedMonth();
+  if (!periodMonth) {
+    showToast("กรุณาเลือกเดือนที่ต้องการปิดงวด", true);
+    return;
+  }
+
+  const selectedBranchId = revenueBranchFilter?.value || "all";
+  const monthRows = branchRevenueEvents.filter((event) => {
+    const sameMonth = getMonthKey(event.event_date || event.created_at) === periodMonth;
+    const sameBranch = selectedBranchId === "all" || event.branch_id === selectedBranchId;
+    return sameMonth && sameBranch && !["cancelled", "refunded"].includes(event.status);
+  });
+  if (!monthRows.length) {
+    showToast("ไม่มีรายการรายรับสำหรับงวดที่เลือก", true);
+    return;
+  }
+
+  const pendingRows = monthRows.filter((event) => (event.status || "pending") === "pending");
+  if (pendingRows.length) {
+    showToast(`ยังมีรายการรอตรวจ ${pendingRows.length} รายการ กรุณาตรวจให้ครบก่อนปิดงวด`, true);
+    return;
+  }
+
+  const branchIds = [...new Set(monthRows.map((event) => event.branch_id).filter(Boolean))];
+  const monthLabel = formatDateOnly(periodMonth);
+  const branchLabel = selectedBranchId === "all" ? `${branchIds.length} สาขา` : (branches.find((branch) => branch.id === selectedBranchId)?.name || "สาขาที่เลือก");
+  const note = window.prompt(`ปิดงวดรายรับ ${monthLabel} สำหรับ ${branchLabel}\n\nหลังปิดงวด รายการจะล็อก และการแก้ย้อนหลังต้องมีเหตุผล\nกรุณาระบุหมายเหตุการปิดงวด`) || "";
+  if (!note.trim()) return;
+
+  const confirmed = window.confirm(`ยืนยันปิดงวด ${monthLabel} ใช่ไหม?\n\nระบบจะล็อกรายการรายรับ/ค่าแฟรนไชส์ของ ${branchLabel}`);
+  if (!confirmed) return;
+
+  closeRevenueMonthButton.disabled = true;
+  closeRevenueMonthButton.textContent = "กำลังปิดงวด...";
+  const errors = [];
+  for (const branchId of branchIds) {
+    const { error } = await supabaseClient.rpc("close_branch_revenue_month", {
+      p_branch_id: branchId,
+      p_period_month: periodMonth,
+      p_note: note.trim()
+    });
+    if (error) {
+      const branchName = branches.find((branch) => branch.id === branchId)?.name || branchId;
+      errors.push(`${branchName}: ${error.message}`);
+    }
+  }
+  closeRevenueMonthButton.disabled = false;
+  closeRevenueMonthButton.textContent = "🔒 ปิดงวดเดือนนี้";
+
+  if (errors.length) {
+    showToast(`ปิดงวดไม่สำเร็จ: ${errors.join(" / ")}`, true);
+    return;
+  }
+
+  showToast("ปิดงวดรายรับเรียบร้อยแล้ว");
   await loadBranchRevenue();
 }
 
@@ -4611,13 +4736,33 @@ async function loadBranchRevenue() {
     query = query.eq("branch_id", currentBranchAssignment.branch_id);
   }
 
-  const { data, error } = await query;
+  let closureQuery = supabaseClient
+    .from("branch_revenue_monthly_closings")
+    .select("*, branches(name,code)")
+    .order("period_month", { ascending: false })
+    .order("closed_at", { ascending: false });
+  const fromMonth = getMonthKey(fromDate);
+  const toMonth = getMonthKey(toDate);
+  if (fromMonth) closureQuery = closureQuery.gte("period_month", fromMonth);
+  if (toMonth) closureQuery = closureQuery.lte("period_month", toMonth);
+  if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
+    closureQuery = closureQuery.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const [{ data, error }, { data: closureData, error: closureError }] = await Promise.all([query, closureQuery]);
   revenueLoadingState.hidden = true;
   if (error) {
     showToast(`โหลดรายรับสาขาไม่สำเร็จ: ${error.message}`, true);
     branchRevenueEvents = [];
+    branchRevenueClosures = [];
     renderBranchRevenue();
     return;
+  }
+  if (closureError) {
+    showToast(`โหลดข้อมูลงวดปิดแล้วไม่สำเร็จ: ${closureError.message}`, true);
+    branchRevenueClosures = [];
+  } else {
+    branchRevenueClosures = closureData || [];
   }
 
   branchRevenueEvents = data || [];
@@ -4644,6 +4789,7 @@ function exportBranchRevenueCsv() {
     "อัตราแฟรนไชส์",
     "ค่าแฟรนไชส์ซี",
     "สถานะ",
+    "สถานะงวด",
     "ผู้เปิดสิทธิ์",
     "ผู้ตรวจรายรับ",
     "เวลาตรวจรายรับ",
@@ -4665,6 +4811,7 @@ function exportBranchRevenueCsv() {
       `${formatMoney(getRevenueRoyaltyRate(event) * 100)}%`,
       getRevenueFranchiseFee(event),
       getRevenueStatusLabel(event.status),
+      isRevenueEventLocked(event) ? "ปิดงวดแล้ว" : "ยังไม่ปิดงวด",
       event.opened_by_email || "",
       event.reviewed_by_email || "",
       event.reviewed_at || "",
@@ -7601,6 +7748,7 @@ staffStudentModal?.addEventListener("click", (event) => {
 });
 refreshClassRemindersButton?.addEventListener("click", loadClassReminders);
 refreshRevenueButton?.addEventListener("click", loadBranchRevenue);
+closeRevenueMonthButton?.addEventListener("click", closeRevenueMonth);
 exportRevenueButton?.addEventListener("click", exportBranchRevenueCsv);
 revenueRows?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-revenue-status]");
