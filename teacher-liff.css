@@ -238,7 +238,7 @@ button { cursor: pointer; }
   top: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
   padding: 10px 0;
   background: rgba(255, 247, 237, .92);
@@ -292,6 +292,38 @@ button { cursor: pointer; }
   font-weight: 900;
 }
 
+.today-summary-grid article:first-child {
+  background: linear-gradient(135deg, #ffffff, #f0f8eb);
+  border-color: rgba(95, 142, 79, .24);
+}
+
+.teacher-task-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.mini-heading {
+  display: grid;
+  gap: 2px;
+  margin: 8px 0 10px;
+}
+
+.mini-heading span {
+  color: var(--orange);
+  font-family: Kanit, Mali, sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.mini-heading strong {
+  color: var(--brown);
+  font-family: Kanit, Mali, sans-serif;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
 .mobile-list {
   display: grid;
   gap: 12px;
@@ -307,6 +339,10 @@ button { cursor: pointer; }
 
 .mobile-card.is-sent {
   background: linear-gradient(135deg, #ffffff, #f0f9ec);
+}
+
+.today-card {
+  border-color: rgba(95, 142, 79, .18);
 }
 
 .card-top {
@@ -376,6 +412,56 @@ button { cursor: pointer; }
 
 .card-actions .full {
   grid-column: 1 / -1;
+}
+
+.task-card {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(75, 55, 42, .06);
+}
+
+.task-card.reminder-task {
+  background: linear-gradient(135deg, #ffffff, #fff8ed);
+}
+
+.task-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 16px;
+  font-size: 23px;
+}
+
+.task-card strong {
+  display: block;
+  color: var(--brown);
+  font-family: Kanit, Mali, sans-serif;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.task-card p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.task-card button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 14px;
+  padding: 8px 12px;
+  color: #ffffff;
+  background: var(--green);
+  font-weight: 900;
 }
 
 .empty-box {

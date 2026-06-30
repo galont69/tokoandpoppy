@@ -19,6 +19,12 @@ const pendingText = document.querySelector("#pendingText");
 const teacherBranchLabel = document.querySelector("#teacherBranchLabel");
 const teacherNameLabel = document.querySelector("#teacherNameLabel");
 const teacherMetaLabel = document.querySelector("#teacherMetaLabel");
+const todayDateLabel = document.querySelector("#todayDateLabel");
+const todayClassTotal = document.querySelector("#todayClassTotal");
+const todayRecordPending = document.querySelector("#todayRecordPending");
+const todayReminderPending = document.querySelector("#todayReminderPending");
+const todayClassList = document.querySelector("#todayClassList");
+const todayActionList = document.querySelector("#todayActionList");
 const reminderDateLabel = document.querySelector("#reminderDateLabel");
 const reminderTotal = document.querySelector("#reminderTotal");
 const reminderPending = document.querySelector("#reminderPending");
@@ -162,6 +168,32 @@ function getCompletedText(item = {}) {
   return total ? `${completed}/${total} ครั้ง` : `${completed} ครั้ง`;
 }
 
+function getTodayDateValue() {
+  return portalData?.today_date || toLocalDateInputValue(new Date());
+}
+
+function getTodayWeekday() {
+  return new Date(`${getTodayDateValue()}T00:00:00`).getDay();
+}
+
+function getTodayScheduledEnrollments() {
+  const todayWeekday = getTodayWeekday();
+  return (portalData?.today_enrollments || [])
+    .filter((item) => Number(item.class_weekday) === todayWeekday);
+}
+
+function hasRecordedToday(item = {}) {
+  if (typeof item.today_session_recorded === "boolean") return item.today_session_recorded;
+  if (item.last_session_date) return item.last_session_date === getTodayDateValue();
+  return false;
+}
+
+function isCourseDone(item = {}) {
+  const completed = Number(item.completed_sessions || 0);
+  const total = Number(item.total_sessions || 0);
+  return Boolean(total && completed >= total);
+}
+
 async function initLine() {
   const params = new URLSearchParams(window.location.search);
   const testLineUserId = normalizeText(params.get("line_user_id"));
@@ -277,20 +309,109 @@ function renderDashboard() {
   const profile = portalData.profile || {};
   const branch = portalData.branch || {};
   const reminders = portalData.reminders || [];
+  const todayItems = getTodayScheduledEnrollments();
+  const pendingRecords = todayItems.filter((item) => !hasRecordedToday(item) && !isCourseDone(item));
   const targetDate = portalData.target_date || toLocalDateInputValue(addDays(new Date(), 1));
   const weekday = Number(portalData.target_weekday ?? new Date(`${targetDate}T00:00:00`).getDay());
   const sent = reminders.filter((item) => item.reminder_sent).length;
+  const reminderPendingCount = Math.max(reminders.length - sent, 0);
 
   teacherBranchLabel.textContent = `สาขา ${branch.name || "-"}`;
   teacherNameLabel.textContent = profile.teacher_name || profile.line_display_name || "คุณครู";
-  teacherMetaLabel.textContent = `${reminders.length} คิวแจ้งเตือน · ${portalData.today_enrollments?.length || 0} คอร์สที่บันทึกได้`;
+  teacherMetaLabel.textContent = `${todayItems.length} คิววันนี้ · ${pendingRecords.length} รอบันทึก · ${reminderPendingCount} ต้องแจ้งพรุ่งนี้`;
+  todayDateLabel.textContent = `${weekdayLabels[getTodayWeekday()]} ${formatThaiDate(getTodayDateValue())}`;
+  todayClassTotal.textContent = todayItems.length;
+  todayRecordPending.textContent = pendingRecords.length;
+  todayReminderPending.textContent = reminderPendingCount;
   reminderDateLabel.textContent = `${weekdayLabels[weekday]} ${formatThaiDate(targetDate)}`;
   reminderTotal.textContent = reminders.length;
   reminderSent.textContent = sent;
-  reminderPending.textContent = Math.max(reminders.length - sent, 0);
+  reminderPending.textContent = reminderPendingCount;
 
+  renderTodayCenter(todayItems, reminders);
   renderReminderList(reminders);
   renderSessionList(portalData.today_enrollments || []);
+}
+
+function renderTodayCenter(todayItems = [], reminders = []) {
+  renderTodayClassList(todayItems);
+  renderTodayActionList(todayItems, reminders);
+}
+
+function renderTodayClassList(items = []) {
+  if (!todayClassList) return;
+  if (!items.length) {
+    todayClassList.innerHTML = '<div class="empty-box">วันนี้ยังไม่มีคิวเรียนตามตารางประจำ</div>';
+    return;
+  }
+
+  todayClassList.innerHTML = items.map((item) => {
+    const meta = getCourseMeta(item.course_type);
+    const recorded = hasRecordedToday(item);
+    const done = isCourseDone(item);
+    return `
+      <article class="mobile-card today-card ${recorded ? "is-sent" : ""}">
+        <div class="card-top">
+          <span class="course-icon" style="background:${meta.color}">${meta.icon}</span>
+          <div>
+            <h3>${escapeHtml(getChildLabel(item))}</h3>
+            <p>${escapeHtml(getCourseLabel(item))}</p>
+          </div>
+        </div>
+        <div class="meta-row">
+          <span class="pill green">${escapeHtml(getScheduleLabel(item))}</span>
+          <span class="pill">${escapeHtml(getNextSessionText(item))}</span>
+          <span class="pill ${recorded ? "green" : "orange"}">${recorded ? "บันทึกแล้ววันนี้" : "รอบันทึก"}</span>
+        </div>
+        <div class="card-actions">
+          <button class="primary-button full" type="button" data-open-session="${item.id}" ${recorded || done ? "disabled" : ""}>
+            ${done ? "จบคอร์สแล้ว" : recorded ? "บันทึกแล้ว" : "บันทึกหลังเรียน"}
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderTodayActionList(todayItems = [], reminders = []) {
+  if (!todayActionList) return;
+  const pendingRecords = todayItems.filter((item) => !hasRecordedToday(item) && !isCourseDone(item));
+  const pendingReminders = reminders.filter((item) => !item.reminder_sent);
+  const actions = [];
+
+  pendingRecords.slice(0, 4).forEach((item) => {
+    const meta = getCourseMeta(item.course_type);
+    actions.push(`
+      <article class="task-card">
+        <span class="task-icon" style="background:${meta.color}">${meta.icon}</span>
+        <div>
+          <strong>บันทึกหลังเรียน ${escapeHtml(getChildLabel(item))}</strong>
+          <p>${escapeHtml(getCourseLabel(item))} · ${escapeHtml(getScheduleLabel(item))}</p>
+        </div>
+        <button type="button" data-open-session="${item.id}">บันทึก</button>
+      </article>
+    `);
+  });
+
+  pendingReminders.slice(0, Math.max(0, 4 - actions.length)).forEach((item) => {
+    const meta = getCourseMeta(item.course_type);
+    actions.push(`
+      <article class="task-card reminder-task">
+        <span class="task-icon" style="background:${meta.color}">${meta.icon}</span>
+        <div>
+          <strong>แจ้งเตือนพรุ่งนี้ ${escapeHtml(getChildLabel(item))}</strong>
+          <p>${escapeHtml(getCourseLabel(item))} · ${escapeHtml(getScheduleLabel(item))}</p>
+        </div>
+        <button type="button" data-open-reminder="${item.id}">การ์ด</button>
+      </article>
+    `);
+  });
+
+  if (!actions.length) {
+    todayActionList.innerHTML = '<div class="empty-box">งานสำคัญวันนี้เรียบร้อยแล้ว</div>';
+    return;
+  }
+  todayActionList.innerHTML = actions.join("");
 }
 
 function renderReminderList(items = []) {
@@ -770,10 +891,26 @@ function bindEvents() {
     button.addEventListener("click", () => {
       document.querySelectorAll("[data-tab]").forEach((item) => item.classList.toggle("active", item === button));
       const tab = button.dataset.tab;
+      document.querySelector("#todayPanel").hidden = tab !== "today";
       document.querySelector("#remindersPanel").hidden = tab !== "reminders";
       document.querySelector("#sessionsPanel").hidden = tab !== "sessions";
     });
   });
+  const handleTeacherTaskClick = (event) => {
+    const reminderButton = event.target.closest("[data-open-reminder]");
+    if (reminderButton) {
+      const item = (portalData.reminders || []).find((row) => row.id === reminderButton.dataset.openReminder);
+      if (item) openReminder(item);
+      return;
+    }
+
+    const sessionButton = event.target.closest("[data-open-session]");
+    if (!sessionButton) return;
+    const item = (portalData.today_enrollments || []).find((row) => row.id === sessionButton.dataset.openSession);
+    if (item) openRecordSheet(item);
+  };
+  todayClassList?.addEventListener("click", handleTeacherTaskClick);
+  todayActionList?.addEventListener("click", handleTeacherTaskClick);
   reminderList?.addEventListener("click", (event) => {
     const openButton = event.target.closest("[data-open-reminder]");
     if (openButton) {
