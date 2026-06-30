@@ -227,6 +227,7 @@ let artLessons = [];
 let activeArtLesson = null;
 let learningEnrollments = [];
 let studentManagementEnrollments = [];
+let studentRevenueEvents = [];
 let classReminderEnrollments = [];
 let branchRevenueEvents = [];
 let classReminderSentKeys = new Set();
@@ -1405,6 +1406,69 @@ function getStudentManagementGroups(rows) {
     String(b.latestUpdatedAt).localeCompare(String(a.latestUpdatedAt)));
 }
 
+function canViewStudentLedger() {
+  return isMainAdmin() || isBranchAdmin();
+}
+
+function getStudentLedgerEvents(group) {
+  if (!canViewStudentLedger()) return [];
+  const enrollmentIds = new Set(group.enrollments.map((item) => item.id).filter(Boolean));
+  const applicationId = group.applicationId || "";
+  return studentRevenueEvents
+    .filter((event) =>
+      (applicationId && event.application_id === applicationId) ||
+      (event.course_enrollment_id && enrollmentIds.has(event.course_enrollment_id)))
+    .sort((a, b) =>
+      String(b.event_date || b.created_at || "").localeCompare(String(a.event_date || a.created_at || "")));
+}
+
+function renderStudentLedger(group) {
+  if (!canViewStudentLedger()) return "";
+  const events = getStudentLedgerEvents(group);
+  if (!events.length) {
+    return `
+      <div class="student-ledger is-empty">
+        <div class="student-ledger-heading">
+          <strong>ประวัติการเงิน</strong>
+          <span>ยังไม่มีรายการเปิดสิทธิ์พร้อมราคา</span>
+        </div>
+      </div>
+    `;
+  }
+
+  const activeEvents = events.filter((event) => !["cancelled", "refunded"].includes(event.status));
+  const paidTotal = activeEvents.reduce((sum, event) => sum + Number(event.actual_amount || 0), 0);
+  const rows = events.slice(0, 4).map((event) => {
+    const branchName = event.branches?.name || event.branch_name || group.branchName || "-";
+    const openedBy = event.opened_by_email || "-";
+    const courseName = courseLabels[event.course_type]?.[0] || event.program_label || event.course_type || "-";
+    return `
+      <li>
+        <div>
+          <strong>${getCourseIcon(event.course_type)} ${escapeHtml(courseName)}</strong>
+          <span>${escapeHtml(formatDateOnly(event.event_date || event.created_at))} · ${escapeHtml(branchName)} · ${Number(event.total_sessions || 0)} ครั้ง</span>
+          <small>เปิดโดย ${escapeHtml(openedBy)}</small>
+        </div>
+        <div>
+          <b>${formatMoney(event.actual_amount || 0)} บาท</b>
+          <em class="revenue-status ${escapeHtml(event.status || "pending")}">${escapeHtml(getRevenueStatusLabel(event.status))}</em>
+        </div>
+      </li>
+    `;
+  }).join("");
+
+  return `
+    <div class="student-ledger">
+      <div class="student-ledger-heading">
+        <strong>ประวัติการเงิน</strong>
+        <span>${events.length} รายการ · รวม ${formatMoney(paidTotal)} บาท</span>
+      </div>
+      <ul>${rows}</ul>
+      ${events.length > 4 ? `<small class="student-ledger-more">แสดง 4 รายการล่าสุดจากทั้งหมด ${events.length} รายการ</small>` : ""}
+    </div>
+  `;
+}
+
 function renderStudentManagementSummary(groups) {
   if (!studentManagementSummary) return;
   const totals = studentManagementEnrollments.reduce((summary, enrollment) => {
@@ -1491,6 +1555,7 @@ function renderStudentManagement() {
         <em class="not_started">เปิดสิทธิ์จากใบสมัคร</em>
       </li>
     `;
+    const ledgerHtml = renderStudentLedger(group);
     return `
       <article class="student-management-card">
         <div class="student-management-main">
@@ -1511,7 +1576,10 @@ function renderStudentManagement() {
           <span><strong>${completedTotal}/${sessionTotal}</strong> ครั้ง</span>
           <span><strong>${remainingTotal}</strong> คงเหลือ</span>
         </div>
-        <ul class="student-management-courses">${courseListHtml}</ul>
+        <div class="student-management-course-ledger">
+          <ul class="student-management-courses">${courseListHtml}</ul>
+          ${ledgerHtml}
+        </div>
         <div class="student-management-actions">
           ${activeEnrollments[0] ? `
             <button class="review-button" type="button" data-student-record-enrollment="${activeEnrollments[0].id}">
@@ -1554,23 +1622,35 @@ async function loadStudentManagement() {
     .select("id,status,student_name,student_nickname,parent_name,parent_phone,parent_email,birth_date,age_years,student_notes,legacy_note,line_display_name,line_user_id,registration_source,branch_id,created_at,branches(name,code)")
     .eq("registration_source", "staff_created")
     .order("created_at", { ascending: false });
+  let revenueQuery = canViewStudentLedger()
+    ? supabaseClient
+      .from("course_revenue_events")
+      .select("id,course_enrollment_id,application_id,branch_id,student_name,student_nickname,course_type,program_label,level_label,total_sessions,event_date,opened_by_email,actual_amount,royalty_base_amount,royalty_rate,status,reviewed_by_email,reviewed_at,created_at,branches(name,code)")
+      .order("event_date", { ascending: false })
+      .order("created_at", { ascending: false })
+    : null;
 
   if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
     enrollmentQuery = enrollmentQuery.eq("branch_id", currentBranchAssignment.branch_id);
     applicationQuery = applicationQuery.eq("branch_id", currentBranchAssignment.branch_id);
+    if (revenueQuery) revenueQuery = revenueQuery.eq("branch_id", currentBranchAssignment.branch_id);
   }
 
+  const requests = [enrollmentQuery, applicationQuery];
+  if (revenueQuery) requests.push(revenueQuery);
   const [
     { data, error },
-    { data: profileApplications, error: profileError }
-  ] = await Promise.all([enrollmentQuery, applicationQuery]);
+    { data: profileApplications, error: profileError },
+    revenueResult
+  ] = await Promise.all(requests);
   studentManagementLoadingState.hidden = true;
-  if (error || profileError) {
-    showToast(`โหลดรายชื่อนักเรียนไม่สำเร็จ: ${(error || profileError).message}`, true);
+  if (error || profileError || revenueResult?.error) {
+    showToast(`โหลดรายชื่อนักเรียนไม่สำเร็จ: ${(error || profileError || revenueResult.error).message}`, true);
     studentManagementRows.innerHTML = "";
     studentManagementEmptyState.hidden = false;
     return;
   }
+  studentRevenueEvents = revenueResult?.data || [];
 
   const enrollmentRows = (data || []).filter((enrollment) => {
     const app = getStudentApplication(enrollment);

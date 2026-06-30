@@ -3906,12 +3906,104 @@ tbody tr:hover td {
   font-size: 34px;
 }
 
+.student-management-course-ledger {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.student-ledger {
+  border: 1px solid #e8decf;
+  border-radius: 16px;
+  padding: 12px;
+  background: linear-gradient(135deg, #fffdf8, #fbf7ef);
+}
+
+.student-ledger.is-empty {
+  border-style: dashed;
+  background: #fffaf2;
+}
+
+.student-ledger-heading {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.student-ledger-heading strong {
+  color: #4d3b31;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.student-ledger-heading span,
+.student-ledger-more {
+  color: #8d7b70;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.student-ledger ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.student-ledger li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  border-top: 1px solid rgba(232, 222, 207, .78);
+  padding-top: 8px;
+}
+
+.student-ledger li strong,
+.student-ledger li span,
+.student-ledger li small {
+  display: block;
+}
+
+.student-ledger li strong {
+  overflow: hidden;
+  color: #4d3b31;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-ledger li span,
+.student-ledger li small {
+  color: #806f63;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.student-ledger li b {
+  display: block;
+  color: #4f7d48;
+  font-size: 14px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.student-ledger li em {
+  margin-top: 4px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
 @media (max-width: 1380px) {
   .student-management-card {
     grid-template-columns: minmax(300px, 1fr) minmax(200px, .7fr);
   }
 
-  .student-management-courses,
+  .student-management-course-ledger,
   .student-management-actions {
     grid-column: 1 / -1;
   }
@@ -3930,7 +4022,7 @@ tbody tr:hover td {
     grid-template-columns: 1fr;
   }
 
-  .student-management-courses,
+  .student-management-course-ledger,
   .student-management-actions {
     grid-column: auto;
   }
