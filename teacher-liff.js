@@ -579,6 +579,25 @@ function drawPanel(ctx, x, y, width, height, fill = "#ffffff", stroke = "#eadccb
   ctx.stroke();
 }
 
+function drawCoverImage(ctx, image, x, y, width, height) {
+  const imageRatio = image.width / image.height;
+  const targetRatio = width / height;
+  let sourceWidth = image.width;
+  let sourceHeight = image.height;
+  let sourceX = 0;
+  let sourceY = 0;
+
+  if (imageRatio > targetRatio) {
+    sourceWidth = image.height * targetRatio;
+    sourceX = (image.width - sourceWidth) / 2;
+  } else {
+    sourceHeight = image.width / targetRatio;
+    sourceY = (image.height - sourceHeight) / 2;
+  }
+
+  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+}
+
 async function loadCanvasImage(url) {
   if (!url) return null;
   return new Promise((resolve) => {
@@ -599,6 +618,69 @@ async function drawShareCard(data) {
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#FAF6EF";
   ctx.fillRect(0, 0, width, height);
+
+  if (data.mode === "session") {
+    ctx.fillStyle = "#EFF8EA";
+    roundedRect(ctx, 42, 42, 996, 210, 42);
+    ctx.fill();
+
+    if (logo) ctx.drawImage(logo, 78, 78, 245, 76);
+
+    ctx.fillStyle = "#E98567";
+    ctx.font = "900 28px Kanit, sans-serif";
+    ctx.fillText("AFTER CLASS", 78, 198);
+
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "900 58px Kanit, sans-serif";
+    ctx.fillText("สรุปหลังเรียน", 384, 112);
+    ctx.font = "900 66px Kanit, sans-serif";
+    wrapText(ctx, data.childLabel, 384, 192, 545, 68, 1);
+
+    drawPanel(ctx, 82, 290, 916, 310, "#ffffff", "#eadccb");
+    ctx.save();
+    roundedRect(ctx, 104, 312, 872, 266, 24);
+    ctx.clip();
+    if (photo) {
+      drawCoverImage(ctx, photo, 104, 312, 872, 266);
+    } else {
+      ctx.fillStyle = "#F3EDE3";
+      ctx.fillRect(104, 312, 872, 266);
+      ctx.fillStyle = "#8A7668";
+      ctx.font = "800 34px Kanit, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("บันทึกบรรยากาศการเรียน", width / 2, 452);
+      ctx.textAlign = "start";
+    }
+    ctx.restore();
+
+    drawPanel(ctx, 82, 630, 916, 188, "#ffffff", "#9BBE86");
+    ctx.fillStyle = "#4F7D48";
+    ctx.font = "900 38px Kanit, sans-serif";
+    wrapText(ctx, `${data.courseIcon} ${data.courseName}`, 128, 694, 590, 44, 1);
+    ctx.fillStyle = "#F05B3E";
+    ctx.font = "900 42px Kanit, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText(data.accentLine, 938, 694);
+    ctx.textAlign = "start";
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "800 34px Kanit, sans-serif";
+    wrapText(ctx, data.primaryLine || "กิจกรรมสร้างสรรค์", 128, 760, 760, 42, 1);
+
+    drawPanel(ctx, 82, 846, 916, 150, "#ffffff", "#eadccb");
+    ctx.fillStyle = "#8A7668";
+    ctx.font = "800 34px Kanit, sans-serif";
+    ctx.fillText("คอมเมนต์คุณครู", 128, 900);
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "800 34px Kanit, sans-serif";
+    wrapText(ctx, data.note, 128, 950, 805, 38, 1);
+
+    ctx.fillStyle = "#6EA154";
+    ctx.font = "900 28px Kanit, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Toko & Poppy", width / 2, 1040);
+    ctx.textAlign = "start";
+    return;
+  }
 
   if (logo) ctx.drawImage(logo, 72, 58, 332, 104);
   ctx.fillStyle = "#F3BE38";
