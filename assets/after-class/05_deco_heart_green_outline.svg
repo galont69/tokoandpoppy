@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Green outline heart</title>
+  <desc id="desc">A cute green outline heart decoration.</desc>
+  <path d="M128 213s-77-42-93-103c-9-34 7-66 40-70 24-3 42 12 53 30 11-18 29-33 53-30 33 4 49 36 40 70-16 61-93 103-93 103z" fill="none" stroke="#6BA65E" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M62 91c3-13 13-23 27-25" stroke="#A8D69C" stroke-width="10" stroke-linecap="round" opacity="0.9"/>
+</svg>

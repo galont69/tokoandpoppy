@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Yellow doodle star</title>
+  <desc id="desc">A soft yellow hand-drawn star decoration.</desc>
+  <path d="M130 24c9 29 17 54 25 75 24 1 49 2 73 5-18 18-37 35-56 51 7 24 14 48 21 73-22-14-43-28-64-44-21 15-43 29-67 41 8-23 17-47 27-70-20-17-39-34-57-52 26-2 51-3 75-4 7-22 15-47 23-75z" fill="#FFD250" stroke="#F0B93B" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M82 105c12-4 24-6 36-7M129 60c3 12 7 24 11 35M158 158c8 15 15 30 21 45" stroke="#FFF2AA" stroke-width="9" stroke-linecap="round" opacity="0.7"/>
+</svg>

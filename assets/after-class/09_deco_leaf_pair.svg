@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" role="img" aria-labelledby="title desc">
+  <title id="title">Leaf pair decoration</title>
+  <desc id="desc">Two small green leaves with a soft curved stem.</desc>
+  <path d="M99 83c43-39 99-53 161-31" fill="none" stroke="#6BA65E" stroke-width="9" stroke-linecap="round" opacity="0.75"/>
+  <path d="M132 72c-35 8-57-12-68-47 42-1 66 16 68 47z" fill="#6BA65E"/>
+  <path d="M206 57c34-11 61 5 77 37-41 6-68-8-77-37z" fill="#6BA65E"/>
+  <path d="M92 48c16 9 27 17 36 25M238 76c-12-7-23-12-32-18" fill="none" stroke="#A8D69C" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
+</svg>

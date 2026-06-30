@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Orange filled heart</title>
+  <desc id="desc">A warm orange heart decoration with a subtle highlight.</desc>
+  <path d="M128 221s-82-47-99-108c-10-37 9-70 44-72 25-2 43 15 55 36 12-21 30-38 55-36 35 2 54 35 44 72-17 61-99 108-99 108z" fill="#F47E5F" stroke="#ED6E50" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M64 89c5-13 16-21 31-22" stroke="#FFC2B4" stroke-width="10" stroke-linecap="round" opacity="0.75"/>
+</svg>

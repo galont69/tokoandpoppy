@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Green spark marks</title>
+  <desc id="desc">Three soft green spark marks for decoration.</desc>
+  <g fill="none" stroke="#6BA65E" stroke-width="20" stroke-linecap="round">
+    <path d="M72 116 26 89"/>
+    <path d="M95 82 77 27"/>
+    <path d="M105 143 44 154"/>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 720" role="img" aria-labelledby="title desc">
+  <title id="title">Student photo placeholder</title>
+  <desc id="desc">A square placeholder for uploading a student photo.</desc>
+  <rect width="720" height="720" rx="56" fill="#FFFFFF"/>
+  <rect x="28" y="28" width="664" height="664" rx="46" fill="#FFFDF9" stroke="#E8D8C7" stroke-width="8"/>
+  <rect x="58" y="58" width="604" height="604" rx="36" fill="#FBF7F0" stroke="#F2D4BC" stroke-width="6" stroke-dasharray="22 16"/>
+  <g transform="translate(238 190)">
+    <rect x="0" y="55" width="244" height="170" rx="36" fill="#EAF7E8" stroke="#8CC47E" stroke-width="10"/>
+    <path d="M72 55l20-33c7-12 20-19 34-19h38c14 0 27 7 34 19l20 33" fill="#EAF7E8" stroke="#8CC47E" stroke-width="10" stroke-linejoin="round"/>
+    <circle cx="122" cy="140" r="52" fill="#FFFFFF" stroke="#6BA65E" stroke-width="10"/>
+    <circle cx="122" cy="140" r="24" fill="#8CC47E"/>
+    <circle cx="51" cy="91" r="16" fill="#FFD250"/>
+  </g>
+  <g font-family="Noto Sans Thai, LINE Seed Sans TH, sans-serif" text-anchor="middle">
+    <text x="360" y="486" font-size="43" font-weight="800" fill="#4F8A49">เพิ่มรูปนักเรียน</text>
+    <text x="360" y="544" font-size="28" font-weight="600" fill="#8A776A">ครอปเป็นสี่เหลี่ยม 1:1</text>
+  </g>
+  <path d="M165 138c-20-18-42-18-57-2-15 16-11 40 7 58 16 16 50 35 50 35s34-19 50-35c18-18 22-42 7-58-15-16-37-16-57 2z" fill="none" stroke="#F48BA0" stroke-width="13" stroke-linejoin="round" opacity="0.75"/>
+  <path d="M555 131c19-19 38-37 59-55M574 73c8 32 16 64 23 97" fill="none" stroke="#FFD250" stroke-width="13" stroke-linecap="round" opacity="0.8"/>
+  <path d="M123 592c33-22 68-34 106-36M173 533c18 24 38 44 62 60" fill="none" stroke="#6BA65E" stroke-width="12" stroke-linecap="round" opacity="0.75"/>
+</svg>

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 160" role="img" aria-labelledby="title desc">
+  <title id="title">Green squiggle decoration</title>
+  <desc id="desc">A playful green squiggle line decoration.</desc>
+  <path d="M38 107c45-45 80-73 106-78 19-4 26 5 16 20-11 18-39 41-54 59 53-37 93-56 120-58 24-2 30 12 14 29-14 15-43 30-69 47 41-18 79-26 112-21" fill="none" stroke="#6BA65E" stroke-width="18" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
