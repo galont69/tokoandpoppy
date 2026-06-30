@@ -79,6 +79,9 @@ const refreshBranchAdminsButton = document.querySelector("#refreshBranchAdminsBu
 const teacherInviteForm = document.querySelector("#teacherInviteForm");
 const teacherInviteBranch = document.querySelector("#teacherInviteBranch");
 const teacherInviteRows = document.querySelector("#teacherInviteRows");
+const teacherLiffRows = document.querySelector("#teacherLiffRows");
+const teacherLiffLinkText = document.querySelector("#teacherLiffLinkText");
+const copyTeacherLiffLinkButton = document.querySelector("#copyTeacherLiffLinkButton");
 const refreshTeacherInvitesButton = document.querySelector("#refreshTeacherInvitesButton");
 const branchTeacherPendingBadge = document.querySelector("#branchTeacherPendingBadge");
 const learningProgressRows = document.querySelector("#learningProgressRows");
@@ -211,6 +214,7 @@ let currentAdminProfile = null;
 let currentBranchAssignment = null;
 let branchAdminApplications = [];
 let branchTeacherInvitations = [];
+let teacherLiffApplications = [];
 let signupBranchesLoaded = false;
 let branches = [];
 let coursePricing = [];
@@ -1142,7 +1146,7 @@ function showAdminView(viewName) {
   if (viewName === "students") loadStudentManagement();
   if (viewName === "classReminders") loadClassReminders();
   if (viewName === "branchRevenue") loadBranchRevenue();
-  if (viewName === "branchStaff") loadBranchTeacherInvitations();
+  if (viewName === "branchStaff") loadBranchStaffView();
   if (viewName === "branches") loadBranchesAdmin();
   if (viewName === "progress") loadLearningProgress();
   if (viewName === "lessons") loadRobotLessons();
@@ -5131,10 +5135,22 @@ function getTeacherInviteLink(invitation) {
   return `${window.location.origin}${basePath}?invite=${encodeURIComponent(invitation.invite_code)}`;
 }
 
+function getTeacherLiffLink() {
+  const basePath = window.location.pathname.replace(/admin\.html$/, "teacher-liff.html");
+  return `${window.location.origin}${basePath}`;
+}
+
+function updateTeacherLiffLink() {
+  if (teacherLiffLinkText) teacherLiffLinkText.textContent = getTeacherLiffLink();
+}
+
 function updateBranchTeacherBadge() {
   if (!branchTeacherPendingBadge) return;
-  const pending = branchTeacherInvitations
+  const invitationPending = branchTeacherInvitations
     .filter((invitation) => invitation.status === "pending").length;
+  const liffPending = teacherLiffApplications
+    .filter((application) => application.status === "pending").length;
+  const pending = invitationPending + liffPending;
   branchTeacherPendingBadge.textContent = pending;
 }
 
@@ -5171,6 +5187,14 @@ async function loadBranchTeacherInvitations() {
   branchTeacherInvitations = data || [];
   updateBranchTeacherBadge();
   renderBranchTeacherInvitations();
+}
+
+async function loadBranchStaffView() {
+  updateTeacherLiffLink();
+  await Promise.allSettled([
+    loadBranchTeacherInvitations(),
+    loadTeacherLiffApplications()
+  ]);
 }
 
 function renderBranchTeacherInvitations() {
@@ -5252,6 +5276,135 @@ function renderBranchTeacherInvitations() {
   }).join("");
 }
 
+async function loadTeacherLiffApplications() {
+  if (!canManageBranchStaff() || !teacherLiffRows) return;
+  updateTeacherLiffLink();
+  teacherLiffRows.innerHTML =
+    '<div class="loading-state"><i></i><span>กำลังโหลดคำขอจาก LINE...</span></div>';
+
+  let query = supabaseClient
+    .from("teacher_liff_profiles")
+    .select("*, branches(name, code)")
+    .order("submitted_at", { ascending: false });
+
+  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+    query = query.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    teacherLiffApplications = [];
+    updateBranchTeacherBadge();
+    teacherLiffRows.innerHTML = `
+      <div class="empty-state">
+        <div>📱</div>
+        <h3>ยังโหลดคำขอ LINE LIFF ไม่ได้</h3>
+        <p>กรุณารันไฟล์ SQL: supabase-teacher-liff-portal.sql</p>
+        <small>${escapeHtml(error.message)}</small>
+      </div>
+    `;
+    return;
+  }
+
+  teacherLiffApplications = data || [];
+  updateBranchTeacherBadge();
+  renderTeacherLiffApplications();
+}
+
+function renderTeacherLiffApplications() {
+  if (!teacherLiffRows) return;
+  if (!teacherLiffApplications.length) {
+    teacherLiffRows.innerHTML = `
+      <div class="empty-state">
+        <div>📱</div>
+        <h3>ยังไม่มีครูสมัครจาก LINE</h3>
+        <p>ส่งลิงก์ teacher-liff.html หรือใส่ใน Rich Menu ของ LINE OA ให้ครูกดสมัคร</p>
+      </div>
+    `;
+    return;
+  }
+
+  const statusText = {
+    pending: "รออนุมัติ",
+    approved: "เปิดสิทธิ์แล้ว",
+    rejected: "ไม่อนุมัติ",
+    suspended: "พักสิทธิ์"
+  };
+
+  teacherLiffRows.innerHTML = teacherLiffApplications.map((application) => {
+    const branchText = application.branches?.name
+      ? `${application.branches.name}${application.branches.code ? ` (${application.branches.code})` : ""}`
+      : "ไม่พบสาขา";
+    const cardStatus = application.status === "approved"
+      ? "approved"
+      : application.status === "rejected" || application.status === "suspended"
+        ? "rejected"
+        : "pending";
+    const isPending = application.status === "pending";
+    return `
+      <article class="branch-admin-request-card ${cardStatus}">
+        <div>
+          <span class="status-pill ${cardStatus}">${statusText[application.status] || application.status}</span>
+          <h3>${escapeHtml(application.teacher_name || application.line_display_name || "ครูจาก LINE")}</h3>
+          <p>
+            LINE: ${escapeHtml(application.line_display_name || "-")}
+            ${application.teacher_phone ? ` · ${escapeHtml(application.teacher_phone)}` : ""}
+          </p>
+          <div class="request-meta">
+            <span>🏫 ${escapeHtml(branchText)}</span>
+            <span>สมัครเมื่อ ${formatDate(application.submitted_at || application.created_at)}</span>
+            ${application.last_seen_at ? `<span>เปิดล่าสุด ${formatDate(application.last_seen_at)}</span>` : ""}
+          </div>
+          <small>LINE user id: ${escapeHtml(application.line_user_id || "-")}</small>
+          ${application.rejection_reason ? `<small>เหตุผล: ${escapeHtml(application.rejection_reason)}</small>` : ""}
+        </div>
+        <div class="branch-admin-request-actions">
+          ${isPending ? `
+            <button class="reject-button" type="button"
+              data-teacher-liff-review="${application.id}" data-decision="rejected">
+              ไม่อนุมัติ
+            </button>
+            <button class="approve-button" type="button"
+              data-teacher-liff-review="${application.id}" data-decision="approved">
+              อนุมัติ LIFF ครู
+            </button>
+          ` : application.status === "approved" ? `
+            <button class="reject-button" type="button"
+              data-teacher-liff-review="${application.id}" data-decision="suspended">
+              พักสิทธิ์
+            </button>
+          ` : `<strong>${statusText[application.status] || application.status}</strong>`}
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function reviewTeacherLiffApplication(profileId, decision) {
+  if (!canManageBranchStaff()) return;
+  let rejectionReasonText = null;
+  if (decision === "rejected") {
+    rejectionReasonText = window.prompt("ระบุเหตุผลที่ไม่อนุมัติครูจาก LINE") || "";
+    if (!rejectionReasonText.trim()) return;
+  }
+
+  const { error } = await supabaseClient.rpc("review_teacher_liff_application", {
+    p_profile_id: profileId,
+    p_decision: decision,
+    p_rejection_reason: rejectionReasonText?.trim() || null
+  });
+
+  if (error) {
+    showToast(`บันทึกคำขอครูจาก LINE ไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  showToast(decision === "approved"
+    ? "อนุมัติครูจาก LINE เรียบร้อย"
+    : "บันทึกสถานะครูจาก LINE แล้ว");
+  await loadTeacherLiffApplications();
+}
+
 async function createTeacherInvitation(event) {
   event.preventDefault();
   if (!canManageBranchStaff()) return;
@@ -5291,7 +5444,7 @@ async function createTeacherInvitation(event) {
   }
   const link = getTeacherInviteLink(data);
   showToast("สร้างลิงก์เชิญครูเรียบร้อย");
-  await loadBranchTeacherInvitations();
+  await loadBranchStaffView();
   copyTextToClipboard(link, "คัดลอกลิงก์เชิญครูแล้ว");
 }
 
@@ -5317,7 +5470,7 @@ async function reviewBranchTeacherInvitation(invitationId, decision) {
   showToast(decision === "approved"
     ? "อนุมัติครูเรียบร้อย"
     : "บันทึกสถานะครูแล้ว");
-  await loadBranchTeacherInvitations();
+  await loadBranchStaffView();
 }
 
 function copyTextToClipboard(text, successMessage = "คัดลอกแล้ว") {
@@ -7137,7 +7290,7 @@ branchAdminRows.addEventListener("click", (event) => {
   reviewBranchAdminApplication(button.dataset.branchAdminReview, button.dataset.decision);
 });
 teacherInviteForm?.addEventListener("submit", createTeacherInvitation);
-refreshTeacherInvitesButton?.addEventListener("click", loadBranchTeacherInvitations);
+refreshTeacherInvitesButton?.addEventListener("click", loadBranchStaffView);
 teacherInviteRows?.addEventListener("click", (event) => {
   const reviewButton = event.target.closest("[data-teacher-review]");
   if (reviewButton) {
@@ -7148,6 +7301,14 @@ teacherInviteRows?.addEventListener("click", (event) => {
   if (!copyButton) return;
   const invitation = branchTeacherInvitations.find((item) => item.id === copyButton.dataset.copyTeacherInvite);
   if (invitation) copyTextToClipboard(getTeacherInviteLink(invitation), "คัดลอกลิงก์เชิญครูแล้ว");
+});
+teacherLiffRows?.addEventListener("click", (event) => {
+  const reviewButton = event.target.closest("[data-teacher-liff-review]");
+  if (!reviewButton) return;
+  reviewTeacherLiffApplication(reviewButton.dataset.teacherLiffReview, reviewButton.dataset.decision);
+});
+copyTeacherLiffLinkButton?.addEventListener("click", () => {
+  copyTextToClipboard(getTeacherLiffLink(), "คัดลอกลิงก์ LIFF ครูแล้ว");
 });
 refreshLearningButton?.addEventListener("click", loadLearningProgress);
 refreshStudentsButton?.addEventListener("click", loadStudentManagement);
