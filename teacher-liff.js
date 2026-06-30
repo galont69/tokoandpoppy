@@ -897,8 +897,16 @@ async function saveSession() {
   }
   setSessionSavingState(true, "กำลังบันทึกหลังเรียน...");
   try {
-    if (sessionPhotoInput.files?.[0]) setSheetStatus("กำลังอัปโหลดรูปผลงาน...");
-    const photoPath = await uploadLearningPhoto(activeSessionEnrollment.id);
+    let photoPath = null;
+    if (sessionPhotoInput.files?.[0]) {
+      setSheetStatus("กำลังอัปโหลดรูปผลงาน...");
+      try {
+        photoPath = await uploadLearningPhoto(activeSessionEnrollment.id);
+      } catch (uploadError) {
+        setSheetStatus("อัปโหลดรูปไม่สำเร็จ กำลังบันทึกข้อมูลโดยไม่แนบรูป...");
+        console.warn("Learning photo upload failed", uploadError);
+      }
+    }
     setSheetStatus("กำลังบันทึกข้อมูลครั้งเรียน...");
     const { error } = await supabaseClient.rpc("record_teacher_liff_session", {
       p_line_user_id: lineUserId,
