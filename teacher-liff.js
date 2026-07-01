@@ -1035,6 +1035,31 @@ function drawWowPill(ctx, x, y, width, height, text, options = {}) {
   ctx.restore();
 }
 
+function drawWowInfoPill(ctx, x, y, width, height, icon, text, options = {}) {
+  ctx.save();
+  ctx.save();
+  ctx.shadowColor = "rgba(74, 55, 46, 0.08)";
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = options.fill || "#FFFFFF";
+  roundedRect(ctx, x, y, width, height, height / 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = options.stroke || "#DFBF9F";
+  ctx.lineWidth = 2;
+  roundedRect(ctx, x, y, width, height, height / 2);
+  ctx.stroke();
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "start";
+  ctx.fillStyle = options.iconColor || options.color || "#5E4A3E";
+  ctx.font = options.iconFont || "900 32px 'Apple Color Emoji', Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText(icon, x + 34, y + height / 2 + 1);
+  ctx.fillStyle = options.color || "#5E4A3E";
+  ctx.font = options.font || "900 26px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText(truncateCanvasText(ctx, text, width - 100), x + 78, y + height / 2 + 1);
+  ctx.restore();
+}
+
 function drawWowPhoto(ctx, photo, placeholder, x, y, width, height) {
   ctx.save();
   ctx.translate(x + width / 2, y + height / 2);
@@ -1060,7 +1085,7 @@ function drawWowPhoto(ctx, photo, placeholder, x, y, width, height) {
   const photoX = 28;
   const photoY = 34;
   const photoW = width - 56;
-  const photoH = Math.round(photoW * 0.6);
+  const photoH = Math.min(Math.round(photoW * 0.66), height - 132);
   ctx.fillStyle = "#F5EFE4";
   roundedRect(ctx, photoX, photoY, photoW, photoH, 20);
   ctx.fill();
@@ -1077,13 +1102,13 @@ function drawWowPhoto(ctx, photo, placeholder, x, y, width, height) {
   }
 
   ctx.fillStyle = "#F47E5F";
-  roundedRect(ctx, 48, photoY + photoH + 24, width - 96, 54, 14);
+  roundedRect(ctx, 48, photoY + photoH + 24, width - 96, 56, 14);
   ctx.fill();
   ctx.fillStyle = "#FFFFFF";
-  ctx.font = "900 26px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.font = "900 29px Kanit, 'Noto Sans Thai', sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("ผลงานวันนี้", width / 2, photoY + photoH + 52);
+  ctx.fillText("ผลงานวันนี้", width / 2, photoY + photoH + 53);
   ctx.restore();
   ctx.textAlign = "start";
   ctx.textBaseline = "alphabetic";
@@ -1111,24 +1136,25 @@ function drawWowTitle(ctx, childLabel, x, y, maxWidth) {
 function drawWowBox(ctx, x, y, width, height, options = {}) {
   const fill = options.fill || "#FFFFFF";
   const stroke = options.stroke || "#E8D8C7";
+  const iconSize = options.iconSize || 64;
   drawCardShadow(ctx, x, y, width, height, 24, fill, stroke);
-  if (options.icon) drawCardImage(ctx, options.icon, x + 24, y + 24, 52, 52, 1, "contain");
-  const textX = options.icon ? x + 92 : x + 28;
-  const textWidth = width - (options.icon ? 124 : 56);
+  if (options.icon) drawCardImage(ctx, options.icon, x + 22, y + 20, iconSize, iconSize, 1, "contain");
+  const textX = options.icon ? x + iconSize + 36 : x + 28;
+  const textWidth = width - (options.icon ? iconSize + 68 : 56);
   ctx.fillStyle = options.accent || "#F05B3E";
-  ctx.font = options.titleFont || "900 29px Kanit, 'Noto Sans Thai', sans-serif";
-  ctx.fillText(options.title || "", textX, y + 46);
+  ctx.font = options.titleFont || "900 32px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText(options.title || "", textX, y + 48);
   ctx.fillStyle = options.color || "#4A372E";
-  ctx.font = options.bodyFont || "700 25px Kanit, 'Noto Sans Thai', sans-serif";
-  wrapCanvasTextByChar(ctx, options.text || "", textX, y + 86, textWidth, options.lineHeight || 34, options.maxLines || 3);
+  ctx.font = options.bodyFont || "700 27px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasTextByChar(ctx, options.text || "", textX, y + 90, textWidth, options.lineHeight || 36, options.maxLines || 3);
 }
 
 function drawWowStrengthPanel(ctx, choices = [], trophyIcon, x, y, width, height) {
   drawCardShadow(ctx, x, y, width, height, 26, "#F6FBF1", "#AED09F");
   ctx.fillStyle = "#4A372E";
-  ctx.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.font = "900 36px Kanit, 'Noto Sans Thai', sans-serif";
   ctx.fillText("สิ่งที่น้องทำได้ดี", x + 38, y + 58);
-  ctx.font = "900 30px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
   ctx.fillStyle = "#F3BE38";
   ctx.fillText("✦", x + 268, y + 58);
 
@@ -1155,10 +1181,10 @@ function drawWowStrengthPanel(ctx, choices = [], trophyIcon, x, y, width, height
     roundedRect(ctx, chip.x, chip.y, chip.w, 44, 14);
     ctx.stroke();
     ctx.fillStyle = "#4A372E";
-    ctx.font = "800 21px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText(`${choice.icon || "⭐"} ${truncateCanvasText(ctx, choice.text || choice, chip.w - 76)}`, chip.x + 18, chip.y + 30);
+    ctx.font = "800 23px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText(`${choice.icon || "⭐"} ${truncateCanvasText(ctx, choice.text || choice, chip.w - 82)}`, chip.x + 18, chip.y + 30);
   });
-  drawCardImage(ctx, trophyIcon, x + width - 172, y + 112, 124, 124, 0.94, "contain");
+  drawCardImage(ctx, trophyIcon, x + width - 184, y + 100, 148, 148, 0.94, "contain");
 }
 
 function drawWowProgress(ctx, completed, total, x, y, width, height) {
@@ -1390,7 +1416,6 @@ async function drawShareCard(data) {
       lightIcon,
       smileIcon,
       tapeIcon,
-      robotIcon,
       trophyIcon
     ] = await Promise.all([
       loadCanvasImage(afterClassWowAssets.logoWord),
@@ -1404,7 +1429,6 @@ async function drawShareCard(data) {
       loadCanvasImage(afterClassWowAssets.icons.light),
       loadCanvasImage(afterClassWowAssets.icons.smile),
       loadCanvasImage(afterClassWowAssets.icons.tape),
-      loadCanvasImage(afterClassWowAssets.icons.robot),
       loadCanvasImage(afterClassWowAssets.icons.trophy)
     ]);
     const childLabel = String(data.childLabel || "น้อง").replace(/^น้อง/, "").slice(0, 14);
@@ -1419,27 +1443,27 @@ async function drawShareCard(data) {
     const displayTotal = totalSessions || Math.max(sessionNumber, completed, 4);
 
     drawWowBackground(ctx, width, height);
-    drawCardImage(ctx, starIcon, 490, 64, 72, 72, 0.86, "contain");
-    drawCardImage(ctx, heartIcon, 980, 132, 74, 74, 0.58, "contain");
-    drawCardImage(ctx, blinkIcon, 42, 180, 58, 58, 0.72, "contain");
+    drawCardImage(ctx, starIcon, 486, 62, 88, 88, 0.86, "contain");
+    drawCardImage(ctx, heartIcon, 968, 132, 92, 92, 0.58, "contain");
+    drawCardImage(ctx, blinkIcon, 36, 178, 72, 72, 0.72, "contain");
 
-    drawCardImage(ctx, cardLogo, 54, 44, 166, 62, 1, "contain");
-    drawWowPill(ctx, 476, 36, 250, 64, `📅 ${formatThaiDate(data.sessionDate)}`, {
-      fill: "#FFFFFF",
-      stroke: "#DFBF9F",
+    drawCardImage(ctx, cardLogo, 54, 44, 184, 70, 1, "contain");
+    drawWowInfoPill(ctx, 466, 34, 266, 70, "📅", formatThaiDate(data.sessionDate), {
       color: "#4F7D48",
-      font: "900 25px Kanit, 'Noto Sans Thai', sans-serif"
+      iconColor: "#8A6E5F",
+      iconFont: "900 32px 'Apple Color Emoji', Kanit, 'Noto Sans Thai', sans-serif",
+      font: "900 27px Kanit, 'Noto Sans Thai', sans-serif"
     });
-    drawWowPill(ctx, 754, 36, 274, 64, `📍 ${data.branchName ? `สาขา ${data.branchName}` : "Toko & Poppy"}`, {
-      fill: "#FFFFFF",
-      stroke: "#DFBF9F",
+    drawWowInfoPill(ctx, 754, 34, 286, 70, "📍", data.branchName ? `สาขา ${data.branchName}` : "Toko & Poppy", {
       color: "#5E4A3E",
-      font: "900 25px Kanit, 'Noto Sans Thai', sans-serif"
+      iconColor: "#D95342",
+      iconFont: "900 31px 'Apple Color Emoji', Kanit, 'Noto Sans Thai', sans-serif",
+      font: "900 27px Kanit, 'Noto Sans Thai', sans-serif"
     });
 
-    drawWowPhoto(ctx, photo, placeholderIcon, 74, 218, 438, 386);
-    drawCardImage(ctx, tapeIcon, 382, 188, 98, 54, 0.78, "contain");
-    drawCardImage(ctx, toko, 384, 528, 142, 142, 1, "contain");
+    drawWowPhoto(ctx, photo, placeholderIcon, 66, 174, 466, 430);
+    drawCardImage(ctx, tapeIcon, 382, 164, 116, 64, 0.78, "contain");
+    drawCardImage(ctx, toko, 386, 518, 160, 160, 1, "contain");
     drawWowTitle(ctx, `น้อง${childLabel}`, 548, 242, 444);
 
     drawWowBox(ctx, 548, 424, 460, 178, {
@@ -1449,34 +1473,38 @@ async function drawShareCard(data) {
       fill: "#FFFFFF",
       stroke: "#E8D8C7",
       accent: "#4F8B37",
+      iconSize: 68,
+      bodyFont: "700 26px Kanit, 'Noto Sans Thai', sans-serif",
       maxLines: 3,
       lineHeight: 33
     });
 
-    drawWowBox(ctx, 72, 632, 936, 188, {
+    drawWowBox(ctx, 72, 624, 936, 188, {
       icon: lightIcon,
       title: "ข้อความจากคุณครู",
       text: teacherNote,
       fill: "#FFFFFF",
       stroke: "#F1DEC8",
       accent: "#F05B3E",
+      iconSize: 72,
       maxLines: 3,
       lineHeight: 35
     });
 
-    drawWowStrengthPanel(ctx, strengthChoices, trophyIcon, 72, 838, 936, 248);
+    drawWowStrengthPanel(ctx, strengthChoices, trophyIcon, 72, 834, 936, 248);
 
     drawWowProgress(ctx, completed || sessionNumber, displayTotal, 72, 1106, 936, 122);
-    if (data.courseType === "robot") drawCardImage(ctx, robotIcon, 38, 1134, 86, 86, 0.9, "contain");
     drawCardImage(ctx, pair, 904, 1210, 108, 72, 1, "contain");
 
     ctx.fillStyle = "#4A372E";
     ctx.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("เก่งขึ้นทุกครั้งเลยนะ เก็บผลงานวันนี้ไว้เป็นกำลังใจ", width / 2, 1288);
+    ctx.fillText("เก่งขึ้นทุกครั้งเลยนะ", width / 2, 1274);
+    ctx.font = "800 30px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("เก็บผลงานวันนี้ไว้เป็นกำลังใจ", width / 2, 1306);
     ctx.fillStyle = "#6EA154";
     ctx.font = "900 24px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("Toko & Poppy", width / 2, 1324);
+    ctx.fillText("Toko & Poppy", width / 2, 1334);
     ctx.textAlign = "start";
     return;
   }
