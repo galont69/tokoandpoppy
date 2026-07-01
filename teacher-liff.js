@@ -54,6 +54,10 @@ const lessonTitleInput = document.querySelector("#lessonTitleInput");
 const teacherCommentInput = document.querySelector("#teacherCommentInput");
 const sessionPhotoInput = document.querySelector("#sessionPhotoInput");
 const photoPreview = document.querySelector("#photoPreview");
+const lessonTitleCounter = document.querySelector("#lessonTitleCounter");
+const teacherCommentCounter = document.querySelector("#teacherCommentCounter");
+const strengthChoiceCounter = document.querySelector("#strengthChoiceCounter");
+const strengthChoiceGroup = document.querySelector("#strengthChoiceGroup");
 const recordConfirmActions = document.querySelector("#recordConfirmActions");
 const copySessionDraftButton = document.querySelector("#copySessionDraftButton");
 const saveSessionButton = document.querySelector("#saveSessionButton");
@@ -80,8 +84,14 @@ let activeCroppedPhotoBlob = null;
 let activeCroppedPhotoName = "";
 let pendingSessionInput = null;
 let cropState = null;
+let selectedStrengthChoices = [];
 
 const weekdayLabels = ["วันอาทิตย์", "วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์"];
+const sessionFieldLimits = {
+  lessonTitle: 64,
+  teacherComment: 115,
+  strengthChoices: 5
+};
 const courseMeta = {
   robot: { label: "โรบอท + โค้ดดิ้ง", icon: "🤖", color: "#eaf7fa" },
   art: { label: "Creative Art", icon: "🎨", color: "#fff0e5" },
@@ -124,23 +134,69 @@ const sessionSummaryAssets = {
 
 const afterClassWowAssets = {
   version: "20260701-parent-wow-card",
+  logoWord: "assets/after-class-wow/logo%20word.svg?v=20260701-parent-wow-card",
   toko: "assets/after-class-wow/toko.png?v=20260701-parent-wow-card",
   poppy: "assets/after-class-wow/poppy.png?v=20260701-parent-wow-card",
   pair: "assets/after-class-wow/pair.png?v=20260701-parent-wow-card",
   icons: {
-    heart: "assets/after-class-wow/1.svg?v=20260701-parent-wow-card",
-    star: "assets/after-class-wow/2.svg?v=20260701-parent-wow-card",
-    sparkle: "assets/after-class-wow/4.svg?v=20260701-parent-wow-card",
-    light: "assets/after-class-wow/5.svg?v=20260701-parent-wow-card",
-    smile: "assets/after-class-wow/6.svg?v=20260701-parent-wow-card",
-    palette: "assets/after-class-wow/7.svg?v=20260701-parent-wow-card",
-    puzzle: "assets/after-class-wow/8.svg?v=20260701-parent-wow-card",
-    basket: "assets/after-class-wow/9.svg?v=20260701-parent-wow-card",
-    clay: "assets/after-class-wow/10.svg?v=20260701-parent-wow-card",
-    ear: "assets/after-class-wow/11.svg?v=20260701-parent-wow-card",
-    robot: "assets/after-class-wow/12.svg?v=20260701-parent-wow-card",
-    trophy: "assets/after-class-wow/13.svg?v=20260701-parent-wow-card"
+    basket: "assets/after-class-wow/basket.svg?v=20260701-parent-wow-card",
+    blink: "assets/after-class-wow/blink.svg?v=20260701-parent-wow-card",
+    clay: "assets/after-class-wow/clay.svg?v=20260701-parent-wow-card",
+    creativeArt: "assets/after-class-wow/creative%20art.svg?v=20260701-parent-wow-card",
+    ear: "assets/after-class-wow/ear.svg?v=20260701-parent-wow-card",
+    happy: "assets/after-class-wow/happy.svg?v=20260701-parent-wow-card",
+    heart: "assets/after-class-wow/heart.svg?v=20260701-parent-wow-card",
+    jigsaw: "assets/after-class-wow/jigsaw.svg?v=20260701-parent-wow-card",
+    light: "assets/after-class-wow/light.svg?v=20260701-parent-wow-card",
+    robot: "assets/after-class-wow/robot.svg?v=20260701-parent-wow-card",
+    star: "assets/after-class-wow/star.svg?v=20260701-parent-wow-card",
+    tape: "assets/after-class-wow/tape.svg?v=20260701-parent-wow-card",
+    trophy: "assets/after-class-wow/trophy.svg?v=20260701-parent-wow-card",
+    waterColor: "assets/after-class-wow/water%20color.svg?v=20260701-parent-wow-card"
   }
+};
+
+const strengthChoiceConfigs = {
+  robot: [
+    { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
+    { icon: "🧩", text: "ต่อชิ้นส่วนได้ถูกต้อง" },
+    { icon: "💡", text: "คิดและลองด้วยตนเอง" },
+    { icon: "🤖", text: "แก้ปัญหาเป็นขั้นตอน" },
+    { icon: "📦", text: "เก็บของเรียบร้อย" },
+    { icon: "😊", text: "มีความสุขในการเรียน" }
+  ],
+  creative_art: [
+    { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
+    { icon: "🎨", text: "เลือกสีได้มั่นใจ" },
+    { icon: "💡", text: "เล่าไอเดียของตัวเอง" },
+    { icon: "🧩", text: "ทำตามขั้นตอนได้ดี" },
+    { icon: "📦", text: "เก็บของเรียบร้อย" },
+    { icon: "😊", text: "มีความสุขในการเรียน" }
+  ],
+  art: [
+    { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
+    { icon: "🎨", text: "เลือกสีได้มั่นใจ" },
+    { icon: "💡", text: "เล่าไอเดียของตัวเอง" },
+    { icon: "🧩", text: "ทำตามขั้นตอนได้ดี" },
+    { icon: "📦", text: "เก็บของเรียบร้อย" },
+    { icon: "😊", text: "มีความสุขในการเรียน" }
+  ],
+  water_color: [
+    { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
+    { icon: "🎨", text: "คุมน้ำหนักสีได้ดี" },
+    { icon: "💡", text: "ลองผสมสีด้วยตนเอง" },
+    { icon: "🧩", text: "สังเกตรายละเอียดเก่ง" },
+    { icon: "📦", text: "เก็บของเรียบร้อย" },
+    { icon: "😊", text: "มีความสุขในการเรียน" }
+  ],
+  clay: [
+    { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
+    { icon: "🧱", text: "ควบคุมรูปทรงได้ดี" },
+    { icon: "💡", text: "ลองแก้ไขงานด้วยตนเอง" },
+    { icon: "🧩", text: "เก็บรายละเอียดตั้งใจ" },
+    { icon: "📦", text: "เก็บของเรียบร้อย" },
+    { icon: "😊", text: "มีความสุขในการเรียน" }
+  ]
 };
 
 function normalizeText(value) {
@@ -596,10 +652,68 @@ function buildSessionText(data) {
 
 function getSessionStrengthText(data = {}) {
   const courseType = data.courseType || data.course_type || "creative_art";
-  if (courseType === "robot") return "คิดเป็นขั้นตอน กล้าลองแก้ปัญหา และไม่ยอมแพ้ง่าย ๆ";
-  if (courseType === "clay") return "ควบคุมรูปทรงได้ดีขึ้น ใช้มืออย่างมั่นใจ และเก็บรายละเอียดตั้งใจมาก";
-  if (courseType === "water_color") return "คุมน้ำหนักสีได้ดี กล้าลองผสมสี และสังเกตรายละเอียดเก่งขึ้น";
-  return "กล้าเล่าไอเดีย เลือกสีอย่างมั่นใจ และตั้งใจทำผลงานจนเสร็จ";
+  const choices = Array.isArray(data.strengthChoices) && data.strengthChoices.length
+    ? data.strengthChoices
+    : getDefaultStrengthChoices(courseType);
+  return choices.map((choice) => choice.text || choice).filter(Boolean).join(" · ");
+}
+
+function getStrengthOptions(courseType = "creative_art") {
+  return strengthChoiceConfigs[courseType] || strengthChoiceConfigs.creative_art;
+}
+
+function getDefaultStrengthChoices(courseType = "creative_art") {
+  return getStrengthOptions(courseType).slice(0, sessionFieldLimits.strengthChoices);
+}
+
+function getSelectedStrengthText() {
+  return selectedStrengthChoices.map((choice) => choice.text).filter(Boolean).join(" · ");
+}
+
+function updateCharacterCounters() {
+  if (lessonTitleCounter && lessonTitleInput) {
+    lessonTitleCounter.textContent = `${Array.from(lessonTitleInput.value || "").length}/${sessionFieldLimits.lessonTitle}`;
+  }
+  if (teacherCommentCounter && teacherCommentInput) {
+    teacherCommentCounter.textContent = `${Array.from(teacherCommentInput.value || "").length}/${sessionFieldLimits.teacherComment}`;
+  }
+}
+
+function renderStrengthChoices(courseType = "creative_art") {
+  if (!strengthChoiceGroup) return;
+  const options = getStrengthOptions(courseType);
+  if (!selectedStrengthChoices.length) selectedStrengthChoices = getDefaultStrengthChoices(courseType);
+  const selectedTexts = new Set(selectedStrengthChoices.map((choice) => choice.text));
+  strengthChoiceGroup.innerHTML = options.map((choice) => {
+    const selected = selectedTexts.has(choice.text);
+    return `
+      <button class="strength-chip ${selected ? "is-selected" : ""}" type="button" data-strength-choice="${escapeHtml(choice.text)}">
+        <span>${escapeHtml(choice.icon)}</span>
+        <span>${escapeHtml(choice.text)}</span>
+      </button>
+    `;
+  }).join("");
+  updateStrengthChoiceCounter();
+}
+
+function updateStrengthChoiceCounter() {
+  if (!strengthChoiceCounter) return;
+  strengthChoiceCounter.textContent = `เลือกไว้ ${selectedStrengthChoices.length}/${sessionFieldLimits.strengthChoices}`;
+}
+
+function toggleStrengthChoice(text) {
+  const courseType = activeSessionEnrollment?.course_type || "creative_art";
+  const option = getStrengthOptions(courseType).find((choice) => choice.text === text);
+  if (!option) return;
+  const exists = selectedStrengthChoices.some((choice) => choice.text === text);
+  if (exists) {
+    selectedStrengthChoices = selectedStrengthChoices.filter((choice) => choice.text !== text);
+  } else if (selectedStrengthChoices.length < sessionFieldLimits.strengthChoices) {
+    selectedStrengthChoices = [...selectedStrengthChoices, option];
+  } else {
+    setMessage(`เลือกสิ่งที่น้องทำได้ดีได้สูงสุด ${sessionFieldLimits.strengthChoices} ข้อ`, true);
+  }
+  renderStrengthChoices(courseType);
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 4) {
@@ -1009,6 +1123,44 @@ function drawWowBox(ctx, x, y, width, height, options = {}) {
   wrapCanvasTextByChar(ctx, options.text || "", textX, y + 86, textWidth, options.lineHeight || 34, options.maxLines || 3);
 }
 
+function drawWowStrengthPanel(ctx, choices = [], trophyIcon, x, y, width, height) {
+  drawCardShadow(ctx, x, y, width, height, 26, "#F6FBF1", "#AED09F");
+  ctx.fillStyle = "#4A372E";
+  ctx.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText("สิ่งที่น้องทำได้ดี", x + 38, y + 58);
+  ctx.font = "900 30px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillStyle = "#F3BE38";
+  ctx.fillText("✦", x + 268, y + 58);
+
+  const chipLayout = [
+    { x: x + 38, y: y + 86, w: 278 },
+    { x: x + 340, y: y + 86, w: 308 },
+    { x: x + 38, y: y + 142, w: 278 },
+    { x: x + 340, y: y + 142, w: 308 },
+    { x: x + 38, y: y + 198, w: 340 }
+  ];
+  choices.slice(0, 5).forEach((choice, index) => {
+    const chip = chipLayout[index];
+    if (!chip) return;
+    ctx.save();
+    ctx.shadowColor = "rgba(74, 55, 46, 0.08)";
+    ctx.shadowBlur = 10;
+    ctx.shadowOffsetY = 5;
+    ctx.fillStyle = "#FFFFFF";
+    roundedRect(ctx, chip.x, chip.y, chip.w, 44, 14);
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = "#DDEBCF";
+    ctx.lineWidth = 2;
+    roundedRect(ctx, chip.x, chip.y, chip.w, 44, 14);
+    ctx.stroke();
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "800 21px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText(`${choice.icon || "⭐"} ${truncateCanvasText(ctx, choice.text || choice, chip.w - 76)}`, chip.x + 18, chip.y + 30);
+  });
+  drawCardImage(ctx, trophyIcon, x + width - 172, y + 112, 124, 124, 0.94, "contain");
+}
+
 function drawWowProgress(ctx, completed, total, x, y, width, height) {
   const safeTotal = Math.max(Number(total || 0), 1);
   const safeCompleted = Math.max(Math.min(Number(completed || 0), safeTotal), 0);
@@ -1219,6 +1371,13 @@ async function drawShareCard(data) {
   ctx.fillRect(0, 0, width, height);
 
   if (data.mode === "session") {
+    const wowCourseIconUrl = {
+      robot: afterClassWowAssets.icons.robot,
+      art: afterClassWowAssets.icons.creativeArt,
+      creative_art: afterClassWowAssets.icons.creativeArt,
+      water_color: afterClassWowAssets.icons.waterColor,
+      clay: afterClassWowAssets.icons.clay
+    }[data.courseType] || afterClassWowAssets.icons.creativeArt;
     const [
       cardLogo,
       courseIcon,
@@ -1227,55 +1386,59 @@ async function drawShareCard(data) {
       pair,
       heartIcon,
       starIcon,
-      sparkleIcon,
+      blinkIcon,
       lightIcon,
       smileIcon,
-      paletteIcon,
+      tapeIcon,
       robotIcon,
       trophyIcon
     ] = await Promise.all([
-      loadCanvasImage(sessionSummaryAssets.logo),
-      loadCanvasImage(sessionSummaryAssets.course[data.courseType] || sessionSummaryAssets.course.creative_art),
+      loadCanvasImage(afterClassWowAssets.logoWord),
+      loadCanvasImage(wowCourseIconUrl),
       loadCanvasImage(afterClassAssets.placeholder),
       loadCanvasImage(afterClassWowAssets.toko),
       loadCanvasImage(afterClassWowAssets.pair),
       loadCanvasImage(afterClassWowAssets.icons.heart),
       loadCanvasImage(afterClassWowAssets.icons.star),
-      loadCanvasImage(afterClassWowAssets.icons.sparkle),
+      loadCanvasImage(afterClassWowAssets.icons.blink),
       loadCanvasImage(afterClassWowAssets.icons.light),
       loadCanvasImage(afterClassWowAssets.icons.smile),
-      loadCanvasImage(afterClassWowAssets.icons.palette),
+      loadCanvasImage(afterClassWowAssets.icons.tape),
       loadCanvasImage(afterClassWowAssets.icons.robot),
       loadCanvasImage(afterClassWowAssets.icons.trophy)
     ]);
     const childLabel = String(data.childLabel || "น้อง").replace(/^น้อง/, "").slice(0, 14);
     const lessonTitle = data.lessonTitle || data.primaryLine || "กิจกรรมสร้างสรรค์";
     const teacherNote = data.teacherComment || data.note || "วันนี้ตั้งใจเรียนดีมาก เก็บผลงานไว้เป็นกำลังใจนะคะ/ครับ";
-    const strengthText = data.strengthText || getSessionStrengthText(data);
+    const strengthChoices = Array.isArray(data.strengthChoices) && data.strengthChoices.length
+      ? data.strengthChoices
+      : getDefaultStrengthChoices(data.courseType);
     const sessionNumber = Number(data.sessionNumber || 0);
     const totalSessions = Number(data.totalSessions || 0);
     const completed = Number(data.completedAfter || sessionNumber || 0);
     const displayTotal = totalSessions || Math.max(sessionNumber, completed, 4);
-    const branchAndDate = [
-      formatThaiDate(data.sessionDate),
-      data.branchName ? `สาขา ${data.branchName}` : ""
-    ].filter(Boolean).join(" · ");
 
     drawWowBackground(ctx, width, height);
     drawCardImage(ctx, starIcon, 490, 64, 72, 72, 0.86, "contain");
     drawCardImage(ctx, heartIcon, 980, 132, 74, 74, 0.58, "contain");
-    drawCardImage(ctx, sparkleIcon, 42, 180, 58, 58, 0.72, "contain");
-    drawCardImage(ctx, paletteIcon, 896, 512, 82, 82, 0.78, "contain");
+    drawCardImage(ctx, blinkIcon, 42, 180, 58, 58, 0.72, "contain");
 
-    drawCardImage(ctx, cardLogo, 48, 32, 172, 126, 1, "contain");
-    drawWowPill(ctx, 468, 52, 560, 64, branchAndDate || formatThaiDate(data.sessionDate), {
+    drawCardImage(ctx, cardLogo, 54, 44, 166, 62, 1, "contain");
+    drawWowPill(ctx, 476, 36, 250, 64, `📅 ${formatThaiDate(data.sessionDate)}`, {
       fill: "#FFFFFF",
       stroke: "#DFBF9F",
       color: "#4F7D48",
       font: "900 25px Kanit, 'Noto Sans Thai', sans-serif"
     });
+    drawWowPill(ctx, 754, 36, 274, 64, `📍 ${data.branchName ? `สาขา ${data.branchName}` : "Toko & Poppy"}`, {
+      fill: "#FFFFFF",
+      stroke: "#DFBF9F",
+      color: "#5E4A3E",
+      font: "900 25px Kanit, 'Noto Sans Thai', sans-serif"
+    });
 
     drawWowPhoto(ctx, photo, placeholderIcon, 74, 218, 438, 386);
+    drawCardImage(ctx, tapeIcon, 382, 188, 98, 54, 0.78, "contain");
     drawCardImage(ctx, toko, 384, 528, 142, 142, 1, "contain");
     drawWowTitle(ctx, `น้อง${childLabel}`, 548, 242, 444);
 
@@ -1290,7 +1453,7 @@ async function drawShareCard(data) {
       lineHeight: 33
     });
 
-    drawWowBox(ctx, 72, 652, 936, 194, {
+    drawWowBox(ctx, 72, 632, 936, 188, {
       icon: lightIcon,
       title: "ข้อความจากคุณครู",
       text: teacherNote,
@@ -1301,20 +1464,10 @@ async function drawShareCard(data) {
       lineHeight: 35
     });
 
-    drawWowBox(ctx, 72, 878, 936, 164, {
-      icon: smileIcon,
-      title: "สิ่งที่น้องทำได้ดี",
-      text: strengthText,
-      fill: "#FFF6E8",
-      stroke: "#F2CC92",
-      accent: "#D97735",
-      maxLines: 2,
-      lineHeight: 36
-    });
+    drawWowStrengthPanel(ctx, strengthChoices, trophyIcon, 72, 838, 936, 248);
 
-    drawWowProgress(ctx, completed || sessionNumber, displayTotal, 72, 1076, 936, 136);
-    drawCardImage(ctx, trophyIcon, 858, 1096, 86, 86, 0.9, "contain");
-    drawCardImage(ctx, robotIcon, 38, 1128, 94, 94, data.courseType === "robot" ? 0.92 : 0.28, "contain");
+    drawWowProgress(ctx, completed || sessionNumber, displayTotal, 72, 1106, 936, 122);
+    if (data.courseType === "robot") drawCardImage(ctx, robotIcon, 38, 1134, 86, 86, 0.9, "contain");
     drawCardImage(ctx, pair, 904, 1210, 108, 72, 1, "contain");
 
     ctx.fillStyle = "#4A372E";
@@ -1487,6 +1640,20 @@ async function markReminderSent(item = activeReminder) {
   await loadPortal();
 }
 
+function populateSessionNumberOptions(total, selected) {
+  if (!sessionNumberInput) return;
+  const maxSession = total ? Math.max(total, 1) : Math.max(selected, 24);
+  sessionNumberInput.innerHTML = [
+    '<option value="">เลือกครั้งที่เรียน</option>',
+    ...Array.from({ length: maxSession }, (_, index) => {
+      const value = index + 1;
+      const label = total ? `ครั้งที่ ${value}/${total}` : `ครั้งที่ ${value}`;
+      return `<option value="${value}">${label}</option>`;
+    })
+  ].join("");
+  sessionNumberInput.value = String(Math.min(Math.max(selected || 1, 1), maxSession));
+}
+
 function openRecordSheet(item) {
   activeSessionEnrollment = item;
   pendingSessionInput = null;
@@ -1495,12 +1662,16 @@ function openRecordSheet(item) {
   const next = total ? Math.min(completed + 1, total) : completed + 1;
   recordTitle.textContent = `บันทึก ${getChildLabel(item)}`;
   recordSubtitle.textContent = `${getCourseLabel(item)} · เรียนแล้ว ${getCompletedText(item)}`;
-  sessionNumberInput.value = String(next);
-  sessionNumberInput.max = total ? String(total) : "";
+  populateSessionNumberOptions(total, next);
   sessionDateInput.value = toLocalDateInputValue(new Date());
+  lessonTitleInput.maxLength = sessionFieldLimits.lessonTitle;
   lessonTitleInput.value = "";
+  teacherCommentInput.maxLength = sessionFieldLimits.teacherComment;
   teacherCommentInput.value = "";
   sessionPhotoInput.value = "";
+  selectedStrengthChoices = getDefaultStrengthChoices(item.course_type || "creative_art");
+  renderStrengthChoices(item.course_type || "creative_art");
+  updateCharacterCounters();
   if (activeCroppedPhotoUrl) URL.revokeObjectURL(activeCroppedPhotoUrl);
   activeCroppedPhotoUrl = "";
   activeCroppedPhotoBlob = null;
@@ -1527,6 +1698,7 @@ function closeRecordSheet() {
   }
   activeCroppedPhotoBlob = null;
   activeCroppedPhotoName = "";
+  selectedStrengthChoices = [];
   closeCropModal(false);
 }
 
@@ -1546,7 +1718,9 @@ function getSessionInput() {
     sessionNumber,
     sessionDate: sessionDateInput.value || toLocalDateInputValue(new Date()),
     lessonTitle: normalizeText(lessonTitleInput.value),
-    teacherComment: normalizeText(teacherCommentInput.value)
+    teacherComment: normalizeText(teacherCommentInput.value),
+    strengthChoices: selectedStrengthChoices.slice(),
+    strengthText: getSelectedStrengthText()
   };
 }
 
@@ -1574,7 +1748,8 @@ function buildSessionShareData(input, photoUrl = "") {
     totalSessions: total,
     completedAfter,
     remainingAfter: total ? Math.max(total - completedAfter, 0) : 0,
-    strengthText: getSessionStrengthText({ courseType }),
+    strengthChoices: input.strengthChoices?.length ? input.strengthChoices : getDefaultStrengthChoices(courseType),
+    strengthText: input.strengthText || getSessionStrengthText({ courseType }),
     photoUrl
   };
 }
@@ -1800,6 +1975,13 @@ function bindEvents() {
   recordForm?.addEventListener("submit", previewSession);
   copySessionDraftButton?.addEventListener("click", () => copyText(shareText.value || ""));
   saveSessionButton?.addEventListener("click", saveSession);
+  lessonTitleInput?.addEventListener("input", updateCharacterCounters);
+  teacherCommentInput?.addEventListener("input", updateCharacterCounters);
+  strengthChoiceGroup?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-strength-choice]");
+    if (!button) return;
+    toggleStrengthChoice(button.dataset.strengthChoice);
+  });
   cropZoomInput?.addEventListener("input", () => {
     if (!cropState) return;
     cropState.zoom = Number(cropZoomInput.value || 1);

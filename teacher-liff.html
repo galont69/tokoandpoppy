@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260701-parent-wow-card" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260701-session-strength-picker" />
 </head>
 <body>
   <main class="teacher-app">
@@ -161,7 +161,9 @@
         <div class="form-row">
           <label>
             ครั้งที่
-            <input id="sessionNumberInput" type="number" min="1" required />
+            <select id="sessionNumberInput" required>
+              <option value="">เลือกครั้งที่เรียน</option>
+            </select>
           </label>
           <label>
             วันที่เรียน
@@ -170,12 +172,27 @@
         </div>
         <label>
           บทเรียน / กิจกรรม
-          <input id="lessonTitleInput" type="text" maxlength="160" placeholder="เช่น วาดสัตว์จากนิทาน" />
+          <input id="lessonTitleInput" type="text" maxlength="64" placeholder="เช่น วาดสัตว์จากนิทาน" />
+          <span class="field-assist">
+            <span>ไม่เกิน 64 ตัวอักษร เพื่อให้พอดีกับการ์ด</span>
+            <strong id="lessonTitleCounter">0/64</strong>
+          </span>
         </label>
         <label>
           คอมเมนต์คุณครู
-          <textarea id="teacherCommentInput" rows="4" maxlength="700" placeholder="วันนี้ตั้งใจดีมาก กล้าเล่าไอเดียมากขึ้น..."></textarea>
+          <textarea id="teacherCommentInput" rows="4" maxlength="115" placeholder="วันนี้ตั้งใจดีมาก กล้าเล่าไอเดียมากขึ้น..."></textarea>
+          <span class="field-assist">
+            <span>ไม่เกิน 115 ตัวอักษร ข้อความจะไม่ล้นจากกรอบ</span>
+            <strong id="teacherCommentCounter">0/115</strong>
+          </span>
         </label>
+        <section class="strength-picker" aria-labelledby="strengthPickerTitle">
+          <div class="strength-picker-title">
+            <strong id="strengthPickerTitle">สิ่งที่น้องทำได้ดี</strong>
+            <span id="strengthChoiceCounter">เลือกไว้ 0/5</span>
+          </div>
+          <div class="strength-choice-grid" id="strengthChoiceGroup"></div>
+        </section>
         <label>
           รูปผลงาน
           <input id="sessionPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
@@ -216,6 +233,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260701-parent-wow-card"></script>
+  <script src="teacher-liff.js?v=20260701-session-strength-picker"></script>
 </body>
 </html>
