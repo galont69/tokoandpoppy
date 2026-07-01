@@ -122,6 +122,27 @@ const sessionSummaryAssets = {
   }
 };
 
+const afterClassWowAssets = {
+  version: "20260701-parent-wow-card",
+  toko: "assets/after-class-wow/toko.png?v=20260701-parent-wow-card",
+  poppy: "assets/after-class-wow/poppy.png?v=20260701-parent-wow-card",
+  pair: "assets/after-class-wow/pair.png?v=20260701-parent-wow-card",
+  icons: {
+    heart: "assets/after-class-wow/1.svg?v=20260701-parent-wow-card",
+    star: "assets/after-class-wow/2.svg?v=20260701-parent-wow-card",
+    sparkle: "assets/after-class-wow/4.svg?v=20260701-parent-wow-card",
+    light: "assets/after-class-wow/5.svg?v=20260701-parent-wow-card",
+    smile: "assets/after-class-wow/6.svg?v=20260701-parent-wow-card",
+    palette: "assets/after-class-wow/7.svg?v=20260701-parent-wow-card",
+    puzzle: "assets/after-class-wow/8.svg?v=20260701-parent-wow-card",
+    basket: "assets/after-class-wow/9.svg?v=20260701-parent-wow-card",
+    clay: "assets/after-class-wow/10.svg?v=20260701-parent-wow-card",
+    ear: "assets/after-class-wow/11.svg?v=20260701-parent-wow-card",
+    robot: "assets/after-class-wow/12.svg?v=20260701-parent-wow-card",
+    trophy: "assets/after-class-wow/13.svg?v=20260701-parent-wow-card"
+  }
+};
+
 function normalizeText(value) {
   return String(value || "").trim();
 }
@@ -567,9 +588,18 @@ function buildSessionText(data) {
     `วันที่ ${formatThaiDate(data.sessionDate)} · ${sessionText}`,
     data.lessonTitle ? `บทเรียนวันนี้: ${data.lessonTitle}` : "",
     data.teacherComment ? `คอมเมนต์คุณครู: ${data.teacherComment}` : "",
+    data.strengthText ? `สิ่งที่ทำได้ดี: ${data.strengthText}` : "",
     data.totalSessions ? `คงเหลือ ${data.remainingAfter} ครั้ง` : "",
     "ขอบคุณค่ะ/ครับ"
   ].filter(Boolean).join("\n");
+}
+
+function getSessionStrengthText(data = {}) {
+  const courseType = data.courseType || data.course_type || "creative_art";
+  if (courseType === "robot") return "คิดเป็นขั้นตอน กล้าลองแก้ปัญหา และไม่ยอมแพ้ง่าย ๆ";
+  if (courseType === "clay") return "ควบคุมรูปทรงได้ดีขึ้น ใช้มืออย่างมั่นใจ และเก็บรายละเอียดตั้งใจมาก";
+  if (courseType === "water_color") return "คุมน้ำหนักสีได้ดี กล้าลองผสมสี และสังเกตรายละเอียดเก่งขึ้น";
+  return "กล้าเล่าไอเดีย เลือกสีอย่างมั่นใจ และตั้งใจทำผลงานจนเสร็จ";
 }
 
 function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = 4) {
@@ -842,6 +872,173 @@ function drawProgressBar(ctx, completed, total, x, y, width, height) {
   ctx.textAlign = "start";
 }
 
+function drawWowBackground(ctx, width, height) {
+  ctx.fillStyle = "#FFF8EF";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = "rgba(147, 198, 126, 0.22)";
+  ctx.beginPath();
+  ctx.arc(80, 40, 190, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255, 191, 112, 0.26)";
+  ctx.beginPath();
+  ctx.arc(1030, 210, 250, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "rgba(244, 126, 95, 0.12)";
+  ctx.beginPath();
+  ctx.arc(135, 1268, 230, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "rgba(223, 191, 159, 0.55)";
+  ctx.lineWidth = 2;
+  for (let x = -80; x < width + 120; x += 86) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + 420, height);
+    ctx.stroke();
+  }
+}
+
+function drawWowPill(ctx, x, y, width, height, text, options = {}) {
+  ctx.save();
+  ctx.save();
+  ctx.shadowColor = "rgba(74, 55, 46, 0.08)";
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 6;
+  ctx.fillStyle = options.fill || "#FFFFFF";
+  roundedRect(ctx, x, y, width, height, height / 2);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = options.stroke || "#E8D8C7";
+  ctx.lineWidth = 2;
+  roundedRect(ctx, x, y, width, height, height / 2);
+  ctx.stroke();
+  ctx.fillStyle = options.color || "#5E4A3E";
+  ctx.font = options.font || "800 25px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(truncateCanvasText(ctx, text, width - 34), x + width / 2, y + height / 2 + 1);
+  ctx.restore();
+}
+
+function drawWowPhoto(ctx, photo, placeholder, x, y, width, height) {
+  ctx.save();
+  ctx.translate(x + width / 2, y + height / 2);
+  ctx.rotate(-0.035);
+  ctx.translate(-width / 2, -height / 2);
+  ctx.shadowColor = "rgba(74, 55, 46, 0.16)";
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 12;
+  ctx.fillStyle = "#FFFFFF";
+  roundedRect(ctx, 0, 0, width, height, 26);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.save();
+  ctx.translate(x + width / 2, y + height / 2);
+  ctx.rotate(-0.035);
+  ctx.translate(-width / 2, -height / 2);
+  ctx.strokeStyle = "#E7D8C7";
+  ctx.lineWidth = 2;
+  roundedRect(ctx, 0, 0, width, height, 26);
+  ctx.stroke();
+
+  const photoX = 28;
+  const photoY = 34;
+  const photoW = width - 56;
+  const photoH = Math.round(photoW * 0.6);
+  ctx.fillStyle = "#F5EFE4";
+  roundedRect(ctx, photoX, photoY, photoW, photoH, 20);
+  ctx.fill();
+  if (photo) {
+    drawRoundImage(ctx, photo, photoX, photoY, photoW, photoH, 20, "cover");
+  } else if (placeholder) {
+    drawCardImage(ctx, placeholder, photoX + 92, photoY + 18, photoW - 184, photoH - 36, 0.82, "contain");
+  } else {
+    ctx.fillStyle = "#8B7668";
+    ctx.font = "800 30px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("รูปผลงานวันนี้", width / 2, photoY + photoH / 2 + 10);
+    ctx.textAlign = "start";
+  }
+
+  ctx.fillStyle = "#F47E5F";
+  roundedRect(ctx, 48, photoY + photoH + 24, width - 96, 54, 14);
+  ctx.fill();
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "900 26px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("ผลงานวันนี้", width / 2, photoY + photoH + 52);
+  ctx.restore();
+  ctx.textAlign = "start";
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawWowTitle(ctx, childLabel, x, y, maxWidth) {
+  const safeChild = `น้อง${String(childLabel || "น้อง").replace(/^น้อง/, "")}`.slice(0, 18);
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#4A372E";
+  ctx.font = "900 54px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText("วันนี้", x, y);
+  ctx.fillStyle = "#F05B3E";
+  let childFontSize = 60;
+  do {
+    ctx.font = `900 ${childFontSize}px Kanit, 'Noto Sans Thai', sans-serif`;
+    if (ctx.measureText(safeChild).width <= maxWidth) break;
+    childFontSize -= 2;
+  } while (childFontSize > 42);
+  ctx.fillText(safeChild, x, y + 68);
+  ctx.fillStyle = "#4A372E";
+  ctx.font = "900 50px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasTextByChar(ctx, "เรียนอะไรบ้าง?", x, y + 132, maxWidth, 55, 2);
+}
+
+function drawWowBox(ctx, x, y, width, height, options = {}) {
+  const fill = options.fill || "#FFFFFF";
+  const stroke = options.stroke || "#E8D8C7";
+  drawCardShadow(ctx, x, y, width, height, 24, fill, stroke);
+  if (options.icon) drawCardImage(ctx, options.icon, x + 24, y + 24, 52, 52, 1, "contain");
+  const textX = options.icon ? x + 92 : x + 28;
+  const textWidth = width - (options.icon ? 124 : 56);
+  ctx.fillStyle = options.accent || "#F05B3E";
+  ctx.font = options.titleFont || "900 29px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText(options.title || "", textX, y + 46);
+  ctx.fillStyle = options.color || "#4A372E";
+  ctx.font = options.bodyFont || "700 25px Kanit, 'Noto Sans Thai', sans-serif";
+  wrapCanvasTextByChar(ctx, options.text || "", textX, y + 86, textWidth, options.lineHeight || 34, options.maxLines || 3);
+}
+
+function drawWowProgress(ctx, completed, total, x, y, width, height) {
+  const safeTotal = Math.max(Number(total || 0), 1);
+  const safeCompleted = Math.max(Math.min(Number(completed || 0), safeTotal), 0);
+  const ratio = safeCompleted / safeTotal;
+
+  drawCardShadow(ctx, x, y, width, height, 26, "#F2F8EC", "#9DCB8A");
+  ctx.fillStyle = "#4A372E";
+  ctx.font = "900 31px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText("เส้นทางการเรียนรู้", x + 34, y + 48);
+  ctx.fillStyle = "#7A685A";
+  ctx.font = "700 22px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText(`เรียนแล้ว ${safeCompleted}/${safeTotal} ครั้ง`, x + 34, y + 82);
+
+  const barX = x + 320;
+  const barY = y + 46;
+  const barW = width - 456;
+  const barH = 30;
+  roundedRect(ctx, barX, barY, barW, barH, barH / 2);
+  ctx.fillStyle = "#DCEFD2";
+  ctx.fill();
+  if (ratio > 0) {
+    roundedRect(ctx, barX, barY, Math.max(barW * ratio, barH), barH, barH / 2);
+    ctx.fillStyle = "#6EA154";
+    ctx.fill();
+  }
+  ctx.fillStyle = "#18743D";
+  ctx.font = "900 29px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText(`${Math.round(ratio * 100)}%`, barX + barW + 24, y + 72);
+}
+
 async function loadCanvasImage(url) {
   if (!url) return null;
   return new Promise((resolve) => {
@@ -1024,168 +1221,110 @@ async function drawShareCard(data) {
   if (data.mode === "session") {
     const [
       cardLogo,
-      locationIcon,
-      sunIcon,
-      sparkleIcon,
-      teacherHeartIcon,
+      courseIcon,
+      placeholderIcon,
+      toko,
+      pair,
       heartIcon,
-      trophyIcon,
-      bookIcon,
-      courseIcon
+      starIcon,
+      sparkleIcon,
+      lightIcon,
+      smileIcon,
+      paletteIcon,
+      robotIcon,
+      trophyIcon
     ] = await Promise.all([
       loadCanvasImage(sessionSummaryAssets.logo),
-      loadCanvasImage(sessionSummaryAssets.location),
-      loadCanvasImage(sessionSummaryAssets.sun),
-      loadCanvasImage(sessionSummaryAssets.star),
-      loadCanvasImage(sessionSummaryAssets.teacherHeart),
-      loadCanvasImage(sessionSummaryAssets.heart),
-      loadCanvasImage(sessionSummaryAssets.trophy),
-      loadCanvasImage(sessionSummaryAssets.book),
-      loadCanvasImage(sessionSummaryAssets.course[data.courseType] || sessionSummaryAssets.course.creative_art)
+      loadCanvasImage(sessionSummaryAssets.course[data.courseType] || sessionSummaryAssets.course.creative_art),
+      loadCanvasImage(afterClassAssets.placeholder),
+      loadCanvasImage(afterClassWowAssets.toko),
+      loadCanvasImage(afterClassWowAssets.pair),
+      loadCanvasImage(afterClassWowAssets.icons.heart),
+      loadCanvasImage(afterClassWowAssets.icons.star),
+      loadCanvasImage(afterClassWowAssets.icons.sparkle),
+      loadCanvasImage(afterClassWowAssets.icons.light),
+      loadCanvasImage(afterClassWowAssets.icons.smile),
+      loadCanvasImage(afterClassWowAssets.icons.palette),
+      loadCanvasImage(afterClassWowAssets.icons.robot),
+      loadCanvasImage(afterClassWowAssets.icons.trophy)
     ]);
     const childLabel = String(data.childLabel || "น้อง").replace(/^น้อง/, "").slice(0, 14);
     const lessonTitle = data.lessonTitle || data.primaryLine || "กิจกรรมสร้างสรรค์";
     const teacherNote = data.teacherComment || data.note || "วันนี้ตั้งใจเรียนดีมาก เก็บผลงานไว้เป็นกำลังใจนะคะ/ครับ";
+    const strengthText = data.strengthText || getSessionStrengthText(data);
     const sessionNumber = Number(data.sessionNumber || 0);
     const totalSessions = Number(data.totalSessions || 0);
     const completed = Number(data.completedAfter || sessionNumber || 0);
-    const remaining = totalSessions ? Math.max(totalSessions - completed, 0) : 0;
     const displayTotal = totalSessions || Math.max(sessionNumber, completed, 4);
+    const branchAndDate = [
+      formatThaiDate(data.sessionDate),
+      data.branchName ? `สาขา ${data.branchName}` : ""
+    ].filter(Boolean).join(" · ");
 
-    ctx.fillStyle = "#FAF6EF";
-    ctx.fillRect(0, 0, width, height);
+    drawWowBackground(ctx, width, height);
+    drawCardImage(ctx, starIcon, 490, 64, 72, 72, 0.86, "contain");
+    drawCardImage(ctx, heartIcon, 980, 132, 74, 74, 0.58, "contain");
+    drawCardImage(ctx, sparkleIcon, 42, 180, 58, 58, 0.72, "contain");
+    drawCardImage(ctx, paletteIcon, 896, 512, 82, 82, 0.78, "contain");
 
-    const glow = ctx.createRadialGradient(550, 250, 80, 550, 250, 760);
-    glow.addColorStop(0, "rgba(255, 255, 255, 0.88)");
-    glow.addColorStop(1, "rgba(250, 246, 239, 0)");
-    ctx.fillStyle = glow;
-    ctx.fillRect(0, 0, width, height);
-
-    [
-      ["#F4C64E", 502, 66],
-      ["#F05B3E", 598, 50],
-      ["#6EA154", 448, 118],
-      ["#F8B7C8", 1030, 214],
-      ["#F4C64E", 960, 156],
-      ["#6EA154", 560, 112],
-      ["#F05B3E", 840, 92]
-    ].forEach(([color, x, y]) => {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x, y, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillRect(x - 3, y - 12, 6, 24);
-      ctx.fillRect(x - 12, y - 3, 24, 6);
+    drawCardImage(ctx, cardLogo, 48, 32, 172, 126, 1, "contain");
+    drawWowPill(ctx, 468, 52, 560, 64, branchAndDate || formatThaiDate(data.sessionDate), {
+      fill: "#FFFFFF",
+      stroke: "#DFBF9F",
+      color: "#4F7D48",
+      font: "900 25px Kanit, 'Noto Sans Thai', sans-serif"
     });
 
-    drawCardImage(ctx, cardLogo, 54, 34, 140, 140, 1, "contain");
-    ctx.strokeStyle = "#D7B99C";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(220, 62);
-    ctx.lineTo(220, 150);
-    ctx.stroke();
+    drawWowPhoto(ctx, photo, placeholderIcon, 74, 218, 438, 386);
+    drawCardImage(ctx, toko, 384, 528, 142, 142, 1, "contain");
+    drawWowTitle(ctx, `น้อง${childLabel}`, 548, 242, 444);
 
-    if (data.branchName) {
-      drawCardShadow(ctx, 778, 50, 254, 60, 30, "#FFFFFF", "#DFBF9F");
-      drawCardImage(ctx, locationIcon, 804, 63, 34, 34, 1, "contain");
-      ctx.fillStyle = "#4F8B37";
-      ctx.font = "800 26px Kanit, 'Noto Sans Thai', sans-serif";
-      wrapCanvasTextByChar(ctx, `สาขา ${data.branchName}`, 848, 89, 150, 30, 1);
-    }
-
-    drawCardImage(ctx, sunIcon, 42, 136, 78, 78, 1, "contain");
-    drawSessionSummaryTitle(ctx, `น้อง${childLabel}`);
-    ctx.fillStyle = "#876F5F";
-    ctx.font = "700 24px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText(formatThaiDate(data.sessionDate), 124, 248);
-
-    const photoX = 48;
-    const photoY = 270;
-    const photoW = 984;
-    const photoH = 594;
-    drawCardShadow(ctx, photoX, photoY, photoW, photoH, 38, "#FFFFFF", "#F1DEC8");
-    if (photo) {
-      drawRoundImage(ctx, photo, photoX + 14, photoY + 14, photoW - 28, photoH - 28, 26, "cover");
-    } else {
-      ctx.fillStyle = "#F5EFE4";
-      roundedRect(ctx, photoX + 14, photoY + 14, photoW - 28, photoH - 28, 26);
-      ctx.fill();
-      ctx.fillStyle = "#8B7668";
-      ctx.font = "800 42px Kanit, 'Noto Sans Thai', sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("เลือกรูปผลงานครั้งนี้", width / 2, photoY + photoH / 2);
-      ctx.textAlign = "start";
-    }
-
-    ctx.fillStyle = "#62A742";
-    roundedRect(ctx, 78, 304, 218, 54, 8);
-    ctx.fill();
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "900 25px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("★  ผลงานวันนี้", 96, 339);
-
-    const infoY = 895;
-    drawCardShadow(ctx, 48, infoY, 984, 126, 26, "#FFFFFF", "#F1DEC8");
-    [224, 770].forEach((x) => {
-      ctx.strokeStyle = "#D7B99C";
-      ctx.setLineDash([4, 4]);
-      ctx.beginPath();
-      ctx.moveTo(x, infoY + 26);
-      ctx.lineTo(x, infoY + 102);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    });
-    drawCardImage(ctx, courseIcon, 110, infoY + 31, 64, 64, 1, "contain");
-    drawSessionInfoColumn(ctx, {
-      icon: bookIcon,
-      title: `บทที่ ${sessionNumber || "-"}`,
-      subtitle: lessonTitle,
-      accent: "#4A372E",
-      iconSize: 54,
-      titleFont: "800 32px Kanit, 'Noto Sans Thai', sans-serif",
-      subtitleFont: "700 27px Kanit, 'Noto Sans Thai', sans-serif"
-    }, 252, infoY, 490, 126);
-    drawSessionInfoColumn(ctx, {
-      title: "ครั้งที่",
-      subtitle: totalSessions ? `${sessionNumber}/${totalSessions}` : String(sessionNumber || "-"),
-      big: true
-    }, 820, infoY, 176, 126);
-
-    const noteY = 1044;
-    drawCardShadow(ctx, 48, noteY, 984, 174, 26, "#FFFFFF", "#F1DEC8");
-    drawCardImage(ctx, teacherHeartIcon, 72, noteY + 44, 88, 88, 1, "contain");
-    drawCardImage(ctx, heartIcon, 856, noteY + 50, 108, 108, 0.38, "contain");
-    ctx.fillStyle = "#F05B3E";
-    ctx.font = "900 31px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("ข้อความจากคุณครู", 188, noteY + 61);
-    drawCardText(ctx, teacherNote, 188, noteY + 104, 610, 34, 3, {
-      color: "#4A372E",
-      font: "700 25px Kanit, 'Noto Sans Thai', sans-serif"
+    drawWowBox(ctx, 548, 424, 460, 178, {
+      icon: courseIcon,
+      title: data.courseName || "บทเรียนวันนี้",
+      text: `${lessonTitle} · ${totalSessions ? `ครั้งที่ ${sessionNumber}/${totalSessions}` : `ครั้งที่ ${sessionNumber || "-"}`}`,
+      fill: "#FFFFFF",
+      stroke: "#E8D8C7",
+      accent: "#4F8B37",
+      maxLines: 3,
+      lineHeight: 33
     });
 
-    const progressY = 1238;
-    drawCardShadow(ctx, 48, progressY, 984, 102, 28, "#F2F8EC", "#93B985");
-    drawCardImage(ctx, trophyIcon, 70, progressY + 15, 72, 72, 1, "contain");
-    ctx.save();
+    drawWowBox(ctx, 72, 652, 936, 194, {
+      icon: lightIcon,
+      title: "ข้อความจากคุณครู",
+      text: teacherNote,
+      fill: "#FFFFFF",
+      stroke: "#F1DEC8",
+      accent: "#F05B3E",
+      maxLines: 3,
+      lineHeight: 35
+    });
+
+    drawWowBox(ctx, 72, 878, 936, 164, {
+      icon: smileIcon,
+      title: "สิ่งที่น้องทำได้ดี",
+      text: strengthText,
+      fill: "#FFF6E8",
+      stroke: "#F2CC92",
+      accent: "#D97735",
+      maxLines: 2,
+      lineHeight: 36
+    });
+
+    drawWowProgress(ctx, completed || sessionNumber, displayTotal, 72, 1076, 936, 136);
+    drawCardImage(ctx, trophyIcon, 858, 1096, 86, 86, 0.9, "contain");
+    drawCardImage(ctx, robotIcon, 38, 1128, 94, 94, data.courseType === "robot" ? 0.92 : 0.28, "contain");
+    drawCardImage(ctx, pair, 904, 1210, 108, 72, 1, "contain");
+
     ctx.fillStyle = "#4A372E";
-    ctx.font = "900 30px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText(`เรียนแล้ว ${completed || sessionNumber || 0} ครั้ง`, 178, progressY + 46);
-    ctx.fillStyle = "#4A372E";
-    ctx.font = "500 20px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("เก่งขึ้นทุกครั้งเลยนะ!", 178, progressY + 78);
-    drawProgressBar(ctx, completed || sessionNumber, displayTotal, 430, progressY + 34, 300, 28);
-    ctx.fillStyle = "#4A372E";
-    ctx.font = "900 27px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("คงเหลือ", 786, progressY + 60);
-    ctx.fillStyle = "#18743D";
     ctx.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText(`${remaining}`, 888, progressY + 60);
-    ctx.fillStyle = "#4A372E";
-    ctx.font = "900 27px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("ครั้ง", 930, progressY + 60);
-    drawCardImage(ctx, sparkleIcon, 960, progressY + 18, 54, 54, 1, "contain");
-    ctx.restore();
+    ctx.textAlign = "center";
+    ctx.fillText("เก่งขึ้นทุกครั้งเลยนะ เก็บผลงานวันนี้ไว้เป็นกำลังใจ", width / 2, 1288);
+    ctx.fillStyle = "#6EA154";
+    ctx.font = "900 24px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("Toko & Poppy", width / 2, 1324);
+    ctx.textAlign = "start";
     return;
   }
 
@@ -1415,12 +1554,13 @@ function buildSessionShareData(input, photoUrl = "") {
   const item = activeSessionEnrollment;
   const total = Number(item.total_sessions || 0);
   const completedAfter = Math.max(Number(item.completed_sessions || 0), input.sessionNumber);
+  const courseType = item.course_type || "creative_art";
   return {
     mode: "session",
     title: `หลังเรียน ${getChildLabel(item)}`,
     subtitle: `${getCourseLabel(item)} · ครั้งที่ ${input.sessionNumber}`,
     childLabel: getChildLabel(item),
-    courseType: item.course_type || "creative_art",
+    courseType,
     courseIcon: getCourseMeta(item.course_type).icon,
     courseName: getCourseLabel(item),
     primaryLine: input.lessonTitle || "กิจกรรมสร้างสรรค์",
@@ -1434,6 +1574,7 @@ function buildSessionShareData(input, photoUrl = "") {
     totalSessions: total,
     completedAfter,
     remainingAfter: total ? Math.max(total - completedAfter, 0) : 0,
+    strengthText: getSessionStrengthText({ courseType }),
     photoUrl
   };
 }
