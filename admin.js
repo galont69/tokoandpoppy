@@ -1388,10 +1388,13 @@ function renderWeeklySchedule() {
     const date = getScheduleDateForWeekday(weekday);
     const items = grouped.get(weekday) || [];
     return `
-      <section class="weekly-schedule-day ${formatDateInputFromDate(date) === formatDateInputFromDate(new Date()) ? "is-today" : ""}">
+      <section class="weekly-schedule-day ${formatDateInputFromDate(date) === formatDateInputFromDate(new Date()) ? "is-today" : ""} ${items.length > 8 ? "is-busy" : ""}">
         <header>
-          <span>${escapeHtml(weekdayLabels[weekday])}</span>
-          <strong>${escapeHtml(formatShortDate(date))}</strong>
+          <div>
+            <span>${escapeHtml(weekdayLabels[weekday])}</span>
+            <strong>${escapeHtml(formatShortDate(date))}</strong>
+            ${items.length > 8 ? '<small>เลื่อนดูรายการในวันนี้</small>' : ""}
+          </div>
           <i>${items.length}</i>
         </header>
         <div class="weekly-schedule-day-list">
@@ -1457,7 +1460,7 @@ function renderWeeklyScheduleCard(enrollment) {
       </div>
       <div class="weekly-schedule-card-footer">
         <em class="${escapeHtml(state.badgeClass)}">${escapeHtml(state.label)}</em>
-        <button type="button" data-weekly-schedule-edit="${enrollment.id}">ตั้งเวลา</button>
+        <button type="button" data-weekly-schedule-edit="${enrollment.id}">แก้เวลา</button>
       </div>
     </article>
   `;
