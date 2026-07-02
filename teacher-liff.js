@@ -685,6 +685,16 @@ function getDefaultStrengthChoices(courseType = "creative_art") {
   return getStrengthOptions(courseType).slice(0, sessionFieldLimits.strengthChoices);
 }
 
+function getWowCourseIconUrl(courseType = "creative_art") {
+  return {
+    robot: afterClassWowAssets.icons.robot,
+    art: afterClassWowAssets.icons.creativeArt,
+    creative_art: afterClassWowAssets.icons.creativeArt,
+    water_color: afterClassWowAssets.icons.waterColor,
+    clay: afterClassWowAssets.icons.clay
+  }[courseType] || afterClassWowAssets.icons.creativeArt;
+}
+
 function getSelectedStrengthText() {
   return selectedStrengthChoices.map((choice) => choice.text).filter(Boolean).join(" · ");
 }
@@ -1234,6 +1244,30 @@ function drawWowProgress(ctx, completed, total, x, y, width, height, pairIcon) {
   ctx.fillText(`${safeCompleted}/${safeTotal}`, barX + barW + 24, y + 72);
 }
 
+function drawReminderHero(ctx, childLabel, x, y, maxWidth) {
+  const safeChild = `น้อง${String(childLabel || "น้อง").replace(/^น้อง/, "")}`.slice(0, 18);
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = "#F3BE38";
+  ctx.font = "900 58px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText("พรุ่งนี้มีเรียน", x, y);
+  ctx.fillStyle = "#4A372E";
+  let childFontSize = 70;
+  do {
+    ctx.font = `900 ${childFontSize}px Kanit, 'Noto Sans Thai', sans-serif`;
+    if (ctx.measureText(safeChild).width <= maxWidth) break;
+    childFontSize -= 2;
+  } while (childFontSize > 46);
+  ctx.fillText(safeChild, x, y + 78);
+}
+
+function drawReminderCharacterPanel(ctx, pairIcon, x, y, width, height) {
+  drawCardShadow(ctx, x, y, width, height, 34, "#FFFFFF", "#F1DEC8");
+  ctx.fillStyle = "#F7F1E8";
+  roundedRect(ctx, x + 24, y + 24, width - 48, height - 48, 24);
+  ctx.fill();
+  drawCardImage(ctx, pairIcon, x + 34, y + 8, width - 68, height - 16, 1, "contain");
+}
+
 async function loadCanvasImage(url) {
   if (!url) return null;
   return new Promise((resolve) => {
@@ -1403,7 +1437,7 @@ async function confirmCropPhoto() {
 
 async function drawShareCard(data) {
   shareCanvas.width = 1080;
-  shareCanvas.height = data.mode === "session" ? 1350 : 1080;
+  shareCanvas.height = ["session", "reminder"].includes(data.mode) ? 1350 : 1080;
   const ctx = shareCanvas.getContext("2d");
   const width = shareCanvas.width;
   const height = shareCanvas.height;
@@ -1414,13 +1448,7 @@ async function drawShareCard(data) {
   ctx.fillRect(0, 0, width, height);
 
   if (data.mode === "session") {
-    const wowCourseIconUrl = {
-      robot: afterClassWowAssets.icons.robot,
-      art: afterClassWowAssets.icons.creativeArt,
-      creative_art: afterClassWowAssets.icons.creativeArt,
-      water_color: afterClassWowAssets.icons.waterColor,
-      clay: afterClassWowAssets.icons.clay
-    }[data.courseType] || afterClassWowAssets.icons.creativeArt;
+    const wowCourseIconUrl = getWowCourseIconUrl(data.courseType);
     const [
       cardLogo,
       courseIcon,
@@ -1512,6 +1540,101 @@ async function drawShareCard(data) {
 
     drawWowProgress(ctx, completed || sessionNumber, displayTotal, 72, 1106, 936, 122, pair);
     ctx.textAlign = "start";
+    return;
+  }
+
+  if (data.mode === "reminder") {
+    const wowCourseIconUrl = getWowCourseIconUrl(data.courseType);
+    const [
+      cardLogo,
+      courseIcon,
+      pair,
+      heartIcon,
+      starIcon,
+      blinkIcon,
+      tapeIcon,
+      trophyIcon
+    ] = await Promise.all([
+      loadCanvasImage(afterClassWowAssets.logoWord),
+      loadCanvasImage(wowCourseIconUrl),
+      loadCanvasImage(afterClassWowAssets.pair),
+      loadCanvasImage(afterClassWowAssets.icons.heart),
+      loadCanvasImage(afterClassWowAssets.icons.star),
+      loadCanvasImage(afterClassWowAssets.icons.blink),
+      loadCanvasImage(afterClassWowAssets.icons.tape),
+      loadCanvasImage(afterClassWowAssets.icons.trophy)
+    ]);
+    const targetDate = data.targetDate || portalData?.target_date || toLocalDateInputValue(addDays(new Date(), 1));
+    const weekday = Number(data.targetWeekday ?? portalData?.target_weekday ?? new Date(`${targetDate}T00:00:00`).getDay());
+    const sessionLabel = data.sessionLabel || data.accentLine || "";
+
+    drawWowBackground(ctx, width, height);
+    drawCardImage(ctx, starIcon, 486, 62, 88, 88, 0.86, "contain");
+    drawCardImage(ctx, heartIcon, 968, 132, 92, 92, 0.58, "contain");
+    drawCardImage(ctx, blinkIcon, 36, 178, 72, 72, 0.72, "contain");
+
+    drawCardImage(ctx, cardLogo, 38, 24, 368, 140, 1, "contain");
+    drawWowInfoPill(ctx, 466, 34, 266, 70, "📅", formatThaiDate(targetDate), {
+      color: "#4F7D48",
+      iconColor: "#8A6E5F",
+      iconFont: "900 32px 'Apple Color Emoji', Kanit, 'Noto Sans Thai', sans-serif",
+      font: "900 27px Kanit, 'Noto Sans Thai', sans-serif"
+    });
+    drawWowInfoPill(ctx, 754, 34, 286, 70, "📍", data.branchName ? `สาขา ${data.branchName}` : "Toko & Poppy", {
+      color: "#5E4A3E",
+      iconColor: "#D95342",
+      iconFont: "900 31px 'Apple Color Emoji', Kanit, 'Noto Sans Thai', sans-serif",
+      font: "900 27px Kanit, 'Noto Sans Thai', sans-serif"
+    });
+
+    drawReminderCharacterPanel(ctx, pair, 66, 210, 466, 386);
+    drawCardImage(ctx, tapeIcon, 392, 194, 116, 64, 0.78, "contain");
+    drawReminderHero(ctx, data.childLabel, 548, 260, 444);
+
+    drawWowBox(ctx, 548, 424, 460, 178, {
+      icon: courseIcon,
+      title: data.courseName || "คอร์สเรียน",
+      text: sessionLabel,
+      fill: "#FFFFFF",
+      stroke: "#E8D8C7",
+      accent: "#4F8B37",
+      iconSize: 68,
+      bodyFont: "700 28px Kanit, 'Noto Sans Thai', sans-serif",
+      maxLines: 2,
+      lineHeight: 36
+    });
+
+    drawWowBox(ctx, 72, 642, 936, 188, {
+      icon: starIcon,
+      title: `${weekdayLabels[weekday]} ${formatThaiDate(targetDate)}`,
+      text: `เวลา ${data.scheduleLabel || data.accentLine || "-"}`,
+      fill: "#FFFFFF",
+      stroke: "#F1DEC8",
+      accent: "#F05B3E",
+      iconSize: 72,
+      titleFont: "900 34px Kanit, 'Noto Sans Thai', sans-serif",
+      bodyFont: "900 32px Kanit, 'Noto Sans Thai', sans-serif",
+      maxLines: 2,
+      lineHeight: 38
+    });
+
+    drawCardShadow(ctx, 72, 872, 936, 234, 28, "#FFFFFF", "#F1DEC8");
+    ctx.fillStyle = "#F05B3E";
+    ctx.font = "900 36px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("ข้อความถึงผู้ปกครอง", 118, 936);
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "800 30px Kanit, 'Noto Sans Thai', sans-serif";
+    wrapCanvasTextByChar(ctx, data.note || "หากไม่สะดวกหรือต้องการเปลี่ยนวันและเวลา แจ้งได้เลยนะคะ", 118, 988, 780, 40, 3);
+    drawCardImage(ctx, trophyIcon, 870, 902, 96, 96, 0.82, "contain");
+
+    drawCardShadow(ctx, 72, 1144, 936, 118, 28, "#F2F8EC", "#9DCB8A");
+    drawCardImage(ctx, pair, 96, 1128, 168, 112, 1, "contain");
+    ctx.fillStyle = "#4A372E";
+    ctx.font = "900 32px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("พรุ่งนี้เจอกันนะคะ", 292, 1192);
+    ctx.fillStyle = "#6EA154";
+    ctx.font = "900 24px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.fillText("Toko & Poppy", 292, 1228);
     return;
   }
 
@@ -1640,15 +1763,23 @@ function closeShareSheet() {
 function openReminder(item) {
   activeReminder = item;
   const text = buildReminderText(item);
+  const targetDate = portalData?.target_date || toLocalDateInputValue(addDays(new Date(), 1));
+  const targetWeekday = Number(portalData?.target_weekday ?? new Date(`${targetDate}T00:00:00`).getDay());
   openShareSheet({
     mode: "reminder",
     title: `แจ้งเตือน ${getChildLabel(item)}`,
     subtitle: `${getCourseLabel(item)} · ${getScheduleLabel(item)}`,
     text,
     childLabel: getChildLabel(item),
+    courseType: item.course_type || "creative_art",
     courseIcon: getCourseMeta(item.course_type).icon,
     courseName: getCourseLabel(item),
-    primaryLine: `${weekdayLabels[Number(portalData.target_weekday)]} ${formatThaiDate(portalData.target_date)}`,
+    branchName: item.branch_name || "",
+    targetDate,
+    targetWeekday,
+    sessionLabel: getNextSessionText(item),
+    scheduleLabel: getScheduleLabel(item),
+    primaryLine: `${weekdayLabels[targetWeekday]} ${formatThaiDate(targetDate)}`,
     accentLine: getScheduleLabel(item),
     note: "หากไม่สะดวกหรือต้องการเปลี่ยนวันและเวลา แจ้งได้เลยนะคะ"
   });
