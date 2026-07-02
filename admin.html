@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260630-logo-split">
+  <link rel="stylesheet" href="admin.css?v=20260702-weekly-schedule">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -79,6 +79,9 @@
         <button class="nav-item" type="button" data-admin-view="students">
           <span>🧒</span> นักเรียน
           <i id="studentBadge">0</i>
+        </button>
+        <button class="nav-item" type="button" data-admin-view="weeklySchedule">
+          <span>🗓️</span> ตารางเรียน
         </button>
         <button class="nav-item" type="button" data-admin-view="classReminders">
           <span>🔔</span> แจ้งเตือนเรียน
@@ -321,6 +324,73 @@
           </div>
           <div class="loading-state" id="classReminderLoadingState" hidden>
             <i></i><span>กำลังโหลดคิวแจ้งเตือน...</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="content admin-view" id="weeklyScheduleView" hidden>
+        <div class="lesson-admin-hero schedule-hero">
+          <div>
+            <span>WEEKLY SCHEDULE</span>
+            <h2>ตารางเรียนประจำสัปดาห์</h2>
+            <p id="weeklyScheduleScopeText">ดูเด็กแต่ละคนตามวัน เวลา คอร์ส และสาขา โดยใช้เวลาจริงที่ตั้งไว้ในคอร์ส</p>
+          </div>
+          <div class="hero-actions">
+            <button class="refresh-button" id="refreshWeeklyScheduleButton" type="button">↻ รีเฟรช</button>
+          </div>
+        </div>
+
+        <section class="applications-panel weekly-schedule-panel">
+          <div class="panel-heading weekly-schedule-heading">
+            <div>
+              <h2>มุมมองรายสัปดาห์</h2>
+              <p>ตารางนี้ไม่ล็อกคาบตายตัว จัดเรียงตามเวลาเรียนจริงของแต่ละสาขา</p>
+            </div>
+            <div class="week-switcher" aria-label="เลือกสัปดาห์">
+              <button type="button" id="schedulePrevWeekButton">‹</button>
+              <strong id="scheduleWeekLabel">สัปดาห์นี้</strong>
+              <button type="button" id="scheduleNextWeekButton">›</button>
+              <button type="button" id="scheduleTodayButton">วันนี้</button>
+            </div>
+          </div>
+
+          <div class="student-management-summary weekly-schedule-summary" id="weeklyScheduleSummary"></div>
+
+          <div class="toolbar learning-toolbar weekly-schedule-toolbar">
+            <label class="search-box">
+              <span>⌕</span>
+              <input id="weeklyScheduleSearchInput" type="search" placeholder="ค้นหาชื่อนักเรียน ชื่อเล่น คอร์ส หรือครู">
+            </label>
+            <select id="weeklyScheduleBranchFilter" class="soft-select">
+              <option value="all">ทุกสาขา</option>
+            </select>
+            <select id="weeklyScheduleCourseFilter" class="soft-select">
+              <option value="all">ทุกคอร์ส</option>
+              <option value="robot">โรบอท</option>
+              <option value="art_family">ศิลปะทั้งหมด</option>
+              <option value="creative_art">Creative Art</option>
+              <option value="water_color">Water Color</option>
+              <option value="clay">ปั้นดินเบา (CLAY)</option>
+              <option value="art">ศิลปะเดิม</option>
+            </select>
+            <select id="weeklyScheduleStatusFilter" class="soft-select">
+              <option value="active">กำลังเรียน</option>
+              <option value="not_started">ยังไม่เริ่มเรียน</option>
+              <option value="almost_done">ใกล้หมดแพ็กเกจ</option>
+              <option value="completed">จบคอร์สแล้ว</option>
+              <option value="all">ทั้งหมด</option>
+            </select>
+          </div>
+
+          <div class="weekly-schedule-board" id="weeklyScheduleRows"></div>
+
+          <div class="empty-state" id="weeklyScheduleEmptyState" hidden>
+            <div>🗓️</div>
+            <h3>ยังไม่มีตารางเรียนในมุมมองนี้</h3>
+            <p>เมื่อทีมสาขาตั้งวันและเวลาในคอร์สของนักเรียนแล้ว ตารางจะเรียงตามวันและเวลาให้อัตโนมัติ</p>
+          </div>
+          <div class="loading-state" id="weeklyScheduleLoadingState" hidden>
+            <i></i><span>กำลังโหลดตารางเรียน...</span>
           </div>
         </section>
       </section>
@@ -1387,6 +1457,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260630-student-delete-approval"></script>
-  <script src="admin.js?v=20260630-logo-split"></script>
+  <script src="admin.js?v=20260702-weekly-schedule"></script>
 </body>
 </html>

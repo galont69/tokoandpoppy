@@ -4283,7 +4283,308 @@ tbody tr:hover td {
   white-space: nowrap;
 }
 
+.weekly-schedule-panel {
+  overflow: hidden;
+}
+
+.weekly-schedule-heading {
+  align-items: center;
+}
+
+.week-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.week-switcher button,
+.weekly-schedule-card-footer button,
+.weekly-unscheduled-list button {
+  border: 1px solid #dfead5;
+  border-radius: 14px;
+  color: #527a49;
+  background: #f5fbef;
+  font-weight: 900;
+}
+
+.week-switcher button {
+  min-width: 42px;
+  min-height: 42px;
+  padding: 9px 13px;
+  font-size: 15px;
+}
+
+.week-switcher strong {
+  min-width: 176px;
+  color: #4d3b31;
+  font-size: 15px;
+  text-align: center;
+}
+
+.weekly-schedule-toolbar {
+  grid-template-columns: minmax(260px, 1fr) repeat(3, minmax(160px, auto));
+}
+
+.weekly-schedule-toolbar .search-box {
+  min-width: 260px;
+}
+
+.weekly-schedule-board {
+  display: grid;
+  gap: 18px;
+  padding: 18px 24px 24px;
+}
+
+.weekly-schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(190px, 1fr));
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.weekly-schedule-day {
+  min-width: 190px;
+  overflow: hidden;
+  border: 1px solid #eadccd;
+  border-radius: 22px;
+  background: #fffdf8;
+  box-shadow: 0 16px 28px rgba(89, 65, 42, .06);
+}
+
+.weekly-schedule-day.is-today {
+  border-color: #95be83;
+  box-shadow: 0 18px 32px rgba(95, 143, 83, .13);
+}
+
+.weekly-schedule-day header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 8px;
+  align-items: center;
+  border-bottom: 1px solid #efe4d7;
+  padding: 14px;
+  background: linear-gradient(135deg, #f7f1e8, #eef7e6);
+}
+
+.weekly-schedule-day header span {
+  color: #4d3b31;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.weekly-schedule-day header strong {
+  color: #806f63;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.weekly-schedule-day header i {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  grid-row: 1 / 3;
+  grid-column: 2;
+  place-items: center;
+  border-radius: 999px;
+  color: white;
+  background: #6ea154;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.weekly-schedule-day-list {
+  display: grid;
+  gap: 10px;
+  min-height: 150px;
+  padding: 12px;
+}
+
+.weekly-schedule-empty-day {
+  display: grid;
+  min-height: 118px;
+  place-items: center;
+  border: 1px dashed #eadccd;
+  border-radius: 16px;
+  color: #a08b7e;
+  background: #fffaf2;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.weekly-schedule-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #eadccd;
+  border-radius: 18px;
+  padding: 12px;
+  background: white;
+  box-shadow: 0 10px 20px rgba(89, 65, 42, .06);
+}
+
+.weekly-schedule-card.almost_done {
+  border-color: #ecd48d;
+  background: #fffdf4;
+}
+
+.weekly-schedule-card.completed {
+  opacity: .72;
+}
+
+.weekly-schedule-time {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.weekly-schedule-time strong {
+  color: #e85d43;
+  font-size: 16px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.weekly-schedule-time span {
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #4f7d48;
+  background: #eaf4e3;
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.weekly-schedule-student {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 9px;
+}
+
+.weekly-schedule-student .learning-course-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 12px;
+  background: #f5efe6;
+}
+
+.weekly-schedule-student strong,
+.weekly-unscheduled-list strong {
+  display: block;
+  overflow: hidden;
+  color: #4d3b31;
+  font-size: 14px;
+  font-weight: 950;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekly-schedule-student small,
+.weekly-unscheduled-list small,
+.weekly-unscheduled-panel span {
+  display: block;
+  overflow: hidden;
+  color: #806f63;
+  font-size: 11px;
+  font-weight: 780;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekly-schedule-note {
+  margin-top: 3px;
+  color: #6ea154 !important;
+}
+
+.weekly-schedule-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.weekly-schedule-card-footer em {
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: #4f7d48;
+  background: #eaf4e3;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.weekly-schedule-card-footer em.almost,
+.weekly-schedule-card-footer em.critical {
+  color: #9b6422;
+  background: #fff0c4;
+}
+
+.weekly-schedule-card-footer em.completed {
+  color: #81736a;
+  background: #f1ece4;
+}
+
+.weekly-schedule-card-footer button {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 11px;
+}
+
+.weekly-unscheduled-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid #f0d8a2;
+  border-radius: 22px;
+  padding: 18px;
+  background: #fff9ea;
+}
+
+.weekly-unscheduled-panel > div:first-child strong {
+  display: block;
+  color: #4d3b31;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.weekly-unscheduled-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.weekly-unscheduled-list button {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 2px 9px;
+  align-items: center;
+  padding: 10px;
+  text-align: left;
+}
+
+.weekly-unscheduled-list button > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  grid-row: 1 / 3;
+  place-items: center;
+  border-radius: 11px;
+  background: white;
+}
+
 @media (max-width: 1380px) {
+  .weekly-schedule-toolbar {
+    grid-template-columns: minmax(240px, 1fr) repeat(2, minmax(150px, auto));
+  }
+
   .student-management-card {
     grid-template-columns: minmax(300px, 1fr) minmax(200px, .7fr);
   }
@@ -4300,6 +4601,42 @@ tbody tr:hover td {
 }
 
 @media (max-width: 860px) {
+  .weekly-schedule-heading {
+    align-items: flex-start;
+  }
+
+  .week-switcher {
+    justify-content: flex-start;
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .week-switcher strong {
+    min-width: 140px;
+    text-align: left;
+  }
+
+  .weekly-schedule-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .weekly-schedule-toolbar .search-box {
+    min-width: 0;
+  }
+
+  .weekly-schedule-board {
+    padding: 14px;
+  }
+
+  .weekly-schedule-grid {
+    grid-template-columns: 1fr;
+    overflow-x: visible;
+  }
+
+  .weekly-schedule-day {
+    min-width: 0;
+  }
+
   .student-management-panel .panel-heading h2 {
     font-size: 28px;
   }

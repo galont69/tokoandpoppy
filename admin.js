@@ -108,6 +108,20 @@ const studentCourseFilter = document.querySelector("#studentCourseFilter");
 const studentStatusFilter = document.querySelector("#studentStatusFilter");
 const refreshStudentsButton = document.querySelector("#refreshStudentsButton");
 const addStaffStudentButton = document.querySelector("#addStaffStudentButton");
+const weeklyScheduleScopeText = document.querySelector("#weeklyScheduleScopeText");
+const weeklyScheduleSummary = document.querySelector("#weeklyScheduleSummary");
+const weeklyScheduleRows = document.querySelector("#weeklyScheduleRows");
+const weeklyScheduleLoadingState = document.querySelector("#weeklyScheduleLoadingState");
+const weeklyScheduleEmptyState = document.querySelector("#weeklyScheduleEmptyState");
+const weeklyScheduleSearchInput = document.querySelector("#weeklyScheduleSearchInput");
+const weeklyScheduleBranchFilter = document.querySelector("#weeklyScheduleBranchFilter");
+const weeklyScheduleCourseFilter = document.querySelector("#weeklyScheduleCourseFilter");
+const weeklyScheduleStatusFilter = document.querySelector("#weeklyScheduleStatusFilter");
+const refreshWeeklyScheduleButton = document.querySelector("#refreshWeeklyScheduleButton");
+const schedulePrevWeekButton = document.querySelector("#schedulePrevWeekButton");
+const scheduleNextWeekButton = document.querySelector("#scheduleNextWeekButton");
+const scheduleTodayButton = document.querySelector("#scheduleTodayButton");
+const scheduleWeekLabel = document.querySelector("#scheduleWeekLabel");
 const staffStudentModal = document.querySelector("#staffStudentModal");
 const staffStudentForm = document.querySelector("#staffStudentForm");
 const staffStudentTitle = document.querySelector("#staffStudentTitle");
@@ -233,6 +247,7 @@ let artLessons = [];
 let activeArtLesson = null;
 let learningEnrollments = [];
 let studentManagementEnrollments = [];
+let weeklyScheduleEnrollments = [];
 let studentRevenueEvents = [];
 let studentDeleteRequests = [];
 const expandedStudentManagementDetails = new Set();
@@ -248,6 +263,7 @@ let lastSessionShareData = null;
 let pendingSessionShareData = null;
 let pendingSessionObjectUrl = "";
 let sessionShareIsSaved = false;
+let activeScheduleWeekStart = getWeekStartDate(new Date());
 const learningStudentTimelineGroups = new Map();
 const learningStudentTimelineCache = new Map();
 let freeResources = [];
@@ -508,6 +524,27 @@ function formatDateInputFromDate(date) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function addDays(date, amount) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+}
+
+function getWeekStartDate(value) {
+  const date = new Date(value);
+  date.setHours(12, 0, 0, 0);
+  const day = date.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  return addDays(date, diff);
+}
+
+function formatShortDate(value) {
+  return new Intl.DateTimeFormat("th-TH", {
+    day: "numeric",
+    month: "short"
+  }).format(new Date(value));
 }
 
 function getTomorrowDate() {
@@ -1119,9 +1156,9 @@ function updateStats() {
 
 function showAdminView(viewName) {
   const roleAllowedViews = isBranchTeacher()
-    ? ["students", "progress", "classReminders"]
+    ? ["students", "weeklySchedule", "progress", "classReminders"]
     : isBranchAdmin()
-      ? ["applications", "students", "classReminders", "branchRevenue", "progress", "branchStaff"]
+      ? ["applications", "students", "weeklySchedule", "classReminders", "branchRevenue", "progress", "branchStaff"]
       : null;
   if (roleAllowedViews && !roleAllowedViews.includes(viewName)) {
     viewName = "applications";
@@ -1137,6 +1174,7 @@ function showAdminView(viewName) {
   const viewCopy = {
     applications: ["ใบสมัครเรียน", "ศูนย์จัดการสมาชิก"],
     students: ["นักเรียน", "STUDENT CENTER"],
+    weeklySchedule: ["ตารางเรียน", "WEEKLY SCHEDULE"],
     classReminders: ["แจ้งเตือนก่อนวันเรียน", "CLASS REMINDERS"],
     branchRevenue: ["รายรับสาขา", "BRANCH REVENUE"],
     branchAdmins: ["ผู้ดูแลสาขา", "BRANCH ADMIN ACCESS"],
@@ -1154,6 +1192,7 @@ function showAdminView(viewName) {
   document.querySelector(".sidebar").classList.remove("open");
   if (viewName === "branchAdmins") loadBranchAdminApplications();
   if (viewName === "students") loadStudentManagement();
+  if (viewName === "weeklySchedule") loadWeeklySchedule();
   if (viewName === "classReminders") loadClassReminders();
   if (viewName === "branchRevenue") loadBranchRevenue();
   if (viewName === "branchStaff") loadBranchStaffView();
@@ -1214,6 +1253,252 @@ function getCourseScheduleClass(enrollment = {}) {
     Boolean(enrollment.class_start_time);
   if (!hasSchedule) return "is-empty";
   return enrollment.class_reminder_enabled === false ? "is-muted" : "is-ready";
+}
+
+function hasCourseSchedule(enrollment = {}) {
+  return enrollment.class_weekday !== null &&
+    enrollment.class_weekday !== undefined &&
+    enrollment.class_weekday !== "" &&
+    Boolean(enrollment.class_start_time);
+}
+
+function getEnrollmentBranchName(enrollment = {}) {
+  return enrollment.branch_name ||
+    enrollment.branches?.name ||
+    getStudentApplication(enrollment).branches?.name ||
+    getCurrentBranchName() ||
+    "ไม่ระบุสาขา";
+}
+
+function getScheduleDateForWeekday(weekday) {
+  const normalized = Number(weekday);
+  const offset = normalized === 0 ? 6 : normalized - 1;
+  return addDays(activeScheduleWeekStart, offset);
+}
+
+function getScheduleWeekLabel() {
+  const endDate = addDays(activeScheduleWeekStart, 6);
+  return `${formatShortDate(activeScheduleWeekStart)} - ${formatShortDate(endDate)}`;
+}
+
+function courseMatchesFilter(courseType, filterValue) {
+  if (!filterValue || filterValue === "all") return true;
+  if (filterValue === "art_family") return isArtCourseType(courseType);
+  return courseType === filterValue;
+}
+
+function getFilteredWeeklyScheduleEnrollments({ includeUnscheduled = false } = {}) {
+  const keyword = (weeklyScheduleSearchInput?.value || "").trim().toLowerCase();
+  const branchFilterValue = weeklyScheduleBranchFilter?.value || "all";
+  const courseFilterValue = weeklyScheduleCourseFilter?.value || "all";
+  const statusFilterValue = weeklyScheduleStatusFilter?.value || "active";
+
+  return weeklyScheduleEnrollments.filter((enrollment) => {
+    const state = getLearningEnrollmentState(enrollment);
+    if (!includeUnscheduled && !hasCourseSchedule(enrollment)) return false;
+    const matchesStatus = statusFilterValue === "all" ||
+      state.key === statusFilterValue ||
+      (statusFilterValue === "active" && state.key !== "completed");
+    if (!matchesStatus) return false;
+    if (!courseMatchesFilter(enrollment.course_type, courseFilterValue)) return false;
+    if (branchFilterValue !== "all" && String(enrollment.branch_id || "") !== branchFilterValue) return false;
+
+    if (keyword) {
+      const haystack = [
+        getLearningStudentDisplayName(enrollment),
+        enrollment.student_name,
+        enrollment.student_nickname,
+        getCourseEnrollmentLabel(enrollment),
+        getEnrollmentBranchName(enrollment),
+        enrollment.teacher_name,
+        enrollment.class_schedule_note
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!haystack.includes(keyword)) return false;
+    }
+    return true;
+  });
+}
+
+function renderWeeklyScheduleBranchOptions() {
+  if (!weeklyScheduleBranchFilter) return;
+  const currentValue = weeklyScheduleBranchFilter.value || "all";
+  const branchRows = [...new Map(weeklyScheduleEnrollments
+    .filter((enrollment) => enrollment.branch_id)
+    .map((enrollment) => [enrollment.branch_id, getEnrollmentBranchName(enrollment)]))
+    .entries()]
+    .sort((a, b) => String(a[1]).localeCompare(String(b[1]), "th"));
+
+  weeklyScheduleBranchFilter.innerHTML = [
+    '<option value="all">ทุกสาขา</option>',
+    ...branchRows.map(([branchId, branchName]) =>
+      `<option value="${escapeHtml(branchId)}">${escapeHtml(branchName)}</option>`)
+  ].join("");
+  weeklyScheduleBranchFilter.value = branchRows.some(([branchId]) => branchId === currentValue)
+    ? currentValue
+    : "all";
+  weeklyScheduleBranchFilter.hidden = isBranchAdmin() || isBranchTeacher();
+}
+
+function renderWeeklyScheduleSummary() {
+  if (!weeklyScheduleSummary) return;
+  const allFiltered = getFilteredWeeklyScheduleEnrollments({ includeUnscheduled: true });
+  const scheduled = allFiltered.filter(hasCourseSchedule);
+  const unscheduled = Math.max(allFiltered.length - scheduled.length, 0);
+  const todayWeekday = new Date().getDay();
+  const todayCount = scheduled.filter((enrollment) => Number(enrollment.class_weekday) === todayWeekday).length;
+  const branchCount = new Set(scheduled.map((enrollment) => enrollment.branch_id || getEnrollmentBranchName(enrollment))).size;
+  weeklyScheduleSummary.innerHTML = [
+    ["คอร์สในตาราง", `${scheduled.length} รายการ`],
+    ["วันนี้", `${todayCount} คลาส`],
+    ["ยังไม่ตั้งเวลา", `${unscheduled} คอร์ส`],
+    ["สาขา", `${branchCount} สาขา`]
+  ].map(([label, value]) => `
+    <article>
+      <span>${escapeHtml(label)}</span>
+      <strong>${escapeHtml(value)}</strong>
+    </article>
+  `).join("");
+}
+
+function renderWeeklySchedule() {
+  if (!weeklyScheduleRows) return;
+  if (scheduleWeekLabel) scheduleWeekLabel.textContent = getScheduleWeekLabel();
+  renderWeeklyScheduleSummary();
+
+  const scheduled = getFilteredWeeklyScheduleEnrollments();
+  const unscheduled = getFilteredWeeklyScheduleEnrollments({ includeUnscheduled: true })
+    .filter((enrollment) => !hasCourseSchedule(enrollment));
+  const weekdayOrder = [1, 2, 3, 4, 5, 6, 0];
+  const grouped = new Map(weekdayOrder.map((weekday) => [weekday, []]));
+  scheduled.forEach((enrollment) => {
+    const weekday = Number(enrollment.class_weekday);
+    if (!grouped.has(weekday)) grouped.set(weekday, []);
+    grouped.get(weekday).push(enrollment);
+  });
+  grouped.forEach((items) => {
+    items.sort((a, b) => {
+      const timeCompare = String(a.class_start_time || "").localeCompare(String(b.class_start_time || ""));
+      if (timeCompare !== 0) return timeCompare;
+      return String(getLearningStudentDisplayName(a)).localeCompare(String(getLearningStudentDisplayName(b)), "th");
+    });
+  });
+
+  weeklyScheduleEmptyState.hidden = scheduled.length > 0 || unscheduled.length > 0;
+  const dayColumns = weekdayOrder.map((weekday) => {
+    const date = getScheduleDateForWeekday(weekday);
+    const items = grouped.get(weekday) || [];
+    return `
+      <section class="weekly-schedule-day ${formatDateInputFromDate(date) === formatDateInputFromDate(new Date()) ? "is-today" : ""}">
+        <header>
+          <span>${escapeHtml(weekdayLabels[weekday])}</span>
+          <strong>${escapeHtml(formatShortDate(date))}</strong>
+          <i>${items.length}</i>
+        </header>
+        <div class="weekly-schedule-day-list">
+          ${items.length ? items.map(renderWeeklyScheduleCard).join("") : `
+            <div class="weekly-schedule-empty-day">ยังไม่มีคลาส</div>
+          `}
+        </div>
+      </section>
+    `;
+  }).join("");
+
+  const unscheduledHtml = unscheduled.length ? `
+    <section class="weekly-unscheduled-panel">
+      <div>
+        <strong>คอร์สที่ยังไม่ได้ตั้งเวลา</strong>
+        <span>กดตั้งเวลาเพื่อให้ขึ้นตารางสัปดาห์และคิวแจ้งเตือน</span>
+      </div>
+      <div class="weekly-unscheduled-list">
+        ${unscheduled.slice(0, 12).map((enrollment) => `
+          <button type="button" data-weekly-schedule-edit="${enrollment.id}">
+            <span>${getCourseIcon(enrollment.course_type)}</span>
+            <strong>${escapeHtml(getLearningStudentDisplayName(enrollment))}</strong>
+            <small>${escapeHtml(getCourseEnrollmentLabel(enrollment))} · ${escapeHtml(getEnrollmentBranchName(enrollment))}</small>
+          </button>
+        `).join("")}
+      </div>
+    </section>
+  ` : "";
+
+  weeklyScheduleRows.innerHTML = `
+    <div class="weekly-schedule-grid">${dayColumns}</div>
+    ${unscheduledHtml}
+  `;
+}
+
+function renderWeeklyScheduleCard(enrollment) {
+  const state = getLearningEnrollmentState(enrollment);
+  const completed = Number(enrollment.completed_sessions || 0);
+  const total = Number(enrollment.total_sessions || 0);
+  const sessionText = total ? `${completed}/${total}` : `${completed} ครั้ง`;
+  const endTime = normalizeTimeLabel(enrollment.class_end_time);
+  const timeLabel = [
+    normalizeTimeLabel(enrollment.class_start_time),
+    endTime
+  ].filter(Boolean).join("-");
+  const note = enrollment.class_schedule_note ? `
+    <small class="weekly-schedule-note">${escapeHtml(enrollment.class_schedule_note)}</small>
+  ` : "";
+  return `
+    <article class="weekly-schedule-card ${state.key}">
+      <div class="weekly-schedule-time">
+        <strong>${escapeHtml(timeLabel || "-")}</strong>
+        <span>${escapeHtml(sessionText)}</span>
+      </div>
+      <div class="weekly-schedule-student">
+        <span class="learning-course-icon">${getCourseIcon(enrollment.course_type)}</span>
+        <div>
+          <strong>${escapeHtml(getLearningStudentDisplayName(enrollment))}</strong>
+          <small>${escapeHtml(getCourseEnrollmentLabel(enrollment))}</small>
+          <small>${escapeHtml(getEnrollmentBranchName(enrollment))}</small>
+          ${note}
+        </div>
+      </div>
+      <div class="weekly-schedule-card-footer">
+        <em class="${escapeHtml(state.badgeClass)}">${escapeHtml(state.label)}</em>
+        <button type="button" data-weekly-schedule-edit="${enrollment.id}">ตั้งเวลา</button>
+      </div>
+    </article>
+  `;
+}
+
+async function loadWeeklySchedule() {
+  if (!weeklyScheduleRows) return;
+  weeklyScheduleLoadingState.hidden = false;
+  weeklyScheduleEmptyState.hidden = true;
+  weeklyScheduleRows.innerHTML = "";
+  if (weeklyScheduleScopeText) {
+    weeklyScheduleScopeText.textContent = isBranchAdmin() || isBranchTeacher()
+      ? `ตารางเรียนของ${getCurrentBranchName()} เรียงตามเวลาจริงของสาขา`
+      : "ตารางเรียนทุกสาขา เรียงตามเวลาจริงที่ตั้งไว้ในแต่ละคอร์ส";
+  }
+
+  let query = supabaseClient
+    .from("course_enrollments")
+    .select("*, enrollment_applications(id,status,student_name,student_nickname,parent_name,parent_phone,parent_email,birth_date,age_years,student_notes,legacy_note,line_display_name,line_user_id,registration_source,branch_id,created_at,branches(name,code)), branches(name,code)")
+    .order("class_weekday", { ascending: true })
+    .order("class_start_time", { ascending: true });
+
+  if ((isBranchAdmin() || isBranchTeacher()) && currentBranchAssignment?.branch_id) {
+    query = query.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const { data, error } = await query;
+  weeklyScheduleLoadingState.hidden = true;
+  if (error) {
+    showToast(`โหลดตารางเรียนไม่สำเร็จ: ${error.message}`, true);
+    weeklyScheduleRows.innerHTML = "";
+    weeklyScheduleEmptyState.hidden = false;
+    return;
+  }
+
+  weeklyScheduleEnrollments = (data || []).filter((enrollment) => {
+    const app = getStudentApplication(enrollment);
+    return !app.status || app.status === "approved";
+  });
+  renderWeeklyScheduleBranchOptions();
+  renderWeeklySchedule();
 }
 
 function getLearningEnrollmentState(enrollment) {
@@ -2197,6 +2482,7 @@ async function saveStaffStudent(event) {
 function findCourseEnrollment(enrollmentId) {
   return learningEnrollments.find((enrollment) => enrollment.id === enrollmentId) ||
     studentManagementEnrollments.find((enrollment) => enrollment.id === enrollmentId) ||
+    weeklyScheduleEnrollments.find((enrollment) => enrollment.id === enrollmentId) ||
     null;
 }
 
@@ -2215,6 +2501,7 @@ function updateCourseEnrollmentInMemory(updatedEnrollment) {
   };
   applyUpdate(learningEnrollments);
   applyUpdate(studentManagementEnrollments);
+  applyUpdate(weeklyScheduleEnrollments);
 }
 
 function openCourseSchedule(enrollmentId) {
@@ -2312,6 +2599,7 @@ async function saveCourseSchedule(event) {
   updateCourseEnrollmentInMemory(data);
   renderStudentManagement();
   renderLearningProgress();
+  renderWeeklySchedule();
   showToast("บันทึกตารางเรียนเรียบร้อยแล้ว");
   closeCourseSchedule();
 }
@@ -2335,6 +2623,7 @@ async function clearCourseSchedule() {
   updateCourseEnrollmentInMemory(data);
   renderStudentManagement();
   renderLearningProgress();
+  renderWeeklySchedule();
   showToast("ล้างตารางเรียนเรียบร้อยแล้ว");
   closeCourseSchedule();
 }
@@ -7730,6 +8019,27 @@ copyTeacherLiffLinkButton?.addEventListener("click", () => {
 });
 refreshLearningButton?.addEventListener("click", loadLearningProgress);
 refreshStudentsButton?.addEventListener("click", loadStudentManagement);
+refreshWeeklyScheduleButton?.addEventListener("click", loadWeeklySchedule);
+weeklyScheduleSearchInput?.addEventListener("input", renderWeeklySchedule);
+weeklyScheduleBranchFilter?.addEventListener("change", renderWeeklySchedule);
+weeklyScheduleCourseFilter?.addEventListener("change", renderWeeklySchedule);
+weeklyScheduleStatusFilter?.addEventListener("change", renderWeeklySchedule);
+schedulePrevWeekButton?.addEventListener("click", () => {
+  activeScheduleWeekStart = addDays(activeScheduleWeekStart, -7);
+  renderWeeklySchedule();
+});
+scheduleNextWeekButton?.addEventListener("click", () => {
+  activeScheduleWeekStart = addDays(activeScheduleWeekStart, 7);
+  renderWeeklySchedule();
+});
+scheduleTodayButton?.addEventListener("click", () => {
+  activeScheduleWeekStart = getWeekStartDate(new Date());
+  renderWeeklySchedule();
+});
+weeklyScheduleRows?.addEventListener("click", (event) => {
+  const scheduleButton = event.target.closest("[data-weekly-schedule-edit]");
+  if (scheduleButton) openCourseSchedule(scheduleButton.dataset.weeklyScheduleEdit);
+});
 addStaffStudentButton?.addEventListener("click", openStaffStudentModal);
 addStaffStudentCourseButton?.addEventListener("click", () => {
   try {
