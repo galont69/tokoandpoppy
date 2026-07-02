@@ -122,6 +122,7 @@ const schedulePrevWeekButton = document.querySelector("#schedulePrevWeekButton")
 const scheduleNextWeekButton = document.querySelector("#scheduleNextWeekButton");
 const scheduleTodayButton = document.querySelector("#scheduleTodayButton");
 const scheduleHideEmptyButton = document.querySelector("#scheduleHideEmptyButton");
+const exportWeeklyScheduleButton = document.querySelector("#exportWeeklyScheduleButton");
 const scheduleWeekLabel = document.querySelector("#scheduleWeekLabel");
 const staffStudentModal = document.querySelector("#staffStudentModal");
 const staffStudentForm = document.querySelector("#staffStudentForm");
@@ -1517,6 +1518,112 @@ function renderWeeklyScheduleStudentRow(enrollment) {
       </div>
     </div>
   `;
+}
+
+function exportWeeklyScheduleExcel() {
+  const rows = getFilteredWeeklyScheduleEnrollments()
+    .map((enrollment) => {
+      const weekday = Number(enrollment.class_weekday);
+      const date = getScheduleDateForWeekday(weekday);
+      const contact = getClassReminderContact(enrollment);
+      const state = getLearningEnrollmentState(enrollment);
+      const completed = Number(enrollment.completed_sessions || 0);
+      const total = Number(enrollment.total_sessions || 0);
+      const startTime = normalizeTimeLabel(enrollment.class_start_time);
+      const endTime = normalizeTimeLabel(enrollment.class_end_time);
+      return {
+        date,
+        weekday,
+        startTime,
+        endTime,
+        branchName: getEnrollmentBranchName(enrollment),
+        studentName: enrollment.student_name || getLearningStudentDisplayName(enrollment),
+        nickname: enrollment.student_nickname || "",
+        courseName: getCourseEnrollmentLabel(enrollment),
+        courseType: enrollment.course_type || "",
+        sessionText: total ? `${completed}/${total}` : `${completed} ครั้ง`,
+        completed,
+        total,
+        status: state.label,
+        reminderEnabled: enrollment.class_reminder_enabled === false ? "ปิด" : "เปิด",
+        note: enrollment.class_schedule_note || "",
+        parentName: contact.parentName || "",
+        parentPhone: contact.parentPhone || ""
+      };
+    })
+    .sort((a, b) => {
+      const dateCompare = a.date - b.date;
+      if (dateCompare !== 0) return dateCompare;
+      const timeCompare = String(a.startTime || "").localeCompare(String(b.startTime || ""));
+      if (timeCompare !== 0) return timeCompare;
+      const branchCompare = String(a.branchName || "").localeCompare(String(b.branchName || ""), "th");
+      if (branchCompare !== 0) return branchCompare;
+      return String(a.studentName || "").localeCompare(String(b.studentName || ""), "th");
+    });
+
+  if (!rows.length) {
+    showToast("ยังไม่มีตารางเรียนให้ Export ในตัวกรองนี้", true);
+    return;
+  }
+
+  const headers = [
+    "วันที่",
+    "วัน",
+    "เวลาเริ่ม",
+    "เวลาเลิก",
+    "ช่วงเวลา",
+    "สาขา",
+    "ชื่อนักเรียน",
+    "ชื่อเล่น",
+    "คอร์ส",
+    "ประเภทคอร์ส",
+    "ครั้งเรียน",
+    "เรียนแล้ว",
+    "จำนวนครั้งทั้งหมด",
+    "สถานะ",
+    "แจ้งเตือน",
+    "หมายเหตุ",
+    "ผู้ปกครอง",
+    "เบอร์ผู้ปกครอง"
+  ];
+  const lines = [
+    headers.map(csvCell).join(","),
+    ...rows.map((row) => [
+      formatDateOnly(row.date),
+      weekdayLabels[row.weekday],
+      row.startTime,
+      row.endTime,
+      [row.startTime, row.endTime].filter(Boolean).join("-"),
+      row.branchName,
+      row.studentName,
+      row.nickname,
+      row.courseName,
+      row.courseType,
+      row.sessionText,
+      row.completed,
+      row.total || "",
+      row.status,
+      row.reminderEnabled,
+      row.note,
+      row.parentName,
+      row.parentPhone
+    ].map(csvCell).join(","))
+  ];
+
+  const weekStart = formatDateInputFromDate(activeScheduleWeekStart);
+  const weekEnd = formatDateInputFromDate(addDays(activeScheduleWeekStart, 6));
+  const blob = new Blob([`\ufeff${lines.join("\n")}`], {
+    type: "text/csv;charset=utf-8"
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `toko-poppy-weekly-schedule-${weekStart}-to-${weekEnd}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  showToast(`Export ตารางเรียนสำเร็จ ${rows.length} รายการ`);
 }
 
 async function loadWeeklySchedule() {
@@ -8096,6 +8203,7 @@ scheduleHideEmptyButton?.addEventListener("click", () => {
   weeklyScheduleHideEmptyDays = !weeklyScheduleHideEmptyDays;
   renderWeeklySchedule();
 });
+exportWeeklyScheduleButton?.addEventListener("click", exportWeeklyScheduleExcel);
 weeklyScheduleRows?.addEventListener("click", (event) => {
   const dayToggle = event.target.closest("[data-weekly-day-toggle]");
   if (dayToggle) {
