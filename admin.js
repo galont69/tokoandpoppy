@@ -121,6 +121,7 @@ const refreshWeeklyScheduleButton = document.querySelector("#refreshWeeklySchedu
 const schedulePrevWeekButton = document.querySelector("#schedulePrevWeekButton");
 const scheduleNextWeekButton = document.querySelector("#scheduleNextWeekButton");
 const scheduleTodayButton = document.querySelector("#scheduleTodayButton");
+const scheduleHideEmptyButton = document.querySelector("#scheduleHideEmptyButton");
 const scheduleWeekLabel = document.querySelector("#scheduleWeekLabel");
 const staffStudentModal = document.querySelector("#staffStudentModal");
 const staffStudentForm = document.querySelector("#staffStudentForm");
@@ -264,6 +265,8 @@ let pendingSessionShareData = null;
 let pendingSessionObjectUrl = "";
 let sessionShareIsSaved = false;
 let activeScheduleWeekStart = getWeekStartDate(new Date());
+let weeklyScheduleHideEmptyDays = false;
+const weeklyScheduleCollapsedDays = new Set();
 const learningStudentTimelineGroups = new Map();
 const learningStudentTimelineCache = new Map();
 let freeResources = [];
@@ -1384,20 +1387,30 @@ function renderWeeklySchedule() {
   });
 
   weeklyScheduleEmptyState.hidden = scheduled.length > 0 || unscheduled.length > 0;
-  const dayColumns = weekdayOrder.map((weekday) => {
+  if (scheduleHideEmptyButton) {
+    scheduleHideEmptyButton.setAttribute("aria-pressed", String(weeklyScheduleHideEmptyDays));
+    scheduleHideEmptyButton.textContent = weeklyScheduleHideEmptyDays ? "แสดงวันว่าง" : "ซ่อนวันว่าง";
+  }
+  const visibleWeekdays = weekdayOrder.filter((weekday) => {
+    const items = grouped.get(weekday) || [];
+    return !weeklyScheduleHideEmptyDays || items.length > 0;
+  });
+  const dayColumns = visibleWeekdays.map((weekday) => {
     const date = getScheduleDateForWeekday(weekday);
     const items = grouped.get(weekday) || [];
+    const collapsed = weeklyScheduleCollapsedDays.has(String(weekday));
     return `
-      <section class="weekly-schedule-day ${formatDateInputFromDate(date) === formatDateInputFromDate(new Date()) ? "is-today" : ""} ${items.length > 8 ? "is-busy" : ""}">
+      <section class="weekly-schedule-day ${formatDateInputFromDate(date) === formatDateInputFromDate(new Date()) ? "is-today" : ""} ${items.length > 8 ? "is-busy" : ""} ${collapsed ? "is-collapsed" : ""}">
         <header>
           <div>
             <span>${escapeHtml(weekdayLabels[weekday])}</span>
             <strong>${escapeHtml(formatShortDate(date))}</strong>
-            ${items.length > 8 ? '<small>เลื่อนดูรายการในวันนี้</small>' : ""}
+            ${items.length > 8 && !collapsed ? '<small>เลื่อนดูรายการในวันนี้</small>' : ""}
           </div>
           <i>${items.length}</i>
+          <button type="button" data-weekly-day-toggle="${weekday}" aria-expanded="${String(!collapsed)}">${collapsed ? "ขยาย" : "ย่อ"}</button>
         </header>
-        <div class="weekly-schedule-day-list">
+        <div class="weekly-schedule-day-list" ${collapsed ? "hidden" : ""}>
           ${items.length ? groupWeeklyScheduleTimeSlots(items).map(renderWeeklyScheduleTimeSlot).join("") : `
             <div class="weekly-schedule-empty-day">ยังไม่มีคลาส</div>
           `}
@@ -1425,7 +1438,9 @@ function renderWeeklySchedule() {
   ` : "";
 
   weeklyScheduleRows.innerHTML = `
-    <div class="weekly-schedule-grid">${dayColumns}</div>
+    <div class="weekly-schedule-grid ${weeklyScheduleHideEmptyDays ? "hide-empty-days" : ""}">
+      ${dayColumns || '<div class="weekly-schedule-all-hidden">ไม่มีวันเรียนในตัวกรองนี้</div>'}
+    </div>
     ${unscheduledHtml}
   `;
 }
@@ -8077,7 +8092,23 @@ scheduleTodayButton?.addEventListener("click", () => {
   activeScheduleWeekStart = getWeekStartDate(new Date());
   renderWeeklySchedule();
 });
+scheduleHideEmptyButton?.addEventListener("click", () => {
+  weeklyScheduleHideEmptyDays = !weeklyScheduleHideEmptyDays;
+  renderWeeklySchedule();
+});
 weeklyScheduleRows?.addEventListener("click", (event) => {
+  const dayToggle = event.target.closest("[data-weekly-day-toggle]");
+  if (dayToggle) {
+    const weekday = dayToggle.dataset.weeklyDayToggle;
+    if (weeklyScheduleCollapsedDays.has(weekday)) {
+      weeklyScheduleCollapsedDays.delete(weekday);
+    } else {
+      weeklyScheduleCollapsedDays.add(weekday);
+    }
+    renderWeeklySchedule();
+    return;
+  }
+
   const scheduleButton = event.target.closest("[data-weekly-schedule-edit]");
   if (scheduleButton) openCourseSchedule(scheduleButton.dataset.weeklyScheduleEdit);
 });

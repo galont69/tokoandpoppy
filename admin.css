@@ -4310,6 +4310,12 @@ tbody tr:hover td {
   font-weight: 900;
 }
 
+.week-switcher button[aria-pressed="true"] {
+  border-color: #9fc68f;
+  color: white;
+  background: #6ea154;
+}
+
 .week-switcher button {
   min-width: 42px;
   min-height: 42px;
@@ -4339,20 +4345,31 @@ tbody tr:hover td {
 }
 
 .weekly-schedule-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(190px, 1fr));
+  display: flex;
+  align-items: stretch;
   gap: 12px;
   overflow-x: auto;
   padding-bottom: 4px;
 }
 
 .weekly-schedule-day {
-  min-width: 190px;
+  flex: 1 0 210px;
+  min-width: 210px;
   overflow: hidden;
   border: 1px solid #eadccd;
   border-radius: 22px;
   background: #fffdf8;
   box-shadow: 0 16px 28px rgba(89, 65, 42, .06);
+  transition: flex-basis .18s ease, min-width .18s ease, opacity .18s ease;
+}
+
+.weekly-schedule-grid.hide-empty-days .weekly-schedule-day {
+  flex: 1 0 240px;
+}
+
+.weekly-schedule-day.is-collapsed {
+  flex: 0 0 96px;
+  min-width: 96px;
 }
 
 .weekly-schedule-day.is-today {
@@ -4374,10 +4391,18 @@ tbody tr:hover td {
   background: linear-gradient(135deg, #f7f1e8, #eef7e6);
 }
 
+.weekly-schedule-day header div {
+  min-width: 0;
+}
+
 .weekly-schedule-day header span {
+  display: block;
+  overflow: hidden;
   color: #4d3b31;
   font-size: 14px;
   font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .weekly-schedule-day header strong {
@@ -4406,6 +4431,47 @@ tbody tr:hover td {
   font-size: 12px;
   font-style: normal;
   font-weight: 950;
+}
+
+.weekly-schedule-day header button {
+  grid-column: 1 / -1;
+  border: 1px solid #dfead5;
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #527a49;
+  background: rgba(255, 255, 255, .76);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.weekly-schedule-day.is-collapsed header {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.weekly-schedule-day.is-collapsed header span {
+  max-width: 70px;
+  font-size: 12px;
+}
+
+.weekly-schedule-day.is-collapsed header strong {
+  font-size: 10px;
+}
+
+.weekly-schedule-day.is-collapsed header i {
+  width: 34px;
+  height: 34px;
+}
+
+.weekly-schedule-day.is-collapsed header button {
+  width: 100%;
+  padding-inline: 4px;
+}
+
+.weekly-schedule-day.is-collapsed .weekly-schedule-day-list {
+  display: none;
 }
 
 .weekly-schedule-day-list {
@@ -4445,6 +4511,19 @@ tbody tr:hover td {
   background: #fffaf2;
   font-size: 12px;
   font-weight: 800;
+}
+
+.weekly-schedule-all-hidden {
+  display: grid;
+  min-width: 260px;
+  min-height: 180px;
+  place-items: center;
+  border: 1px dashed #eadccd;
+  border-radius: 22px;
+  color: #806f63;
+  background: #fffaf2;
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .weekly-schedule-slot {
@@ -4706,11 +4785,17 @@ tbody tr:hover td {
   }
 
   .weekly-schedule-grid {
-    grid-template-columns: 1fr;
+    flex-direction: column;
     overflow-x: visible;
   }
 
   .weekly-schedule-day {
+    flex: none;
+    min-width: 0;
+  }
+
+  .weekly-schedule-day.is-collapsed {
+    flex: none;
     min-width: 0;
   }
 
