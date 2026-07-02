@@ -659,7 +659,6 @@ function buildSessionText(data) {
     : `ครั้งที่ ${data.sessionNumber}`;
   return [
     `สรุปวันนี้ของ${data.childLabel}`,
-    data.branchName ? `สาขา: ${data.branchName}` : "",
     `${data.courseIcon} ${data.courseName}`,
     `วันที่ ${formatThaiDate(data.sessionDate)} · ${sessionText}`,
     data.lessonTitle ? `บทเรียนวันนี้: ${data.lessonTitle}` : "",
