@@ -160,42 +160,62 @@ const strengthChoiceConfigs = {
   robot: [
     { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
     { icon: "🧩", text: "ต่อชิ้นส่วนได้ถูกต้อง" },
-    { icon: "💡", text: "คิดและลองด้วยตนเอง" },
+    { icon: "💡", text: "คิดลองเอง" },
     { icon: "🤖", text: "แก้ปัญหาเป็นขั้นตอน" },
     { icon: "📦", text: "เก็บของเรียบร้อย" },
-    { icon: "😊", text: "มีความสุขในการเรียน" }
+    { icon: "😊", text: "มีความสุขในการเรียน" },
+    { icon: "🔍", text: "สังเกตดี" },
+    { icon: "🛠️", text: "ประกอบอย่างตั้งใจ" },
+    { icon: "🗣️", text: "กล้าเล่าเหตุผล" },
+    { icon: "🤝", text: "ทำงานร่วมกับครูดี" }
   ],
   creative_art: [
     { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
     { icon: "🎨", text: "เลือกสีได้มั่นใจ" },
-    { icon: "💡", text: "เล่าไอเดียของตัวเอง" },
+    { icon: "💡", text: "เล่าไอเดียเอง" },
     { icon: "🧩", text: "ทำตามขั้นตอนได้ดี" },
     { icon: "📦", text: "เก็บของเรียบร้อย" },
-    { icon: "😊", text: "มีความสุขในการเรียน" }
+    { icon: "😊", text: "มีความสุขในการเรียน" },
+    { icon: "✏️", text: "จับดินสอดีขึ้น" },
+    { icon: "🌈", text: "กล้าลองสีใหม่" },
+    { icon: "🔎", text: "สังเกตรายละเอียด" },
+    { icon: "⭐", text: "ตั้งใจจนเสร็จ" }
   ],
   art: [
     { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
     { icon: "🎨", text: "เลือกสีได้มั่นใจ" },
-    { icon: "💡", text: "เล่าไอเดียของตัวเอง" },
+    { icon: "💡", text: "เล่าไอเดียเอง" },
     { icon: "🧩", text: "ทำตามขั้นตอนได้ดี" },
     { icon: "📦", text: "เก็บของเรียบร้อย" },
-    { icon: "😊", text: "มีความสุขในการเรียน" }
+    { icon: "😊", text: "มีความสุขในการเรียน" },
+    { icon: "✏️", text: "จับดินสอดีขึ้น" },
+    { icon: "🌈", text: "กล้าลองสีใหม่" },
+    { icon: "🔎", text: "สังเกตรายละเอียด" },
+    { icon: "⭐", text: "ตั้งใจจนเสร็จ" }
   ],
   water_color: [
     { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
     { icon: "🎨", text: "คุมน้ำหนักสีได้ดี" },
-    { icon: "💡", text: "ลองผสมสีด้วยตนเอง" },
+    { icon: "💡", text: "ลองผสมสีเอง" },
     { icon: "🧩", text: "สังเกตรายละเอียดเก่ง" },
     { icon: "📦", text: "เก็บของเรียบร้อย" },
-    { icon: "😊", text: "มีความสุขในการเรียน" }
+    { icon: "😊", text: "มีความสุขในการเรียน" },
+    { icon: "💧", text: "ควบคุมน้ำดี" },
+    { icon: "🖌️", text: "ใช้พู่กันดีขึ้น" },
+    { icon: "🌈", text: "ไล่สีสวย" },
+    { icon: "⭐", text: "ตั้งใจจนเสร็จ" }
   ],
   clay: [
     { icon: "👂", text: "ตั้งใจฟังอธิบาย" },
     { icon: "🧱", text: "ควบคุมรูปทรงได้ดี" },
-    { icon: "💡", text: "ลองแก้ไขงานด้วยตนเอง" },
+    { icon: "💡", text: "ลองแก้งานเอง" },
     { icon: "🧩", text: "เก็บรายละเอียดตั้งใจ" },
     { icon: "📦", text: "เก็บของเรียบร้อย" },
-    { icon: "😊", text: "มีความสุขในการเรียน" }
+    { icon: "😊", text: "มีความสุขในการเรียน" },
+    { icon: "🤲", text: "ใช้มือคล่องขึ้น" },
+    { icon: "🔎", text: "สังเกตรูปทรงดี" },
+    { icon: "🌟", text: "ตกแต่งได้น่ารัก" },
+    { icon: "⭐", text: "ตั้งใจจนเสร็จ" }
   ]
 };
 
@@ -1184,25 +1204,23 @@ function drawWowStrengthPanel(ctx, choices = [], trophyIcon, x, y, width, height
     ctx.font = "800 23px Kanit, 'Noto Sans Thai', sans-serif";
     ctx.fillText(`${choice.icon || "⭐"} ${truncateCanvasText(ctx, choice.text || choice, chip.w - 82)}`, chip.x + 18, chip.y + 30);
   });
-  drawCardImage(ctx, trophyIcon, x + width - 184, y + 100, 148, 148, 0.94, "contain");
+  drawCardImage(ctx, trophyIcon, x + width - 132, y + 18, 96, 96, 0.9, "contain");
 }
 
-function drawWowProgress(ctx, completed, total, x, y, width, height) {
+function drawWowProgress(ctx, completed, total, x, y, width, height, pairIcon) {
   const safeTotal = Math.max(Number(total || 0), 1);
   const safeCompleted = Math.max(Math.min(Number(completed || 0), safeTotal), 0);
   const ratio = safeCompleted / safeTotal;
 
   drawCardShadow(ctx, x, y, width, height, 26, "#F2F8EC", "#9DCB8A");
+  drawCardImage(ctx, pairIcon, x + 16, y + 4, 178, 118, 1, "contain");
   ctx.fillStyle = "#4A372E";
-  ctx.font = "900 31px Kanit, 'Noto Sans Thai', sans-serif";
-  ctx.fillText("เส้นทางการเรียนรู้", x + 34, y + 48);
-  ctx.fillStyle = "#7A685A";
-  ctx.font = "700 22px Kanit, 'Noto Sans Thai', sans-serif";
-  ctx.fillText(`เรียนแล้ว ${safeCompleted}/${safeTotal} ครั้ง`, x + 34, y + 82);
+  ctx.font = "900 32px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText("เส้นทางการเรียนรู้", x + 208, y + 58);
 
-  const barX = x + 320;
+  const barX = x + 462;
   const barY = y + 46;
-  const barW = width - 456;
+  const barW = width - 608;
   const barH = 30;
   roundedRect(ctx, barX, barY, barW, barH, barH / 2);
   ctx.fillStyle = "#DCEFD2";
@@ -1213,8 +1231,8 @@ function drawWowProgress(ctx, completed, total, x, y, width, height) {
     ctx.fill();
   }
   ctx.fillStyle = "#18743D";
-  ctx.font = "900 29px Kanit, 'Noto Sans Thai', sans-serif";
-  ctx.fillText(`${Math.round(ratio * 100)}%`, barX + barW + 24, y + 72);
+  ctx.font = "900 33px Kanit, 'Noto Sans Thai', sans-serif";
+  ctx.fillText(`${safeCompleted}/${safeTotal}`, barX + barW + 24, y + 72);
 }
 
 async function loadCanvasImage(url) {
@@ -1447,7 +1465,7 @@ async function drawShareCard(data) {
     drawCardImage(ctx, heartIcon, 968, 132, 92, 92, 0.58, "contain");
     drawCardImage(ctx, blinkIcon, 36, 178, 72, 72, 0.72, "contain");
 
-    drawCardImage(ctx, cardLogo, 54, 44, 184, 70, 1, "contain");
+    drawCardImage(ctx, cardLogo, 38, 24, 368, 140, 1, "contain");
     drawWowInfoPill(ctx, 466, 34, 266, 70, "📅", formatThaiDate(data.sessionDate), {
       color: "#4F7D48",
       iconColor: "#8A6E5F",
@@ -1493,18 +1511,7 @@ async function drawShareCard(data) {
 
     drawWowStrengthPanel(ctx, strengthChoices, trophyIcon, 72, 834, 936, 248);
 
-    drawWowProgress(ctx, completed || sessionNumber, displayTotal, 72, 1106, 936, 122);
-    drawCardImage(ctx, pair, 904, 1210, 108, 72, 1, "contain");
-
-    ctx.fillStyle = "#4A372E";
-    ctx.font = "900 34px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("เก่งขึ้นทุกครั้งเลยนะ", width / 2, 1274);
-    ctx.font = "800 30px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("เก็บผลงานวันนี้ไว้เป็นกำลังใจ", width / 2, 1306);
-    ctx.fillStyle = "#6EA154";
-    ctx.font = "900 24px Kanit, 'Noto Sans Thai', sans-serif";
-    ctx.fillText("Toko & Poppy", width / 2, 1334);
+    drawWowProgress(ctx, completed || sessionNumber, displayTotal, 72, 1106, 936, 122, pair);
     ctx.textAlign = "start";
     return;
   }
