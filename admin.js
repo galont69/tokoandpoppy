@@ -1398,7 +1398,7 @@ function renderWeeklySchedule() {
           <i>${items.length}</i>
         </header>
         <div class="weekly-schedule-day-list">
-          ${items.length ? items.map(renderWeeklyScheduleCard).join("") : `
+          ${items.length ? groupWeeklyScheduleTimeSlots(items).map(renderWeeklyScheduleTimeSlot).join("") : `
             <div class="weekly-schedule-empty-day">ยังไม่มีคลาส</div>
           `}
         </div>
@@ -1430,39 +1430,77 @@ function renderWeeklySchedule() {
   `;
 }
 
-function renderWeeklyScheduleCard(enrollment) {
+function groupWeeklyScheduleTimeSlots(items = []) {
+  const slots = new Map();
+  items.forEach((enrollment) => {
+    const startTime = normalizeTimeLabel(enrollment.class_start_time);
+    const endTime = normalizeTimeLabel(enrollment.class_end_time);
+    const branchKey = enrollment.branch_id || getEnrollmentBranchName(enrollment);
+    const key = [startTime, endTime, branchKey].join("|");
+    if (!slots.has(key)) {
+      slots.set(key, {
+        key,
+        startTime,
+        endTime,
+        branchName: getEnrollmentBranchName(enrollment),
+        items: []
+      });
+    }
+    slots.get(key).items.push(enrollment);
+  });
+
+  return [...slots.values()].map((slot) => ({
+    ...slot,
+    items: slot.items.sort((a, b) =>
+      String(getLearningStudentDisplayName(a)).localeCompare(String(getLearningStudentDisplayName(b)), "th"))
+  })).sort((a, b) => {
+    const timeCompare = String(a.startTime || "").localeCompare(String(b.startTime || ""));
+    if (timeCompare !== 0) return timeCompare;
+    return String(a.branchName || "").localeCompare(String(b.branchName || ""), "th");
+  });
+}
+
+function renderWeeklyScheduleTimeSlot(slot) {
+  const timeLabel = [slot.startTime, slot.endTime].filter(Boolean).join("-");
+  const itemCount = slot.items.length;
+  return `
+    <article class="weekly-schedule-slot ${itemCount > 1 ? "has-many" : ""}">
+      <div class="weekly-schedule-slot-head">
+        <strong>${escapeHtml(timeLabel || "-")}</strong>
+        <span>${itemCount} คน</span>
+      </div>
+      <small class="weekly-schedule-slot-branch">${escapeHtml(slot.branchName)}</small>
+      <div class="weekly-schedule-slot-list">
+        ${slot.items.map(renderWeeklyScheduleStudentRow).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function renderWeeklyScheduleStudentRow(enrollment) {
   const state = getLearningEnrollmentState(enrollment);
   const completed = Number(enrollment.completed_sessions || 0);
   const total = Number(enrollment.total_sessions || 0);
   const sessionText = total ? `${completed}/${total}` : `${completed} ครั้ง`;
-  const endTime = normalizeTimeLabel(enrollment.class_end_time);
-  const timeLabel = [
-    normalizeTimeLabel(enrollment.class_start_time),
-    endTime
-  ].filter(Boolean).join("-");
   const note = enrollment.class_schedule_note ? `
     <small class="weekly-schedule-note">${escapeHtml(enrollment.class_schedule_note)}</small>
   ` : "";
   return `
-    <article class="weekly-schedule-card ${state.key}">
-      <div class="weekly-schedule-time">
-        <strong>${escapeHtml(timeLabel || "-")}</strong>
-        <span>${escapeHtml(sessionText)}</span>
-      </div>
+    <div class="weekly-schedule-student-row ${state.key}">
       <div class="weekly-schedule-student">
         <span class="learning-course-icon">${getCourseIcon(enrollment.course_type)}</span>
         <div>
           <strong>${escapeHtml(getLearningStudentDisplayName(enrollment))}</strong>
           <small>${escapeHtml(getCourseEnrollmentLabel(enrollment))}</small>
-          <small>${escapeHtml(getEnrollmentBranchName(enrollment))}</small>
           ${note}
         </div>
       </div>
       <div class="weekly-schedule-card-footer">
+        <span>${escapeHtml(sessionText)}</span>
         <em class="${escapeHtml(state.badgeClass)}">${escapeHtml(state.label)}</em>
         <button type="button" data-weekly-schedule-edit="${enrollment.id}">แก้เวลา</button>
       </div>
-    </article>
+    </div>
   `;
 }
 

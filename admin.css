@@ -4447,10 +4447,10 @@ tbody tr:hover td {
   font-weight: 800;
 }
 
-.weekly-schedule-card {
+.weekly-schedule-slot {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
+  gap: 7px;
   border: 1px solid #eadccd;
   border-radius: 16px;
   padding: 10px;
@@ -4458,37 +4458,69 @@ tbody tr:hover td {
   box-shadow: 0 10px 20px rgba(89, 65, 42, .06);
 }
 
-.weekly-schedule-card.almost_done {
-  border-color: #ecd48d;
-  background: #fffdf4;
+.weekly-schedule-slot.has-many {
+  border-color: #b8d8a8;
+  background: #fbfff7;
 }
 
-.weekly-schedule-card.completed {
-  opacity: .72;
-}
-
-.weekly-schedule-time {
+.weekly-schedule-slot-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
 }
 
-.weekly-schedule-time strong {
+.weekly-schedule-slot-head strong {
   color: #e85d43;
   font-size: 15px;
   font-weight: 950;
   white-space: nowrap;
 }
 
-.weekly-schedule-time span {
+.weekly-schedule-slot-head span {
   border-radius: 999px;
-  padding: 3px 7px;
+  padding: 3px 8px;
   color: #4f7d48;
   background: #eaf4e3;
   font-size: 10px;
   font-weight: 950;
   white-space: nowrap;
+}
+
+.weekly-schedule-slot-branch {
+  display: block;
+  overflow: hidden;
+  color: #806f63;
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weekly-schedule-slot-list {
+  display: grid;
+  gap: 6px;
+}
+
+.weekly-schedule-student-row {
+  display: grid;
+  gap: 7px;
+  border-top: 1px solid #f0e5d8;
+  padding-top: 7px;
+}
+
+.weekly-schedule-student-row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.weekly-schedule-student-row.almost_done {
+  border-color: #ecd48d;
+}
+
+.weekly-schedule-student-row.completed {
+  opacity: .72;
 }
 
 .weekly-schedule-student {
@@ -4540,8 +4572,19 @@ tbody tr:hover td {
 .weekly-schedule-card-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 6px;
+}
+
+.weekly-schedule-card-footer > span {
+  margin-right: auto;
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: #4f7d48;
+  background: #eaf4e3;
+  font-size: 10px;
+  font-weight: 950;
+  white-space: nowrap;
 }
 
 .weekly-schedule-card-footer em {
