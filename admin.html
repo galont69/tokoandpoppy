@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="admin.css?v=20260702-weekly-schedule-export">
+  <link rel="stylesheet" href="admin.css?v=20260703-student-merge-multi-schedule">
 </head>
 <body>
   <div class="paper-noise" aria-hidden="true"></div>
@@ -1169,33 +1169,10 @@
         <p id="courseScheduleSummary">บันทึกวันเรียนประจำของคอร์สนี้ เพื่อใช้ต่อยอดแจ้งเตือนผู้ปกครองก่อนวันเรียน</p>
       </div>
       <form class="course-schedule-form" id="courseScheduleForm">
-        <label>วันเรียนในสัปดาห์
-          <select id="courseScheduleWeekday" required>
-            <option value="">เลือกวันเรียน</option>
-            <option value="1">วันจันทร์</option>
-            <option value="2">วันอังคาร</option>
-            <option value="3">วันพุธ</option>
-            <option value="4">วันพฤหัสบดี</option>
-            <option value="5">วันศุกร์</option>
-            <option value="6">วันเสาร์</option>
-            <option value="0">วันอาทิตย์</option>
-          </select>
-        </label>
-        <label>เวลาเริ่ม
-          <input id="courseScheduleStartTime" type="time" required>
-        </label>
-        <label>เวลาเลิก
-          <input id="courseScheduleEndTime" type="time">
-        </label>
-        <label class="schedule-toggle">
-          <input id="courseScheduleReminderEnabled" type="checkbox" checked>
-          <span>เปิดใช้สำหรับแจ้งเตือนผู้ปกครองในอนาคต</span>
-        </label>
-        <label class="full">หมายเหตุ
-          <textarea id="courseScheduleNote" rows="3" placeholder="เช่น เรียนทุกสัปดาห์ / สลับสัปดาห์ / แจ้งล่วงหน้าก่อนเลื่อนเวลา"></textarea>
-        </label>
+        <div class="course-schedule-list full" id="courseScheduleRows"></div>
+        <button class="refresh-button full" id="addCourseScheduleRowButton" type="button">＋ เพิ่มวัน/เวลาเรียน</button>
         <div class="course-schedule-actions full">
-          <button class="delete-student-button" id="clearCourseScheduleButton" type="button">ล้างตารางเรียน</button>
+          <button class="delete-student-button" id="clearCourseScheduleButton" type="button">ล้างตารางเรียนทั้งหมด</button>
           <button class="save-lesson-button" id="saveCourseScheduleButton" type="submit">บันทึกตารางเรียน</button>
         </div>
       </form>
@@ -1459,6 +1436,6 @@
 
   <script src="supabase.js?v=2"></script>
   <script src="supabase-config.js?v=20260630-student-delete-approval"></script>
-  <script src="admin.js?v=20260702-weekly-schedule-export"></script>
+  <script src="admin.js?v=20260703-student-merge-multi-schedule"></script>
 </body>
 </html>
