@@ -67,6 +67,19 @@ const cropImage = document.querySelector("#cropImage");
 const cropZoomInput = document.querySelector("#cropZoomInput");
 const resetCropButton = document.querySelector("#resetCropButton");
 const confirmCropButton = document.querySelector("#confirmCropButton");
+const posterForm = document.querySelector("#posterForm");
+const posterPhotoInput = document.querySelector("#posterPhotoInput");
+const posterNicknameInput = document.querySelector("#posterNicknameInput");
+const posterLessonInput = document.querySelector("#posterLessonInput");
+const posterNicknameCounter = document.querySelector("#posterNicknameCounter");
+const posterLessonCounter = document.querySelector("#posterLessonCounter");
+const posterOutlineToggle = document.querySelector("#posterOutlineToggle");
+const posterScaleInput = document.querySelector("#posterScaleInput");
+const posterResetButton = document.querySelector("#posterResetButton");
+const posterCanvas = document.querySelector("#posterCanvas");
+const posterStatus = document.querySelector("#posterStatus");
+const posterRenderButton = document.querySelector("#posterRenderButton");
+const posterDownloadButton = document.querySelector("#posterDownloadButton");
 
 let lineProfile = null;
 let lineContext = {};
@@ -85,6 +98,18 @@ let activeCroppedPhotoName = "";
 let pendingSessionInput = null;
 let cropState = null;
 let selectedStrengthChoices = [];
+let posterState = {
+  photoObjectUrl: "",
+  sourceImage: null,
+  cutoutCanvas: null,
+  stickerCanvas: null,
+  scale: 1,
+  offsetX: 0,
+  offsetY: 0,
+  isProcessing: false,
+  outputBlob: null,
+  outputUrl: ""
+};
 
 const weekdayLabels = ["วันอาทิตย์", "วันจันทร์", "วันอังคาร", "วันพุธ", "วันพฤหัสบดี", "วันศุกร์", "วันเสาร์"];
 const sessionFieldLimits = {
@@ -154,6 +179,21 @@ const afterClassWowAssets = {
     trophy: "assets/after-class-wow/trophy.svg?v=20260701-parent-wow-card",
     waterColor: "assets/after-class-wow/water%20color.svg?v=20260701-parent-wow-card"
   }
+};
+
+const teacherPosterAssets = {
+  version: "20260708-teacher-poster",
+  background: "assets/teacher-poster/background.png?v=20260708-teacher-poster",
+  foreground: "assets/teacher-poster/foreground.png?v=20260708-teacher-poster"
+};
+
+const teacherPosterLayout = {
+  canvas: { width: 1080, height: 1350 },
+  nickname: { x: 467, y: 67, width: 365, height: 138 },
+  lesson: { x: 120, y: 200, width: 840, height: 115 },
+  photo: { x: 260, y: 320, width: 560, height: 790 },
+  outline: { size: 16, softness: 2 },
+  shadow: { blur: 8, opacity: 0.25, offsetX: 4, offsetY: 6 }
 };
 
 const strengthChoiceConfigs = {
@@ -1279,6 +1319,521 @@ async function loadCanvasImage(url) {
   });
 }
 
+function setPosterStatus(message, isError = false) {
+  if (!posterStatus) return;
+  posterStatus.hidden = !message;
+  posterStatus.textContent = message || "";
+  posterStatus.classList.toggle("error", isError);
+}
+
+function updatePosterCounters() {
+  if (posterNicknameCounter && posterNicknameInput) {
+    posterNicknameCounter.textContent = `${Array.from(posterNicknameInput.value || "").length}/${posterNicknameInput.maxLength || 18}`;
+  }
+  if (posterLessonCounter && posterLessonInput) {
+    posterLessonCounter.textContent = `${Array.from(posterLessonInput.value || "").length}/${posterLessonInput.maxLength || 70}`;
+  }
+}
+
+function revokePosterOutputUrl() {
+  if (posterState.outputUrl) URL.revokeObjectURL(posterState.outputUrl);
+  posterState.outputUrl = "";
+  posterState.outputBlob = null;
+  if (posterDownloadButton) posterDownloadButton.disabled = true;
+}
+
+function resetPosterTransform() {
+  posterState.scale = 1;
+  posterState.offsetX = 0;
+  posterState.offsetY = 0;
+  if (posterScaleInput) posterScaleInput.value = "1";
+}
+
+function createImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => resolve({ image, objectUrl });
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("เปิดรูปไม่สำเร็จ"));
+    };
+    image.src = objectUrl;
+  });
+}
+
+function createScaledCanvasFromImage(image, maxDimension = 1700) {
+  const ratio = Math.min(maxDimension / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height), 1);
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(Math.round((image.naturalWidth || image.width) * ratio), 1);
+  canvas.height = Math.max(Math.round((image.naturalHeight || image.height) * ratio), 1);
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+function canvasHasTransparentAlpha(canvas) {
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  for (let index = 3; index < data.length; index += 64) {
+    if (data[index] < 245) return true;
+  }
+  return false;
+}
+
+function getCanvasAlphaBounds(canvas) {
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  let minX = canvas.width;
+  let minY = canvas.height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < canvas.height; y += 1) {
+    for (let x = 0; x < canvas.width; x += 1) {
+      const alpha = data[(y * canvas.width + x) * 4 + 3];
+      if (alpha <= 12) continue;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+  if (maxX < minX || maxY < minY) return null;
+  return { minX, minY, maxX, maxY };
+}
+
+function trimCanvasToAlpha(canvas, padding = 14) {
+  const bounds = getCanvasAlphaBounds(canvas);
+  if (!bounds) return canvas;
+  const sx = Math.max(bounds.minX - padding, 0);
+  const sy = Math.max(bounds.minY - padding, 0);
+  const ex = Math.min(bounds.maxX + padding, canvas.width - 1);
+  const ey = Math.min(bounds.maxY + padding, canvas.height - 1);
+  const trimmed = document.createElement("canvas");
+  trimmed.width = Math.max(ex - sx + 1, 1);
+  trimmed.height = Math.max(ey - sy + 1, 1);
+  trimmed.getContext("2d").drawImage(canvas, sx, sy, trimmed.width, trimmed.height, 0, 0, trimmed.width, trimmed.height);
+  return trimmed;
+}
+
+function colorDistance(data, index, color) {
+  const dr = data[index] - color.r;
+  const dg = data[index + 1] - color.g;
+  const db = data[index + 2] - color.b;
+  return Math.sqrt(dr * dr + dg * dg + db * db);
+}
+
+function getAverageEdgeColor(data, width, height) {
+  const samples = [];
+  const step = Math.max(Math.floor(Math.min(width, height) / 34), 8);
+  for (let x = 0; x < width; x += step) {
+    samples.push((x * 4), ((height - 1) * width + x) * 4);
+  }
+  for (let y = 0; y < height; y += step) {
+    samples.push((y * width) * 4, (y * width + width - 1) * 4);
+  }
+  const color = samples.reduce((sum, index) => {
+    sum.r += data[index];
+    sum.g += data[index + 1];
+    sum.b += data[index + 2];
+    return sum;
+  }, { r: 0, g: 0, b: 0 });
+  const count = Math.max(samples.length, 1);
+  return {
+    r: color.r / count,
+    g: color.g / count,
+    b: color.b / count
+  };
+}
+
+function getEdgeColorTolerance(data, width, height, edgeColor) {
+  const distances = [];
+  const step = Math.max(Math.floor(Math.min(width, height) / 32), 10);
+  for (let x = 0; x < width; x += step) {
+    distances.push(colorDistance(data, x * 4, edgeColor));
+    distances.push(colorDistance(data, ((height - 1) * width + x) * 4, edgeColor));
+  }
+  for (let y = 0; y < height; y += step) {
+    distances.push(colorDistance(data, (y * width) * 4, edgeColor));
+    distances.push(colorDistance(data, (y * width + width - 1) * 4, edgeColor));
+  }
+  const average = distances.reduce((sum, value) => sum + value, 0) / Math.max(distances.length, 1);
+  return Math.min(Math.max(average + 46, 48), 92);
+}
+
+function removeBackgroundFromEdges(canvas) {
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const { data, width, height } = imageData;
+  const edgeColor = getAverageEdgeColor(data, width, height);
+  const tolerance = getEdgeColorTolerance(data, width, height, edgeColor);
+  const total = width * height;
+  const visited = new Uint8Array(total);
+  const remove = new Uint8Array(total);
+  const queue = new Int32Array(total);
+  let head = 0;
+  let tail = 0;
+
+  const tryPush = (x, y) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    const point = y * width + x;
+    if (visited[point]) return;
+    visited[point] = 1;
+    if (data[point * 4 + 3] < 20 || colorDistance(data, point * 4, edgeColor) <= tolerance) {
+      queue[tail] = point;
+      tail += 1;
+      remove[point] = 1;
+    }
+  };
+
+  for (let x = 0; x < width; x += 1) {
+    tryPush(x, 0);
+    tryPush(x, height - 1);
+  }
+  for (let y = 0; y < height; y += 1) {
+    tryPush(0, y);
+    tryPush(width - 1, y);
+  }
+
+  while (head < tail) {
+    const point = queue[head];
+    head += 1;
+    const x = point % width;
+    const y = Math.floor(point / width);
+    tryPush(x + 1, y);
+    tryPush(x - 1, y);
+    tryPush(x, y + 1);
+    tryPush(x, y - 1);
+  }
+
+  for (let point = 0; point < total; point += 1) {
+    const alphaIndex = point * 4 + 3;
+    if (remove[point]) {
+      data[alphaIndex] = 0;
+      continue;
+    }
+    const x = point % width;
+    const y = Math.floor(point / width);
+    const nearRemoved = (x > 0 && remove[point - 1]) ||
+      (x < width - 1 && remove[point + 1]) ||
+      (y > 0 && remove[point - width]) ||
+      (y < height - 1 && remove[point + width]);
+    if (nearRemoved && colorDistance(data, point * 4, edgeColor) <= tolerance + 38) {
+      data[alphaIndex] = Math.min(data[alphaIndex], 190);
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
+  return {
+    canvas,
+    removedRatio: tail / total,
+    tolerance
+  };
+}
+
+function createPosterCutoutCanvas(image) {
+  const sourceCanvas = createScaledCanvasFromImage(image);
+  const hadAlpha = canvasHasTransparentAlpha(sourceCanvas);
+  if (hadAlpha) {
+    return {
+      canvas: trimCanvasToAlpha(sourceCanvas, 16),
+      usedExistingAlpha: true,
+      removedRatio: 0
+    };
+  }
+  const result = removeBackgroundFromEdges(sourceCanvas);
+  return {
+    canvas: trimCanvasToAlpha(result.canvas, 16),
+    usedExistingAlpha: false,
+    removedRatio: result.removedRatio
+  };
+}
+
+function createStickerOutlineCanvas(cutoutCanvas, options = {}) {
+  const size = Math.max(Number(options.size || 16), 0);
+  const softness = Math.max(Number(options.softness || 2), 0);
+  const margin = size + softness + 4;
+  const sticker = document.createElement("canvas");
+  sticker.width = cutoutCanvas.width + margin * 2;
+  sticker.height = cutoutCanvas.height + margin * 2;
+  const ctx = sticker.getContext("2d");
+
+  if (size > 0) {
+    const outline = document.createElement("canvas");
+    outline.width = sticker.width;
+    outline.height = sticker.height;
+    const outlineCtx = outline.getContext("2d");
+    const step = size > 12 ? 2 : 1;
+    for (let dx = -size; dx <= size; dx += step) {
+      for (let dy = -size; dy <= size; dy += step) {
+        if (dx * dx + dy * dy > size * size) continue;
+        outlineCtx.drawImage(cutoutCanvas, margin + dx, margin + dy);
+      }
+    }
+    outlineCtx.globalCompositeOperation = "source-in";
+    outlineCtx.fillStyle = "#ffffff";
+    outlineCtx.fillRect(0, 0, outline.width, outline.height);
+    outlineCtx.globalCompositeOperation = "source-over";
+
+    if (softness > 0) {
+      ctx.save();
+      ctx.filter = `blur(${softness}px)`;
+      ctx.drawImage(outline, 0, 0);
+      ctx.restore();
+    }
+    ctx.drawImage(outline, 0, 0);
+  }
+
+  ctx.drawImage(cutoutCanvas, margin, margin);
+  return sticker;
+}
+
+function getPosterTextLines(ctx, text, maxWidth, maxLines) {
+  const source = String(text || "").replace(/\s+/g, " ").trim();
+  if (!source) return [];
+  if (maxLines === 1) return [truncateCanvasText(ctx, source, maxWidth)];
+  const segments = source.split(" ").flatMap((word) => {
+    if (ctx.measureText(word).width <= maxWidth) return [word];
+    const chunks = [];
+    let chunk = "";
+    Array.from(word).forEach((char) => {
+      const testChunk = `${chunk}${char}`;
+      if (!chunk || ctx.measureText(testChunk).width <= maxWidth) {
+        chunk = testChunk;
+      } else {
+        chunks.push(chunk);
+        chunk = char;
+      }
+    });
+    if (chunk) chunks.push(chunk);
+    return chunks;
+  });
+  const lines = [];
+  let line = "";
+  segments.forEach((segment) => {
+    const testLine = line ? `${line} ${segment}` : segment;
+    if (!line || ctx.measureText(testLine).width <= maxWidth) {
+      line = testLine;
+      return;
+    }
+    lines.push(line);
+    line = segment;
+  });
+  if (line) lines.push(line);
+  const clipped = lines.slice(0, maxLines);
+  if (lines.length > maxLines) {
+    clipped[maxLines - 1] = truncateCanvasText(ctx, `${clipped[maxLines - 1]}...`, maxWidth);
+  }
+  return clipped;
+}
+
+function drawPosterFittedText(ctx, text, box, options = {}) {
+  const source = normalizeText(text);
+  if (!source) return;
+  const fontFamily = options.fontFamily || "Kanit, 'Noto Sans Thai', sans-serif";
+  const maxFontSize = options.fontSize || 56;
+  const minFontSize = options.minFontSize || 36;
+  const maxLines = options.maxLines || 1;
+  const lineHeightRatio = options.lineHeight || 1.15;
+  let fontSize = maxFontSize;
+  let lines = [];
+  while (fontSize >= minFontSize) {
+    ctx.font = `900 ${fontSize}px ${fontFamily}`;
+    lines = getPosterTextLines(ctx, source, box.width - 24, maxLines);
+    const lineHeight = fontSize * lineHeightRatio;
+    const fitsHeight = lines.length * lineHeight <= box.height - 10;
+    const fitsWidth = lines.every((line) => ctx.measureText(line).width <= box.width - 24);
+    if (fitsHeight && fitsWidth) break;
+    fontSize -= 2;
+  }
+  ctx.save();
+  ctx.fillStyle = options.color || "#3b2418";
+  ctx.font = `900 ${Math.max(fontSize, minFontSize)}px ${fontFamily}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  const lineHeight = Math.max(fontSize, minFontSize) * lineHeightRatio;
+  const totalHeight = (lines.length - 1) * lineHeight;
+  const firstY = box.y + box.height / 2 - totalHeight / 2;
+  lines.forEach((line, index) => {
+    ctx.fillText(line, box.x + box.width / 2, firstY + index * lineHeight);
+  });
+  ctx.restore();
+}
+
+function drawPosterPhoto(ctx) {
+  const base = posterOutlineToggle?.checked && posterState.stickerCanvas
+    ? posterState.stickerCanvas
+    : posterState.cutoutCanvas;
+  if (!base) return;
+  const frame = teacherPosterLayout.photo;
+  const fitScale = Math.min(frame.width / base.width, frame.height / base.height);
+  const scale = fitScale * posterState.scale;
+  const drawWidth = base.width * scale;
+  const drawHeight = base.height * scale;
+  const drawX = frame.x + frame.width / 2 - drawWidth / 2 + posterState.offsetX;
+  const drawY = frame.y + frame.height - drawHeight + posterState.offsetY;
+  const shadow = teacherPosterLayout.shadow;
+  ctx.save();
+  ctx.shadowColor = `rgba(40, 28, 20, ${shadow.opacity})`;
+  ctx.shadowBlur = shadow.blur;
+  ctx.shadowOffsetX = shadow.offsetX;
+  ctx.shadowOffsetY = shadow.offsetY;
+  ctx.drawImage(base, drawX, drawY, drawWidth, drawHeight);
+  ctx.restore();
+}
+
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("สร้าง PNG ไม่สำเร็จ"));
+    }, "image/png");
+  });
+}
+
+async function renderTeacherPoster(options = {}) {
+  if (!posterCanvas) return;
+  const ctx = posterCanvas.getContext("2d");
+  const { width, height } = teacherPosterLayout.canvas;
+  posterCanvas.width = width;
+  posterCanvas.height = height;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#dff3ff";
+  ctx.fillRect(0, 0, width, height);
+
+  const [background, foreground] = await Promise.all([
+    loadCanvasImage(teacherPosterAssets.background),
+    loadCanvasImage(teacherPosterAssets.foreground)
+  ]);
+  drawCardImage(ctx, background, 0, 0, width, height);
+
+  drawPosterFittedText(ctx, posterNicknameInput?.value || "", teacherPosterLayout.nickname, {
+    color: "#f26a21",
+    fontSize: 72,
+    minFontSize: 44,
+    maxLines: 1,
+    lineHeight: 1.05
+  });
+  drawPosterFittedText(ctx, posterLessonInput?.value || "", teacherPosterLayout.lesson, {
+    color: "#3b2418",
+    fontSize: 56,
+    minFontSize: 36,
+    maxLines: 2,
+    lineHeight: 1.15
+  });
+
+  drawPosterPhoto(ctx);
+  drawCardImage(ctx, foreground, 0, 0, width, height);
+
+  if (options.createBlob) {
+    revokePosterOutputUrl();
+    posterState.outputBlob = await canvasToBlob(posterCanvas);
+    posterState.outputUrl = URL.createObjectURL(posterState.outputBlob);
+    if (posterDownloadButton) posterDownloadButton.disabled = false;
+  }
+}
+
+async function processPosterPhoto(file) {
+  if (!file) return;
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+    setPosterStatus("รูปต้องเป็น PNG, JPG หรือ WEBP", true);
+    posterPhotoInput.value = "";
+    return;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    setPosterStatus("รูปต้องไม่เกิน 10 MB", true);
+    posterPhotoInput.value = "";
+    return;
+  }
+
+  posterState.isProcessing = true;
+  if (posterRenderButton) posterRenderButton.disabled = true;
+  if (posterDownloadButton) posterDownloadButton.disabled = true;
+  setPosterStatus("กำลังเตรียมรูปและตัดพื้นหลัง...");
+  try {
+    if (posterState.photoObjectUrl) URL.revokeObjectURL(posterState.photoObjectUrl);
+    const { image, objectUrl } = await createImageFromFile(file);
+    posterState.photoObjectUrl = objectUrl;
+    posterState.sourceImage = image;
+    const result = createPosterCutoutCanvas(image);
+    posterState.cutoutCanvas = result.canvas;
+    posterState.stickerCanvas = createStickerOutlineCanvas(result.canvas, teacherPosterLayout.outline);
+    resetPosterTransform();
+    revokePosterOutputUrl();
+    await renderTeacherPoster();
+    const statusText = result.usedExistingAlpha
+      ? "ตรวจพบพื้นหลังโปร่งใสอยู่แล้ว สร้างขอบขาวพร้อมใช้งาน"
+      : "ตัดพื้นหลังจากขอบภาพและสร้างขอบขาวแล้ว";
+    setPosterStatus(statusText);
+  } catch (error) {
+    setPosterStatus(`เตรียมรูปไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    posterState.isProcessing = false;
+    if (posterRenderButton) posterRenderButton.disabled = false;
+  }
+}
+
+async function createPosterOutput(event) {
+  event?.preventDefault?.();
+  updatePosterCounters();
+  if (!posterState.cutoutCanvas) {
+    setPosterStatus("กรุณาอัปโหลดรูปเด็กก่อนสร้างภาพ", true);
+    return;
+  }
+  if (document.fonts?.ready) await document.fonts.ready;
+  if (posterRenderButton) {
+    posterRenderButton.disabled = true;
+    posterRenderButton.textContent = "กำลังสร้างภาพ...";
+  }
+  try {
+    await renderTeacherPoster({ createBlob: true });
+    setPosterStatus("สร้างภาพเรียบร้อย ดาวน์โหลด PNG ได้เลย");
+  } catch (error) {
+    setPosterStatus(`สร้างภาพไม่สำเร็จ: ${error.message}`, true);
+  } finally {
+    if (posterRenderButton) {
+      posterRenderButton.disabled = false;
+      posterRenderButton.textContent = "สร้างภาพ";
+    }
+  }
+}
+
+function getPosterFileName() {
+  const safeName = normalizeText(posterNicknameInput?.value || "student")
+    .replace(/[^\wก-๙-]+/g, "-")
+    .slice(0, 40) || "student";
+  return `toko-poppy-artwork-${safeName}.png`;
+}
+
+async function downloadPosterImage() {
+  if (!posterState.outputBlob || !posterState.outputUrl) {
+    await createPosterOutput();
+  }
+  if (!posterState.outputBlob || !posterState.outputUrl) return;
+  const fileName = getPosterFileName();
+  const file = new File([posterState.outputBlob], fileName, { type: "image/png" });
+  if (isLineOrIosWebView() && navigator.canShare?.({ files: [file] }) && navigator.share) {
+    try {
+      await navigator.share({ files: [file], title: "Toko & Poppy Artwork" });
+      return;
+    } catch {
+      // Continue to the download link fallback.
+    }
+  }
+  const link = document.createElement("a");
+  link.download = fileName;
+  link.href = posterState.outputUrl;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
+async function refreshPosterPreview() {
+  revokePosterOutputUrl();
+  updatePosterCounters();
+  await renderTeacherPoster();
+}
+
 function updateCropTransform() {
   if (!cropState || !cropImage || !cropStage) return;
   const stageWidth = cropStage.clientWidth || 430;
@@ -2095,6 +2650,8 @@ function bindEvents() {
       document.querySelector("#todayPanel").hidden = tab !== "today";
       document.querySelector("#remindersPanel").hidden = tab !== "reminders";
       document.querySelector("#sessionsPanel").hidden = tab !== "sessions";
+      document.querySelector("#posterPanel").hidden = tab !== "poster";
+      if (tab === "poster") renderTeacherPoster();
     });
   });
   const handleTeacherTaskClick = (event) => {
@@ -2192,6 +2749,46 @@ function bindEvents() {
     photoPreview.innerHTML = `<span>กำลังเปิดเครื่องมือครอปรูป...</span>`;
     openCropModal(file);
   });
+  posterForm?.addEventListener("submit", createPosterOutput);
+  posterDownloadButton?.addEventListener("click", downloadPosterImage);
+  posterPhotoInput?.addEventListener("change", () => {
+    revokePosterOutputUrl();
+    const file = posterPhotoInput.files?.[0];
+    if (!file) {
+      posterState.sourceImage = null;
+      posterState.cutoutCanvas = null;
+      posterState.stickerCanvas = null;
+      setPosterStatus("");
+      renderTeacherPoster();
+      return;
+    }
+    processPosterPhoto(file);
+  });
+  [posterNicknameInput, posterLessonInput].forEach((input) => {
+    input?.addEventListener("input", refreshPosterPreview);
+  });
+  posterOutlineToggle?.addEventListener("change", refreshPosterPreview);
+  posterScaleInput?.addEventListener("input", () => {
+    posterState.scale = Number(posterScaleInput.value || 1);
+    refreshPosterPreview();
+  });
+  document.querySelectorAll("[data-poster-nudge]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const amount = 28;
+      const direction = button.dataset.posterNudge;
+      if (direction === "up") posterState.offsetY -= amount;
+      if (direction === "down") posterState.offsetY += amount;
+      if (direction === "left") posterState.offsetX -= amount;
+      if (direction === "right") posterState.offsetX += amount;
+      refreshPosterPreview();
+    });
+  });
+  posterResetButton?.addEventListener("click", () => {
+    resetPosterTransform();
+    refreshPosterPreview();
+  });
+  updatePosterCounters();
+  renderTeacherPoster();
 }
 
 async function init() {

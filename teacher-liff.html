@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260702-reminder-wow-card" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260708-teacher-poster" />
 </head>
 <body>
   <main class="teacher-app">
@@ -70,6 +70,7 @@
         <button class="active" type="button" data-tab="today">วันนี้</button>
         <button type="button" data-tab="reminders">แจ้งเตือน</button>
         <button type="button" data-tab="sessions">หลังเรียน</button>
+        <button type="button" data-tab="poster">ภาพผลงาน</button>
       </nav>
 
       <section class="tab-panel" id="todayPanel">
@@ -122,6 +123,69 @@
           <span>เลือกเด็ก กรอกบันทึก สร้างการ์ด แล้วคัดลอกข้อความส่งผู้ปกครอง</span>
         </div>
         <div class="mobile-list" id="sessionList"></div>
+      </section>
+
+      <section class="tab-panel" id="posterPanel" hidden>
+        <div class="section-title">
+          <p>Artwork Poster</p>
+          <h2>สร้างภาพผลงานเด็ก</h2>
+          <span>อัปโหลดรูปเด็ก กรอกข้อความ แล้วจัดตำแหน่งก่อนดาวน์โหลด PNG</span>
+        </div>
+
+        <form id="posterForm" class="stack-form poster-form">
+          <label>
+            รูปเด็ก / ผลงาน
+            <input id="posterPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+          </label>
+          <div class="poster-upload-tips">
+            <strong>แนะนำการถ่ายรูป</strong>
+            <span>ถ่ายแนวตั้ง เห็นเด็กและผลงานครบ หัว/มือไม่ชิดขอบ พื้นหลังเรียบ และอยู่ในที่สว่าง</span>
+          </div>
+          <label>
+            ชื่อเล่นเด็ก
+            <input id="posterNicknameInput" type="text" maxlength="18" placeholder="เช่น โลมา" />
+            <span class="field-assist">
+              <span>แสดงในช่องสีเหลืองด้านบน</span>
+              <strong id="posterNicknameCounter">0/18</strong>
+            </span>
+          </label>
+          <label>
+            บทเรียน / กิจกรรม
+            <textarea id="posterLessonInput" rows="2" maxlength="70" placeholder="เช่น วาดภาพสวนดอกไม้"></textarea>
+            <span class="field-assist">
+              <span>รองรับ 1-2 บรรทัดในกรอบเมฆ</span>
+              <strong id="posterLessonCounter">0/70</strong>
+            </span>
+          </label>
+
+          <section class="poster-controls" aria-label="ปรับรูปเด็กในภาพ">
+            <label class="poster-toggle">
+              <input id="posterOutlineToggle" type="checkbox" checked />
+              <span>ขอบขาวแบบสติกเกอร์</span>
+            </label>
+            <label>
+              ขนาดรูปเด็ก
+              <input id="posterScaleInput" type="range" min="0.65" max="1.6" step="0.01" value="1" />
+            </label>
+            <div class="poster-nudge-grid" aria-label="เลื่อนตำแหน่งรูปเด็ก">
+              <button type="button" data-poster-nudge="up">↑</button>
+              <button type="button" data-poster-nudge="left">←</button>
+              <button type="button" data-poster-nudge="down">↓</button>
+              <button type="button" data-poster-nudge="right">→</button>
+            </div>
+            <button class="ghost-button" id="posterResetButton" type="button">รีเซ็ตตำแหน่ง</button>
+          </section>
+
+          <div class="poster-preview-wrap">
+            <canvas id="posterCanvas" width="1080" height="1350"></canvas>
+          </div>
+          <p class="sheet-save-status" id="posterStatus" hidden></p>
+
+          <div class="sheet-actions">
+            <button class="ghost-button" id="posterRenderButton" type="submit">สร้างภาพ</button>
+            <button class="primary-button" id="posterDownloadButton" type="button" disabled>ดาวน์โหลด PNG</button>
+          </div>
+        </form>
       </section>
     </section>
   </main>
@@ -233,6 +297,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260702-reminder-wow-card"></script>
+  <script src="teacher-liff.js?v=20260708-teacher-poster"></script>
 </body>
 </html>
