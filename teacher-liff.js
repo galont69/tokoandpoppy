@@ -69,6 +69,7 @@ const resetCropButton = document.querySelector("#resetCropButton");
 const confirmCropButton = document.querySelector("#confirmCropButton");
 const posterForm = document.querySelector("#posterForm");
 const posterPhotoInput = document.querySelector("#posterPhotoInput");
+const posterPhotoModeSelect = document.querySelector("#posterPhotoModeSelect");
 const posterNicknameInput = document.querySelector("#posterNicknameInput");
 const posterLessonInput = document.querySelector("#posterLessonInput");
 const posterNicknameCounter = document.querySelector("#posterNicknameCounter");
@@ -101,8 +102,11 @@ let selectedStrengthChoices = [];
 let posterState = {
   photoObjectUrl: "",
   sourceImage: null,
+  photoCanvas: null,
+  sourceHasAlpha: false,
   cutoutCanvas: null,
   stickerCanvas: null,
+  lastCutoutMeta: null,
   scale: 1,
   offsetX: 0,
   offsetY: 0,
@@ -182,16 +186,17 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260708-teacher-poster",
-  background: "assets/teacher-poster/background.png?v=20260708-teacher-poster",
-  foreground: "assets/teacher-poster/foreground.png?v=20260708-teacher-poster"
+  version: "20260708-teacher-poster-polish",
+  background: "assets/teacher-poster/background.png?v=20260708-teacher-poster-polish",
+  foreground: "assets/teacher-poster/foreground.png?v=20260708-teacher-poster-polish"
 };
 
 const teacherPosterLayout = {
   canvas: { width: 1080, height: 1350 },
-  nickname: { x: 467, y: 67, width: 365, height: 138 },
-  lesson: { x: 120, y: 200, width: 840, height: 115 },
+  nickname: { x: 494, y: 78, width: 312, height: 82 },
+  lesson: { x: 196, y: 216, width: 688, height: 86 },
   photo: { x: 260, y: 320, width: 560, height: 790 },
+  framedPhoto: { x: 224, y: 360, width: 632, height: 690 },
   outline: { size: 16, softness: 2 },
   shadow: { blur: 8, opacity: 0.25, offsetX: 4, offsetY: 6 }
 };
@@ -1349,6 +1354,10 @@ function resetPosterTransform() {
   if (posterScaleInput) posterScaleInput.value = "1";
 }
 
+function getPosterPhotoMode() {
+  return posterPhotoModeSelect?.value || "framed";
+}
+
 function createImageFromFile(file) {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
@@ -1458,7 +1467,7 @@ function getEdgeColorTolerance(data, width, height, edgeColor) {
     distances.push(colorDistance(data, (y * width + width - 1) * 4, edgeColor));
   }
   const average = distances.reduce((sum, value) => sum + value, 0) / Math.max(distances.length, 1);
-  return Math.min(Math.max(average + 46, 48), 92);
+  return Math.min(Math.max(average + 28, 34), 64);
 }
 
 function removeBackgroundFromEdges(canvas) {
@@ -1514,13 +1523,8 @@ function removeBackgroundFromEdges(canvas) {
     }
     const x = point % width;
     const y = Math.floor(point / width);
-    const nearRemoved = (x > 0 && remove[point - 1]) ||
-      (x < width - 1 && remove[point + 1]) ||
-      (y > 0 && remove[point - width]) ||
-      (y < height - 1 && remove[point + width]);
-    if (nearRemoved && colorDistance(data, point * 4, edgeColor) <= tolerance + 38) {
-      data[alphaIndex] = Math.min(data[alphaIndex], 190);
-    }
+    // Keep near-edge subject pixels opaque. A soft matte can damage faces and artwork
+    // when the classroom background has colors close to skin, paper, or white clothes.
   }
 
   ctx.putImageData(imageData, 0, 0);
@@ -1547,6 +1551,34 @@ function createPosterCutoutCanvas(image) {
     usedExistingAlpha: false,
     removedRatio: result.removedRatio
   };
+}
+
+function preparePosterCutoutForCurrentMode() {
+  if (!posterState.sourceImage) return null;
+  const mode = getPosterPhotoMode();
+  const sourceCanvas = createScaledCanvasFromImage(posterState.sourceImage);
+  const hasAlpha = canvasHasTransparentAlpha(sourceCanvas);
+  posterState.sourceHasAlpha = hasAlpha;
+
+  if (mode === "alpha" || hasAlpha) {
+    const canvas = trimCanvasToAlpha(sourceCanvas, 16);
+    posterState.cutoutCanvas = canvas;
+    posterState.stickerCanvas = createStickerOutlineCanvas(canvas, teacherPosterLayout.outline);
+    posterState.lastCutoutMeta = { usedExistingAlpha: true, removedRatio: 0, suspicious: false };
+    return posterState.lastCutoutMeta;
+  }
+
+  const result = removeBackgroundFromEdges(sourceCanvas);
+  const canvas = trimCanvasToAlpha(result.canvas, 16);
+  const suspicious = result.removedRatio < 0.04 || result.removedRatio > 0.68;
+  posterState.cutoutCanvas = canvas;
+  posterState.stickerCanvas = createStickerOutlineCanvas(canvas, teacherPosterLayout.outline);
+  posterState.lastCutoutMeta = {
+    usedExistingAlpha: false,
+    removedRatio: result.removedRatio,
+    suspicious
+  };
+  return posterState.lastCutoutMeta;
 }
 
 function createStickerOutlineCanvas(cutoutCanvas, options = {}) {
@@ -1630,7 +1662,8 @@ function getPosterTextLines(ctx, text, maxWidth, maxLines) {
 function drawPosterFittedText(ctx, text, box, options = {}) {
   const source = normalizeText(text);
   if (!source) return;
-  const fontFamily = options.fontFamily || "Kanit, 'Noto Sans Thai', sans-serif";
+  const fontFamily = options.fontFamily || "'Mali', 'Noto Sans Thai', sans-serif";
+  const fontWeight = options.weight || 700;
   const maxFontSize = options.fontSize || 56;
   const minFontSize = options.minFontSize || 36;
   const maxLines = options.maxLines || 1;
@@ -1638,7 +1671,7 @@ function drawPosterFittedText(ctx, text, box, options = {}) {
   let fontSize = maxFontSize;
   let lines = [];
   while (fontSize >= minFontSize) {
-    ctx.font = `900 ${fontSize}px ${fontFamily}`;
+    ctx.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
     lines = getPosterTextLines(ctx, source, box.width - 24, maxLines);
     const lineHeight = fontSize * lineHeightRatio;
     const fitsHeight = lines.length * lineHeight <= box.height - 10;
@@ -1648,9 +1681,12 @@ function drawPosterFittedText(ctx, text, box, options = {}) {
   }
   ctx.save();
   ctx.fillStyle = options.color || "#3b2418";
-  ctx.font = `900 ${Math.max(fontSize, minFontSize)}px ${fontFamily}`;
+  ctx.font = `${fontWeight} ${Math.max(fontSize, minFontSize)}px ${fontFamily}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  ctx.shadowColor = options.shadowColor || "rgba(255, 255, 255, 0.75)";
+  ctx.shadowBlur = options.shadowBlur ?? 2;
+  ctx.shadowOffsetY = options.shadowOffsetY ?? 1;
   const lineHeight = Math.max(fontSize, minFontSize) * lineHeightRatio;
   const totalHeight = (lines.length - 1) * lineHeight;
   const firstY = box.y + box.height / 2 - totalHeight / 2;
@@ -1660,7 +1696,50 @@ function drawPosterFittedText(ctx, text, box, options = {}) {
   ctx.restore();
 }
 
+function drawPosterFramedPhoto(ctx, image) {
+  if (!image) return;
+  const frame = teacherPosterLayout.framedPhoto;
+  const radius = 34;
+  ctx.save();
+  ctx.shadowColor = "rgba(65, 46, 35, 0.18)";
+  ctx.shadowBlur = 22;
+  ctx.shadowOffsetY = 12;
+  ctx.fillStyle = "#ffffff";
+  roundedRect(ctx, frame.x, frame.y, frame.width, frame.height, radius);
+  ctx.fill();
+  ctx.restore();
+  ctx.strokeStyle = "rgba(232, 216, 199, 0.9)";
+  ctx.lineWidth = 3;
+  roundedRect(ctx, frame.x, frame.y, frame.width, frame.height, radius);
+  ctx.stroke();
+
+  const padding = 18;
+  const inner = {
+    x: frame.x + padding,
+    y: frame.y + padding,
+    width: frame.width - padding * 2,
+    height: frame.height - padding * 2
+  };
+  ctx.save();
+  roundedRect(ctx, inner.x, inner.y, inner.width, inner.height, 24);
+  ctx.clip();
+  ctx.fillStyle = "#fffaf2";
+  ctx.fillRect(inner.x, inner.y, inner.width, inner.height);
+  const fitScale = Math.min(inner.width / image.width, inner.height / image.height) * posterState.scale;
+  const drawWidth = image.width * fitScale;
+  const drawHeight = image.height * fitScale;
+  const drawX = inner.x + inner.width / 2 - drawWidth / 2 + posterState.offsetX;
+  const drawY = inner.y + inner.height - drawHeight + posterState.offsetY;
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  ctx.restore();
+}
+
 function drawPosterPhoto(ctx) {
+  const mode = getPosterPhotoMode();
+  if (mode === "framed" || (!posterState.cutoutCanvas && posterState.photoCanvas)) {
+    drawPosterFramedPhoto(ctx, posterState.photoCanvas);
+    return;
+  }
   const base = posterOutlineToggle?.checked && posterState.stickerCanvas
     ? posterState.stickerCanvas
     : posterState.cutoutCanvas;
@@ -1709,17 +1788,21 @@ async function renderTeacherPoster(options = {}) {
 
   drawPosterFittedText(ctx, posterNicknameInput?.value || "", teacherPosterLayout.nickname, {
     color: "#f26a21",
-    fontSize: 72,
-    minFontSize: 44,
+    fontFamily: "'Mali', 'Noto Sans Thai', sans-serif",
+    weight: 700,
+    fontSize: 58,
+    minFontSize: 36,
     maxLines: 1,
-    lineHeight: 1.05
+    lineHeight: 1.02
   });
   drawPosterFittedText(ctx, posterLessonInput?.value || "", teacherPosterLayout.lesson, {
     color: "#3b2418",
-    fontSize: 56,
-    minFontSize: 36,
+    fontFamily: "'Mali', 'Noto Sans Thai', sans-serif",
+    weight: 700,
+    fontSize: 44,
+    minFontSize: 30,
     maxLines: 2,
-    lineHeight: 1.15
+    lineHeight: 1.16
   });
 
   drawPosterPhoto(ctx);
@@ -1755,15 +1838,25 @@ async function processPosterPhoto(file) {
     const { image, objectUrl } = await createImageFromFile(file);
     posterState.photoObjectUrl = objectUrl;
     posterState.sourceImage = image;
-    const result = createPosterCutoutCanvas(image);
-    posterState.cutoutCanvas = result.canvas;
-    posterState.stickerCanvas = createStickerOutlineCanvas(result.canvas, teacherPosterLayout.outline);
+    posterState.photoCanvas = createScaledCanvasFromImage(image);
+    posterState.sourceHasAlpha = canvasHasTransparentAlpha(posterState.photoCanvas);
+    posterState.cutoutCanvas = null;
+    posterState.stickerCanvas = null;
+    posterState.lastCutoutMeta = null;
+    let result = null;
+    if (getPosterPhotoMode() !== "framed") {
+      result = preparePosterCutoutForCurrentMode();
+    }
     resetPosterTransform();
     revokePosterOutputUrl();
     await renderTeacherPoster();
-    const statusText = result.usedExistingAlpha
-      ? "ตรวจพบพื้นหลังโปร่งใสอยู่แล้ว สร้างขอบขาวพร้อมใช้งาน"
-      : "ตัดพื้นหลังจากขอบภาพและสร้างขอบขาวแล้ว";
+    const statusText = getPosterPhotoMode() === "framed"
+      ? "ใช้โหมดกรอบรูปปลอดภัย เหมาะกับรูปพื้นหลังซับซ้อน"
+      : result?.usedExistingAlpha
+        ? "ตรวจพบพื้นหลังโปร่งใสอยู่แล้ว สร้างขอบขาวพร้อมใช้งาน"
+        : result?.suspicious
+          ? "ตัดพื้นหลังแล้ว แต่รูปนี้พื้นหลังซับซ้อน ถ้ารูปพังให้เลือกกรอบรูปปลอดภัย"
+          : "ตัดพื้นหลังจากขอบภาพและสร้างขอบขาวแล้ว";
     setPosterStatus(statusText);
   } catch (error) {
     setPosterStatus(`เตรียมรูปไม่สำเร็จ: ${error.message}`, true);
@@ -1776,9 +1869,12 @@ async function processPosterPhoto(file) {
 async function createPosterOutput(event) {
   event?.preventDefault?.();
   updatePosterCounters();
-  if (!posterState.cutoutCanvas) {
+  if (!posterState.photoCanvas && !posterState.cutoutCanvas) {
     setPosterStatus("กรุณาอัปโหลดรูปเด็กก่อนสร้างภาพ", true);
     return;
+  }
+  if (getPosterPhotoMode() !== "framed" && !posterState.cutoutCanvas) {
+    preparePosterCutoutForCurrentMode();
   }
   if (document.fonts?.ready) await document.fonts.ready;
   if (posterRenderButton) {
@@ -2756,13 +2852,41 @@ function bindEvents() {
     const file = posterPhotoInput.files?.[0];
     if (!file) {
       posterState.sourceImage = null;
+      posterState.photoCanvas = null;
+      posterState.sourceHasAlpha = false;
       posterState.cutoutCanvas = null;
       posterState.stickerCanvas = null;
+      posterState.lastCutoutMeta = null;
       setPosterStatus("");
       renderTeacherPoster();
       return;
     }
     processPosterPhoto(file);
+  });
+  posterPhotoModeSelect?.addEventListener("change", async () => {
+    revokePosterOutputUrl();
+    if (!posterState.sourceImage) {
+      setPosterStatus("");
+      await renderTeacherPoster();
+      return;
+    }
+    if (getPosterPhotoMode() === "framed") {
+      posterState.cutoutCanvas = null;
+      posterState.stickerCanvas = null;
+      posterState.lastCutoutMeta = null;
+      setPosterStatus("ใช้โหมดกรอบรูปปลอดภัย เหมาะกับรูปพื้นหลังซับซ้อน");
+    } else {
+      setPosterStatus("กำลังเตรียมรูปตัดพื้นหลัง...");
+      const meta = preparePosterCutoutForCurrentMode();
+      if (meta?.usedExistingAlpha) {
+        setPosterStatus("ใช้ alpha จากรูป PNG และสร้างขอบขาวแล้ว");
+      } else if (meta?.suspicious) {
+        setPosterStatus("ตัดพื้นหลังแล้ว แต่รูปนี้พื้นหลังซับซ้อน ถ้ารูปพังให้เลือกกรอบรูปปลอดภัย", true);
+      } else {
+        setPosterStatus("ตัดพื้นหลังและสร้างขอบขาวแล้ว");
+      }
+    }
+    await renderTeacherPoster();
   });
   [posterNicknameInput, posterLessonInput].forEach((input) => {
     input?.addEventListener("input", refreshPosterPreview);

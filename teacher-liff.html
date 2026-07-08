@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260708-teacher-poster" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260708-teacher-poster-polish" />
 </head>
 <body>
   <main class="teacher-app">
@@ -139,8 +139,19 @@
           </label>
           <div class="poster-upload-tips">
             <strong>แนะนำการถ่ายรูป</strong>
-            <span>ถ่ายแนวตั้ง เห็นเด็กและผลงานครบ หัว/มือไม่ชิดขอบ พื้นหลังเรียบ และอยู่ในที่สว่าง</span>
+            <span>ถ่ายแนวตั้ง เห็นเด็กและผลงานครบ หัว/มือไม่ชิดขอบ ถ้าต้องการตัดพื้นหลังควรถ่ายกับพื้นหลังเรียบ</span>
           </div>
+          <label>
+            รูปแบบการวางรูป
+            <select id="posterPhotoModeSelect">
+              <option value="framed">กรอบรูปปลอดภัย (แนะนำ)</option>
+              <option value="auto">ตัดพื้นหลังอัตโนมัติ</option>
+              <option value="alpha">ใช้ PNG โปร่งใส / รูปตัดแล้ว</option>
+            </select>
+            <span class="field-assist">
+              <span>รูปพื้นหลังซับซ้อนแนะนำใช้กรอบรูป เพื่อไม่ให้หน้าและผลงานหาย</span>
+            </span>
+          </label>
           <label>
             ชื่อเล่นเด็ก
             <input id="posterNicknameInput" type="text" maxlength="18" placeholder="เช่น โลมา" />
@@ -161,7 +172,7 @@
           <section class="poster-controls" aria-label="ปรับรูปเด็กในภาพ">
             <label class="poster-toggle">
               <input id="posterOutlineToggle" type="checkbox" checked />
-              <span>ขอบขาวแบบสติกเกอร์</span>
+              <span>ขอบขาวแบบสติกเกอร์สำหรับรูปตัดพื้นหลัง</span>
             </label>
             <label>
               ขนาดรูปเด็ก
@@ -297,6 +308,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260708-teacher-poster"></script>
+  <script src="teacher-liff.js?v=20260708-teacher-poster-polish"></script>
 </body>
 </html>
