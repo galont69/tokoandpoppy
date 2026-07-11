@@ -188,30 +188,17 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260711-artwork-carousel-pizza-name",
+  version: "20260711-template-lab-applied",
   pizza: {
-    background: "assets/artwork-carousel/pizza/layer_01.png?v=20260711-artwork-carousel-pizza-name",
-    foreground: "assets/artwork-carousel/pizza/layer_03.png?v=20260711-artwork-carousel-pizza-name"
+    background: "assets/artwork-carousel/pizza/layer_01.png?v=20260711-template-lab-applied",
+    foreground: "assets/artwork-carousel/pizza/layer_03.png?v=20260711-template-lab-applied"
   }
 };
 
 const teacherPosterLayout = {
   canvas: { width: 2160, height: 2700 },
-  pizzaPhoto: {
-    x: 199,
-    y: 821,
-    width: 1810,
-    height: 1720,
-    rotate: -0.05934
-  },
-  chefName: {
-    x: 1052,
-    y: 566,
-    width: 500,
-    height: 116,
-    fontSize: 117,
-    minFontSize: 56
-  }
+  pizzaPhoto: { x: 199, y: 821, width: 1810, height: 1720, rotate: -0.05934 },
+  chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 },
   outline: { size: 16, softness: 2 },
   shadow: { blur: 8, opacity: 0.25, offsetX: 4, offsetY: 6 }
 };
@@ -1792,13 +1779,13 @@ function drawPizzaChefName(ctx) {
   const name = normalizeChefName(posterNicknameInput?.value || "");
   if (!name) return;
   const box = teacherPosterLayout.chefName;
-  let fontSize = 104;
+  let fontSize = Number(box.fontSize || 104);
   const fontFamily = "'Mali', 'Noto Sans Thai', sans-serif";
   do {
     ctx.font = `700 ${fontSize}px ${fontFamily}`;
     if (ctx.measureText(name).width <= box.width) break;
     fontSize -= 2;
-  } while (fontSize > 56);
+  } while (fontSize > Number(box.minFontSize || 56));
   ctx.save();
   ctx.fillStyle = "#3b2418";
   ctx.font = `700 ${fontSize}px ${fontFamily}`;
