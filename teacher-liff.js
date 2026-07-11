@@ -199,13 +199,13 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260711-carousel-preview",
+  version: "20260711-carousel-asset-fallback",
   pizza: {
-    background: "assets/artwork-carousel/pizza/layer_01.png?v=20260711-carousel-preview",
-    foreground: "assets/artwork-carousel/pizza/layer_03.png?v=20260711-carousel-preview",
-    story: "assets/artwork-carousel/pizza/slide_02.png?v=20260711-carousel-preview",
-    planBackground: "assets/artwork-carousel/pizza/p3_layer_01.png?v=20260711-carousel-preview",
-    planForeground: "assets/artwork-carousel/pizza/p3_layer_03.png?v=20260711-carousel-preview"
+    background: "assets/artwork-carousel/pizza/layer_01.png",
+    foreground: "assets/artwork-carousel/pizza/layer_03.png",
+    story: "assets/artwork-carousel/pizza/slide_02.png",
+    planBackground: "assets/artwork-carousel/pizza/p3_layer_01.png",
+    planForeground: "assets/artwork-carousel/pizza/p3_layer_03.png"
   }
 };
 
@@ -1331,15 +1331,54 @@ function drawReminderCharacterPanel(ctx, pairIcon, x, y, width, height) {
   drawCardImage(ctx, pairIcon, x + 34, y + 8, width - 68, height - 16, 1, "contain");
 }
 
-async function loadCanvasImage(url) {
-  if (!url) return null;
+function getCanvasImageCandidates(url) {
+  if (!url) return [];
+  const rawUrl = String(url).trim();
+  if (!rawUrl) return [];
+  if (rawUrl.startsWith("data:") || rawUrl.startsWith("blob:")) return [rawUrl];
+
+  const candidates = [rawUrl];
+  const noQueryUrl = rawUrl.split("?")[0];
+  const isLocalAsset = /^(?:\.\/|\/)?assets\//.test(noQueryUrl);
+
+  if (isLocalAsset && noQueryUrl !== rawUrl) {
+    candidates.push(noQueryUrl);
+  }
+
+  if (isLocalAsset) {
+    candidates.push(`/${noQueryUrl.replace(/^\.?\//, "")}`);
+  }
+
+  return Array.from(new Set(candidates));
+}
+
+function shouldUseAnonymousImage(url) {
+  if (!/^https?:\/\//i.test(url)) return false;
+  try {
+    return new URL(url).origin !== window.location.origin;
+  } catch (error) {
+    return false;
+  }
+}
+
+function loadCanvasImageCandidate(url) {
   return new Promise((resolve) => {
     const image = new Image();
-    image.crossOrigin = "anonymous";
+    if (shouldUseAnonymousImage(url)) image.crossOrigin = "anonymous";
+    image.decoding = "async";
     image.onload = () => resolve(image);
     image.onerror = () => resolve(null);
     image.src = url;
   });
+}
+
+async function loadCanvasImage(url) {
+  const candidates = getCanvasImageCandidates(url);
+  for (const candidate of candidates) {
+    const image = await loadCanvasImageCandidate(candidate);
+    if (image) return image;
+  }
+  return null;
 }
 
 function setPosterStatus(message, isError = false) {
