@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260708-teacher-poster-polish" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260711-artwork-carousel-pizza" />
 </head>
 <body>
   <main class="teacher-app">
@@ -127,56 +127,59 @@
 
       <section class="tab-panel" id="posterPanel" hidden>
         <div class="section-title">
-          <p>Artwork Poster</p>
-          <h2>สร้างภาพผลงานเด็ก</h2>
-          <span>อัปโหลดรูปเด็ก กรอกข้อความ แล้วจัดตำแหน่งก่อนดาวน์โหลด PNG</span>
+          <p>Artwork Carousel</p>
+          <h2>สร้าง Carousel ผลงานเด็ก</h2>
+          <span>เลือกบทเรียน อัปโหลดรูป แล้วสร้างภาพพร้อมนำไปโพสต์</span>
         </div>
 
         <form id="posterForm" class="stack-form poster-form">
-          <label>
-            รูปเด็ก / ผลงาน
-            <input id="posterPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
-          </label>
-          <div class="poster-upload-tips">
-            <strong>แนะนำการถ่ายรูป</strong>
-            <span>ถ่ายแนวตั้ง เห็นเด็กและผลงานครบ หัว/มือไม่ชิดขอบ ถ้าต้องการตัดพื้นหลังควรถ่ายกับพื้นหลังเรียบ</span>
-          </div>
-          <label>
-            รูปแบบการวางรูป
-            <select id="posterPhotoModeSelect">
-              <option value="framed">กรอบรูปปลอดภัย (แนะนำ)</option>
-              <option value="auto">ตัดพื้นหลังอัตโนมัติ</option>
-              <option value="alpha">ใช้ PNG โปร่งใส / รูปตัดแล้ว</option>
-            </select>
-            <span class="field-assist">
-              <span>รูปพื้นหลังซับซ้อนแนะนำใช้กรอบรูป เพื่อไม่ให้หน้าและผลงานหาย</span>
-            </span>
-          </label>
+          <section class="poster-lesson-picker" aria-labelledby="posterLessonTitle">
+            <strong id="posterLessonTitle">เลือกบทเรียน</strong>
+            <button class="poster-lesson-card is-active" type="button" data-poster-lesson="pizza">
+              <span>🍕</span>
+              <div>
+                <b>แต่งหน้าพิซซ่า</b>
+                <small>เริ่มทดลองภาพที่ 1: รูปถือผลงานหน้าตรง</small>
+              </div>
+            </button>
+          </section>
+
           <label>
             ชื่อเล่นเด็ก
-            <input id="posterNicknameInput" type="text" maxlength="18" placeholder="เช่น โลมา" />
+            <input id="posterNicknameInput" type="text" maxlength="18" placeholder="เช่น ภัทร" />
             <span class="field-assist">
-              <span>แสดงในช่องสีเหลืองด้านบน</span>
+              <span>ระบบจะวางชื่อหลังคำว่า By เชฟ</span>
               <strong id="posterNicknameCounter">0/18</strong>
             </span>
           </label>
+
           <label>
-            บทเรียน / กิจกรรม
-            <textarea id="posterLessonInput" rows="2" maxlength="70" placeholder="เช่น วาดภาพสวนดอกไม้"></textarea>
+            รูปที่ 1: ถือผลงานหน้าตรง
+            <input id="posterPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+          </label>
+          <label>
+            รูปที่ 2: กำลังวางแผน
+            <input id="posterPlanPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
             <span class="field-assist">
-              <span>รองรับ 1-2 บรรทัดในกรอบเมฆ</span>
-              <strong id="posterLessonCounter">0/70</strong>
+              <span>เตรียมไว้สำหรับภาพถัดไปใน carousel</span>
             </span>
           </label>
+          <label>
+            รูปที่ 3: กำลังวาด / ลงมือทำ
+            <input id="posterDrawPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+            <span class="field-assist">
+              <span>เตรียมไว้สำหรับภาพถัดไปใน carousel</span>
+            </span>
+          </label>
+          <div class="poster-upload-tips">
+            <strong>แนะนำการถ่ายรูป</strong>
+            <span>รูปที่ 1 ควรถ่ายแนวตั้ง เห็นเด็กและพิซซ่าครบ หัว/มือไม่ชิดขอบ ระบบจะครอปเป็น 1800 x 1700 px ให้อัตโนมัติ</span>
+          </div>
 
           <section class="poster-controls" aria-label="ปรับรูปเด็กในภาพ">
-            <label class="poster-toggle">
-              <input id="posterOutlineToggle" type="checkbox" checked />
-              <span>ขอบขาวแบบสติกเกอร์สำหรับรูปตัดพื้นหลัง</span>
-            </label>
             <label>
-              ขนาดรูปเด็ก
-              <input id="posterScaleInput" type="range" min="0.65" max="1.6" step="0.01" value="1" />
+              ขนาด / ครอปรูปที่ 1
+              <input id="posterScaleInput" type="range" min="0.75" max="1.7" step="0.01" value="1" />
             </label>
             <div class="poster-nudge-grid" aria-label="เลื่อนตำแหน่งรูปเด็ก">
               <button type="button" data-poster-nudge="up">↑</button>
@@ -188,12 +191,12 @@
           </section>
 
           <div class="poster-preview-wrap">
-            <canvas id="posterCanvas" width="1080" height="1350"></canvas>
+            <canvas id="posterCanvas" width="2160" height="2700"></canvas>
           </div>
           <p class="sheet-save-status" id="posterStatus" hidden></p>
 
           <div class="sheet-actions">
-            <button class="ghost-button" id="posterRenderButton" type="submit">สร้างภาพ</button>
+            <button class="ghost-button" id="posterRenderButton" type="submit">สร้างภาพที่ 1</button>
             <button class="primary-button" id="posterDownloadButton" type="button" disabled>ดาวน์โหลด PNG</button>
           </div>
         </form>
@@ -308,6 +311,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260708-teacher-poster-polish"></script>
+  <script src="teacher-liff.js?v=20260711-artwork-carousel-pizza"></script>
 </body>
 </html>

@@ -701,6 +701,69 @@ button { cursor: pointer; }
   gap: 16px;
 }
 
+.poster-lesson-picker {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(244, 126, 95, .2);
+  border-radius: 22px;
+  padding: 14px;
+  background: linear-gradient(135deg, #ffffff, #fff8ed);
+}
+
+.poster-lesson-picker > strong {
+  color: #5a463b;
+  font-family: Kanit, "Noto Sans Thai", sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.poster-lesson-card {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 12px;
+  align-items: center;
+  min-height: 78px;
+  border: 1px solid rgba(95, 142, 79, .24);
+  border-radius: 20px;
+  padding: 12px;
+  color: #5a463b;
+  background: #ffffff;
+  box-shadow: 0 10px 22px rgba(75, 55, 42, .07);
+  text-align: left;
+}
+
+.poster-lesson-card > span {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 18px;
+  background: #fff0d1;
+  font-size: 28px;
+}
+
+.poster-lesson-card b {
+  display: block;
+  color: #4a372e;
+  font-family: Kanit, "Noto Sans Thai", sans-serif;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.poster-lesson-card small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.poster-lesson-card.is-active {
+  border-color: rgba(95, 142, 79, .52);
+  background: linear-gradient(135deg, #ffffff, #eef8e8);
+}
+
 .poster-upload-tips {
   display: grid;
   gap: 3px;
@@ -795,7 +858,7 @@ button { cursor: pointer; }
   height: auto;
   margin: 0 auto;
   border-radius: 18px;
-  background: #dff3ff;
+  background: #fff1c9;
 }
 
 .crop-modal {

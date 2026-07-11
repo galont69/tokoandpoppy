@@ -69,6 +69,8 @@ const resetCropButton = document.querySelector("#resetCropButton");
 const confirmCropButton = document.querySelector("#confirmCropButton");
 const posterForm = document.querySelector("#posterForm");
 const posterPhotoInput = document.querySelector("#posterPhotoInput");
+const posterPlanPhotoInput = document.querySelector("#posterPlanPhotoInput");
+const posterDrawPhotoInput = document.querySelector("#posterDrawPhotoInput");
 const posterPhotoModeSelect = document.querySelector("#posterPhotoModeSelect");
 const posterNicknameInput = document.querySelector("#posterNicknameInput");
 const posterLessonInput = document.querySelector("#posterLessonInput");
@@ -186,17 +188,17 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260708-teacher-poster-polish",
-  background: "assets/teacher-poster/background.png?v=20260708-teacher-poster-polish",
-  foreground: "assets/teacher-poster/foreground.png?v=20260708-teacher-poster-polish"
+  version: "20260711-artwork-carousel-pizza",
+  pizza: {
+    background: "assets/artwork-carousel/pizza/layer_01.png?v=20260711-artwork-carousel-pizza",
+    foreground: "assets/artwork-carousel/pizza/layer_03.png?v=20260711-artwork-carousel-pizza"
+  }
 };
 
 const teacherPosterLayout = {
-  canvas: { width: 1080, height: 1350 },
-  nickname: { x: 494, y: 78, width: 312, height: 82 },
-  lesson: { x: 196, y: 216, width: 688, height: 86 },
-  photo: { x: 260, y: 320, width: 560, height: 790 },
-  framedPhoto: { x: 224, y: 360, width: 632, height: 690 },
+  canvas: { width: 2160, height: 2700 },
+  pizzaPhoto: { x: 180, y: 820, width: 1800, height: 1700, rotate: -0.035 },
+  chefName: { x: 835, y: 616, width: 680, height: 92 },
   outline: { size: 16, softness: 2 },
   shadow: { blur: 8, opacity: 0.25, offsetX: 4, offsetY: 6 }
 };
@@ -1699,6 +1701,7 @@ function drawPosterFittedText(ctx, text, box, options = {}) {
 function drawPosterFramedPhoto(ctx, image) {
   if (!image) return;
   const frame = teacherPosterLayout.framedPhoto;
+  if (!frame) return;
   const radius = 34;
   ctx.save();
   ctx.shadowColor = "rgba(65, 46, 35, 0.18)";
@@ -1731,6 +1734,66 @@ function drawPosterFramedPhoto(ctx, image) {
   const drawX = inner.x + inner.width / 2 - drawWidth / 2 + posterState.offsetX;
   const drawY = inner.y + inner.height - drawHeight + posterState.offsetY;
   ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  ctx.restore();
+}
+
+function createPizzaPhotoCropCanvas(image) {
+  const frame = teacherPosterLayout.pizzaPhoto;
+  const crop = document.createElement("canvas");
+  crop.width = frame.width;
+  crop.height = frame.height;
+  const ctx = crop.getContext("2d");
+  ctx.fillStyle = "#fffaf2";
+  ctx.fillRect(0, 0, crop.width, crop.height);
+  if (!image) return crop;
+  const fitScale = Math.max(crop.width / image.width, crop.height / image.height) * posterState.scale;
+  const drawWidth = image.width * fitScale;
+  const drawHeight = image.height * fitScale;
+  const drawX = crop.width / 2 - drawWidth / 2 + posterState.offsetX;
+  const drawY = crop.height / 2 - drawHeight / 2 + posterState.offsetY;
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  return crop;
+}
+
+function drawPizzaCarouselPhoto(ctx, image) {
+  if (!image) return;
+  const frame = teacherPosterLayout.pizzaPhoto;
+  const crop = createPizzaPhotoCropCanvas(image);
+  ctx.save();
+  ctx.translate(frame.x + frame.width / 2, frame.y + frame.height / 2);
+  ctx.rotate(frame.rotate || 0);
+  roundedRect(ctx, -frame.width / 2, -frame.height / 2, frame.width, frame.height, 58);
+  ctx.clip();
+  ctx.drawImage(crop, -frame.width / 2, -frame.height / 2, frame.width, frame.height);
+  ctx.restore();
+}
+
+function normalizeChefName(value) {
+  return normalizeText(value)
+    .replace(/^น้อง\s*/i, "")
+    .replace(/^เชฟ\s*/i, "")
+    .trim();
+}
+
+function drawPizzaChefName(ctx) {
+  const name = normalizeChefName(posterNicknameInput?.value || "");
+  if (!name) return;
+  const box = teacherPosterLayout.chefName;
+  let fontSize = 78;
+  const fontFamily = "'Mali', 'Noto Sans Thai', sans-serif";
+  do {
+    ctx.font = `700 ${fontSize}px ${fontFamily}`;
+    if (ctx.measureText(name).width <= box.width) break;
+    fontSize -= 2;
+  } while (fontSize > 44);
+  ctx.save();
+  ctx.fillStyle = "#3b2418";
+  ctx.font = `700 ${fontSize}px ${fontFamily}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(255, 226, 120, 0.45)";
+  ctx.shadowBlur = 2;
+  ctx.fillText(name, box.x, box.y + box.height / 2);
   ctx.restore();
 }
 
@@ -1777,36 +1840,17 @@ async function renderTeacherPoster(options = {}) {
   posterCanvas.width = width;
   posterCanvas.height = height;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#dff3ff";
+  ctx.fillStyle = "#fff1c9";
   ctx.fillRect(0, 0, width, height);
 
   const [background, foreground] = await Promise.all([
-    loadCanvasImage(teacherPosterAssets.background),
-    loadCanvasImage(teacherPosterAssets.foreground)
+    loadCanvasImage(teacherPosterAssets.pizza.background),
+    loadCanvasImage(teacherPosterAssets.pizza.foreground)
   ]);
   drawCardImage(ctx, background, 0, 0, width, height);
-
-  drawPosterFittedText(ctx, posterNicknameInput?.value || "", teacherPosterLayout.nickname, {
-    color: "#f26a21",
-    fontFamily: "'Mali', 'Noto Sans Thai', sans-serif",
-    weight: 700,
-    fontSize: 58,
-    minFontSize: 36,
-    maxLines: 1,
-    lineHeight: 1.02
-  });
-  drawPosterFittedText(ctx, posterLessonInput?.value || "", teacherPosterLayout.lesson, {
-    color: "#3b2418",
-    fontFamily: "'Mali', 'Noto Sans Thai', sans-serif",
-    weight: 700,
-    fontSize: 44,
-    minFontSize: 30,
-    maxLines: 2,
-    lineHeight: 1.16
-  });
-
-  drawPosterPhoto(ctx);
+  drawPizzaCarouselPhoto(ctx, posterState.photoCanvas);
   drawCardImage(ctx, foreground, 0, 0, width, height);
+  drawPizzaChefName(ctx);
 
   if (options.createBlob) {
     revokePosterOutputUrl();
@@ -1832,7 +1876,7 @@ async function processPosterPhoto(file) {
   posterState.isProcessing = true;
   if (posterRenderButton) posterRenderButton.disabled = true;
   if (posterDownloadButton) posterDownloadButton.disabled = true;
-  setPosterStatus("กำลังเตรียมรูปและตัดพื้นหลัง...");
+  setPosterStatus("กำลังเตรียมรูปที่ 1 สำหรับ carousel...");
   try {
     if (posterState.photoObjectUrl) URL.revokeObjectURL(posterState.photoObjectUrl);
     const { image, objectUrl } = await createImageFromFile(file);
@@ -1851,7 +1895,7 @@ async function processPosterPhoto(file) {
     revokePosterOutputUrl();
     await renderTeacherPoster();
     const statusText = getPosterPhotoMode() === "framed"
-      ? "ใช้โหมดกรอบรูปปลอดภัย เหมาะกับรูปพื้นหลังซับซ้อน"
+      ? "เตรียมรูปที่ 1 แล้ว ปรับขนาดหรือเลื่อนตำแหน่งให้เด็กและพิซซ่าอยู่พอดี"
       : result?.usedExistingAlpha
         ? "ตรวจพบพื้นหลังโปร่งใสอยู่แล้ว สร้างขอบขาวพร้อมใช้งาน"
         : result?.suspicious
@@ -1883,13 +1927,13 @@ async function createPosterOutput(event) {
   }
   try {
     await renderTeacherPoster({ createBlob: true });
-    setPosterStatus("สร้างภาพเรียบร้อย ดาวน์โหลด PNG ได้เลย");
+    setPosterStatus("สร้างภาพที่ 1 ของ carousel เรียบร้อย ดาวน์โหลด PNG ได้เลย");
   } catch (error) {
     setPosterStatus(`สร้างภาพไม่สำเร็จ: ${error.message}`, true);
   } finally {
     if (posterRenderButton) {
       posterRenderButton.disabled = false;
-      posterRenderButton.textContent = "สร้างภาพ";
+      posterRenderButton.textContent = "สร้างภาพที่ 1";
     }
   }
 }
@@ -1898,7 +1942,7 @@ function getPosterFileName() {
   const safeName = normalizeText(posterNicknameInput?.value || "student")
     .replace(/[^\wก-๙-]+/g, "-")
     .slice(0, 40) || "student";
-  return `toko-poppy-artwork-${safeName}.png`;
+  return `toko-poppy-pizza-carousel-01-${safeName}.png`;
 }
 
 async function downloadPosterImage() {
@@ -2847,6 +2891,15 @@ function bindEvents() {
   });
   posterForm?.addEventListener("submit", createPosterOutput);
   posterDownloadButton?.addEventListener("click", downloadPosterImage);
+  document.querySelectorAll("[data-poster-lesson]").forEach((button) => {
+    button.addEventListener("click", () => {
+      document.querySelectorAll("[data-poster-lesson]").forEach((item) => {
+        item.classList.toggle("is-active", item === button);
+      });
+      setPosterStatus("เลือกบทเรียนแต่งหน้าพิซซ่าแล้ว ตอนนี้สร้างภาพที่ 1 ก่อน");
+      refreshPosterPreview();
+    });
+  });
   posterPhotoInput?.addEventListener("change", () => {
     revokePosterOutputUrl();
     const file = posterPhotoInput.files?.[0];
@@ -2890,6 +2943,11 @@ function bindEvents() {
   });
   [posterNicknameInput, posterLessonInput].forEach((input) => {
     input?.addEventListener("input", refreshPosterPreview);
+  });
+  [posterPlanPhotoInput, posterDrawPhotoInput].forEach((input) => {
+    input?.addEventListener("change", () => {
+      if (input.files?.[0]) setPosterStatus("รับรูปสำหรับภาพถัดไปแล้ว รอบนี้จะ render ภาพที่ 1 ก่อน");
+    });
   });
   posterOutlineToggle?.addEventListener("change", refreshPosterPreview);
   posterScaleInput?.addEventListener("input", () => {
