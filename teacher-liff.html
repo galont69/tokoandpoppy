@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260711-p3-plan-position" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260711-carousel-preview" />
 </head>
 <body>
   <main class="teacher-app">
@@ -176,9 +176,16 @@
             <span>รูปที่ 1 ควรถ่ายแนวตั้ง เห็นเด็กและพิซซ่าครบ หัว/มือไม่ชิดขอบ ระบบจะครอปเป็น 1800 x 1700 px ให้อัตโนมัติ</span>
           </div>
 
+          <section class="poster-preview-tabs" aria-label="เลือกภาพตัวอย่างใน Carousel">
+            <button class="is-active" type="button" data-poster-preview="1">ภาพที่ 1</button>
+            <button type="button" data-poster-preview="2">ภาพที่ 2</button>
+            <button type="button" data-poster-preview="3">ภาพที่ 3</button>
+          </section>
+          <p class="poster-preview-hint" id="posterPreviewHint">กำลังดูภาพที่ 1: ถือผลงานหน้าตรง</p>
+
           <section class="poster-controls" aria-label="ปรับรูปเด็กในภาพ">
             <label>
-              ขนาด / ครอปรูปที่ 1
+              <span id="posterControlLabel">ขนาด / ครอปรูปที่ 1</span>
               <input id="posterScaleInput" type="range" min="0.75" max="1.7" step="0.01" value="1" />
             </label>
             <div class="poster-nudge-grid" aria-label="เลื่อนตำแหน่งรูปเด็ก">
@@ -311,6 +318,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260711-p3-plan-position"></script>
+  <script src="teacher-liff.js?v=20260711-carousel-preview"></script>
 </body>
 </html>

@@ -784,6 +784,38 @@ button { cursor: pointer; }
   font-weight: 900;
 }
 
+.poster-preview-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.poster-preview-tabs button {
+  min-height: 52px;
+  border: 1px solid rgba(95, 142, 79, .24);
+  border-radius: 18px;
+  color: #5a463b;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(75, 55, 42, .05);
+  font-family: Kanit, "Noto Sans Thai", sans-serif;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.poster-preview-tabs button.is-active {
+  color: #ffffff;
+  border-color: transparent;
+  background: linear-gradient(135deg, #6f9d55, #4f7d48);
+}
+
+.poster-preview-hint {
+  margin: -6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
 .poster-controls {
   display: grid;
   gap: 12px;
