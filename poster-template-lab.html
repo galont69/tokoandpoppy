@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poster Template Lab | Toko & Poppy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="poster-template-lab.css?v=20260711-p3-plan-position" />
+</head>
+<body>
+  <main class="lab-shell">
+    <aside class="lab-panel">
+      <div class="lab-title">
+        <p>Template Lab</p>
+        <h1>จูนตำแหน่ง Carousel</h1>
+        <span>ลากบนภาพหรือใส่ตัวเลข แล้วคัดลอก config ไปใช้ใน LIFF จริง</span>
+      </div>
+
+      <section class="control-card">
+        <h2>บทเรียน</h2>
+        <label>
+          Template
+          <select id="templateSelect">
+            <option value="pizza1">แต่งหน้าพิซซ่า / ภาพที่ 1 ถือผลงาน</option>
+            <option value="pizza3">แต่งหน้าพิซซ่า / ภาพที่ 3 วางแผนก่อนวาด</option>
+          </select>
+        </label>
+        <label>
+          <span id="photoInputLabel">รูปเด็กตัวอย่าง</span>
+          <input id="photoInput" type="file" accept="image/png,image/jpeg,image/webp" />
+        </label>
+        <label id="nameField">
+          ชื่อเชฟ
+          <input id="nameInput" type="text" value="ภูผา" />
+        </label>
+      </section>
+
+      <section class="control-card">
+        <h2>เลือกสิ่งที่จะขยับ</h2>
+        <div class="segmented">
+          <button class="active" type="button" data-target="photo">กรอบรูป</button>
+          <button type="button" data-target="crop">ครอปรูป</button>
+          <button id="nameTargetButton" type="button" data-target="name">ชื่อ</button>
+        </div>
+        <div class="nudge-grid">
+          <button type="button" data-nudge="up">↑</button>
+          <button type="button" data-nudge="left">←</button>
+          <button type="button" data-nudge="down">↓</button>
+          <button type="button" data-nudge="right">→</button>
+        </div>
+        <label>
+          ระยะต่อคลิก
+          <select id="stepSelect">
+            <option value="1">1 px</option>
+            <option value="5" selected>5 px</option>
+            <option value="10">10 px</option>
+            <option value="25">25 px</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="control-card">
+        <h2>กรอบรูปเด็ก</h2>
+        <div class="number-grid">
+          <label>x <input id="photoXInput" type="number" /></label>
+          <label>y <input id="photoYInput" type="number" /></label>
+          <label>w <input id="photoWInput" type="number" /></label>
+          <label>h <input id="photoHInput" type="number" /></label>
+        </div>
+        <label>
+          เอียงกรอบรูป
+          <input id="photoRotateInput" type="range" min="-8" max="8" step="0.1" />
+          <strong id="photoRotateLabel">-3.0°</strong>
+        </label>
+      </section>
+
+      <section class="control-card">
+        <h2>ครอปรูปในกรอบ</h2>
+        <div class="number-grid">
+          <label>scale <input id="cropScaleInput" type="number" min="0.5" max="2.5" step="0.01" /></label>
+          <label>offset x <input id="cropXInput" type="number" /></label>
+          <label>offset y <input id="cropYInput" type="number" /></label>
+        </div>
+      </section>
+
+      <section class="control-card" id="nameControlCard">
+        <h2>ชื่อหลัง By เชฟ</h2>
+        <div class="number-grid">
+          <label>x <input id="nameXInput" type="number" /></label>
+          <label>y <input id="nameYInput" type="number" /></label>
+          <label>w <input id="nameWInput" type="number" /></label>
+          <label>h <input id="nameHInput" type="number" /></label>
+          <label>font <input id="fontSizeInput" type="number" /></label>
+        </div>
+      </section>
+
+      <section class="control-card">
+        <h2>เครื่องมือ</h2>
+        <label class="check-row">
+          <input id="gridToggle" type="checkbox" checked />
+          <span>แสดง grid / กรอบตำแหน่ง</span>
+        </label>
+        <div class="action-stack">
+          <button id="copyConfigButton" class="primary" type="button">คัดลอก config</button>
+          <button id="downloadPreviewButton" type="button">ดาวน์โหลด preview PNG</button>
+          <button id="resetButton" type="button">กลับค่าเริ่มต้น</button>
+        </div>
+        <textarea id="configOutput" readonly rows="7"></textarea>
+      </section>
+    </aside>
+
+    <section class="canvas-panel">
+      <div class="canvas-toolbar">
+        <strong id="statusLabel">พร้อมจูนตำแหน่ง</strong>
+        <span>Canvas 2160 x 2700</span>
+      </div>
+      <div class="canvas-wrap">
+        <canvas id="labCanvas" width="2160" height="2700"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <script src="poster-template-lab.js?v=20260711-p3-plan-position"></script>
+</body>
+</html>

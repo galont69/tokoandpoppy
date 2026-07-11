@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260711-template-lab-applied" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260711-p3-plan-position" />
 </head>
 <body>
   <main class="teacher-app">
@@ -139,7 +139,7 @@
               <span>🍕</span>
               <div>
                 <b>แต่งหน้าพิซซ่า</b>
-                <small>เริ่มทดลองภาพที่ 1: รูปถือผลงานหน้าตรง</small>
+                <small>ภาพที่ 1: ถือผลงาน + ภาพที่ 2: นิทาน + ภาพที่ 3: วางแผนก่อนวาด</small>
               </div>
             </button>
           </section>
@@ -158,14 +158,14 @@
             <input id="posterPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
           </label>
           <label>
-            รูปที่ 2: กำลังวางแผน
+            รูปสำหรับภาพที่ 3: กำลังวางแผนก่อนวาด
             <input id="posterPlanPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
             <span class="field-assist">
-              <span>เตรียมไว้สำหรับภาพถัดไปใน carousel</span>
+              <span>ระบบจะวางรูปนี้ในกรอบ “วางแผนก่อนวาด”</span>
             </span>
           </label>
           <label>
-            รูปที่ 3: กำลังวาด / ลงมือทำ
+            รูปเพิ่มเติม: กำลังวาด / ลงมือทำ
             <input id="posterDrawPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
             <span class="field-assist">
               <span>เตรียมไว้สำหรับภาพถัดไปใน carousel</span>
@@ -196,8 +196,8 @@
           <p class="sheet-save-status" id="posterStatus" hidden></p>
 
           <div class="sheet-actions">
-            <button class="ghost-button" id="posterRenderButton" type="submit">สร้างภาพที่ 1</button>
-            <button class="primary-button" id="posterDownloadButton" type="button" disabled>ดาวน์โหลด PNG</button>
+            <button class="ghost-button" id="posterRenderButton" type="submit">สร้าง Carousel 3 รูป</button>
+            <button class="primary-button" id="posterDownloadButton" type="button" disabled>ดาวน์โหลด PNG 3 รูป</button>
           </div>
         </form>
       </section>
@@ -311,6 +311,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260711-template-lab-applied"></script>
+  <script src="teacher-liff.js?v=20260711-p3-plan-position"></script>
 </body>
 </html>
