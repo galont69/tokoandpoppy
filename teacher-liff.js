@@ -197,8 +197,21 @@ const teacherPosterAssets = {
 
 const teacherPosterLayout = {
   canvas: { width: 2160, height: 2700 },
-  pizzaPhoto: { x: 176, y: 828, width: 1810, height: 1720, rotate: -0.05236 },
-  chefName: { x: 1042, y: 586, width: 500, height: 116 },
+  pizzaPhoto: {
+    x: 199,
+    y: 821,
+    width: 1810,
+    height: 1720,
+    rotate: -0.05934
+  },
+  chefName: {
+    x: 1052,
+    y: 566,
+    width: 500,
+    height: 116,
+    fontSize: 117,
+    minFontSize: 56
+  }
   outline: { size: 16, softness: 2 },
   shadow: { blur: 8, opacity: 0.25, offsetX: 4, offsetY: 6 }
 };
