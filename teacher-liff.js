@@ -188,17 +188,17 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260711-artwork-carousel-pizza-tune",
+  version: "20260711-artwork-carousel-pizza-nudge",
   pizza: {
-    background: "assets/artwork-carousel/pizza/layer_01.png?v=20260711-artwork-carousel-pizza-tune",
-    foreground: "assets/artwork-carousel/pizza/layer_03.png?v=20260711-artwork-carousel-pizza-tune"
+    background: "assets/artwork-carousel/pizza/layer_01.png?v=20260711-artwork-carousel-pizza-nudge",
+    foreground: "assets/artwork-carousel/pizza/layer_03.png?v=20260711-artwork-carousel-pizza-nudge"
   }
 };
 
 const teacherPosterLayout = {
   canvas: { width: 2160, height: 2700 },
-  pizzaPhoto: { x: 176, y: 802, width: 1810, height: 1720, rotate: -0.05236 },
-  chefName: { x: 952, y: 596, width: 560, height: 92 },
+  pizzaPhoto: { x: 176, y: 828, width: 1810, height: 1720, rotate: -0.05236 },
+  chefName: { x: 1005, y: 596, width: 510, height: 92 },
   outline: { size: 16, softness: 2 },
   shadow: { blur: 8, opacity: 0.25, offsetX: 4, offsetY: 6 }
 };
