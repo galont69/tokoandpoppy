@@ -97,10 +97,10 @@ const templateDefinitions = {
     },
     config: {
       canvas: { width: 2160, height: 2700 },
-      photo: { x: 165, y: 345, width: 1168, height: 905, rotate: -0.03054, radius: 44 },
+      photo: { x: 165, y: 332, width: 1173, height: 1081, rotate: -0.04014, radius: 44 },
       chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 }
     },
-    crop: { scale: 1, offsetX: 0, offsetY: 0 }
+    crop: { scale: 1, offsetX: -15, offsetY: -54 }
   },
   pizza5plan: {
     label: "ภาพที่ 5 รูปเล็ก",
@@ -115,7 +115,7 @@ const templateDefinitions = {
     },
     config: {
       canvas: { width: 2160, height: 2700 },
-      photo: { x: 1404, y: 548, width: 520, height: 700, rotate: 0.02792, radius: 44 },
+      photo: { x: 1386, y: 548, width: 616, height: 871, rotate: 0.09076, radius: 44 },
       chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 }
     },
     crop: { scale: 1, offsetX: 0, offsetY: 0 }

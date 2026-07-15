@@ -126,8 +126,8 @@ let posterState = {
   drawOffsetX: 0,
   drawOffsetY: 0,
   resultMainScale: 1,
-  resultMainOffsetX: 0,
-  resultMainOffsetY: 0,
+  resultMainOffsetX: -15,
+  resultMainOffsetY: -54,
   isProcessing: false,
   outputBlob: null,
   outputUrl: "",
@@ -205,7 +205,7 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260715-pizza-slide-05",
+  version: "20260715-pizza-slide-05-position",
   pizza: {
     background: "assets/artwork-carousel/pizza/layer_01.png",
     foreground: "assets/artwork-carousel/pizza/layer_03.png",
@@ -228,9 +228,9 @@ const teacherPosterLayout = {
   pizzaPlanCrop: { scale: 1, offsetX: -1, offsetY: 37 },
   pizzaDrawPhoto: { x: 130, y: 1015, width: 1900, height: 1525, rotate: 0 },
   pizzaDrawCrop: { scale: 1, offsetX: 0, offsetY: 0 },
-  pizzaResultMainPhoto: { x: 165, y: 345, width: 1168, height: 905, rotate: -0.03054 },
-  pizzaResultMainCrop: { scale: 1, offsetX: 0, offsetY: 0 },
-  pizzaResultPlanPhoto: { x: 1404, y: 548, width: 520, height: 700, rotate: 0.02792 },
+  pizzaResultMainPhoto: { x: 165, y: 332, width: 1173, height: 1081, rotate: -0.04014 },
+  pizzaResultMainCrop: { scale: 1, offsetX: -15, offsetY: -54 },
+  pizzaResultPlanPhoto: { x: 1386, y: 548, width: 616, height: 871, rotate: 0.09076 },
   pizzaResultPlanCrop: { scale: 1, offsetX: 0, offsetY: 0 },
   chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 },
   outline: { size: 16, softness: 2 },
