@@ -38,8 +38,8 @@ const templateDefinitions = {
     showName: true,
     placeholder: "อัปโหลดรูปถือผลงาน",
     assets: {
-      background: "assets/artwork-carousel/pizza/layer_01.png?v=20260711-p3-plan-position",
-      foreground: "assets/artwork-carousel/pizza/layer_03.png?v=20260711-p3-plan-position"
+      background: "assets/artwork-carousel/pizza/layer_01.png",
+      foreground: "assets/artwork-carousel/pizza/layer_03.png"
     },
     config: {
       canvas: { width: 2160, height: 2700 },
@@ -56,8 +56,8 @@ const templateDefinitions = {
     showName: false,
     placeholder: "อัปโหลดรูปกำลังวางแผน",
     assets: {
-      background: "assets/artwork-carousel/pizza/p3_layer_01.png?v=20260711-p3-plan-position",
-      foreground: "assets/artwork-carousel/pizza/p3_layer_03.png?v=20260711-p3-plan-position"
+      background: "assets/artwork-carousel/pizza/p3_layer_01.png",
+      foreground: "assets/artwork-carousel/pizza/p3_layer_03.png"
     },
     config: {
       canvas: { width: 2160, height: 2700 },
@@ -65,6 +65,24 @@ const templateDefinitions = {
       chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 }
     },
     crop: { scale: 1, offsetX: -1, offsetY: 37 }
+  },
+  pizza4: {
+    label: "ภาพที่ 4 ลงมือทำ",
+    photoLabel: "รูปที่ 4: กำลังวาด / ลงมือทำ",
+    photoKey: "pizzaDrawPhoto",
+    cropKey: "pizzaDrawCrop",
+    showName: false,
+    placeholder: "อัปโหลดรูปกำลังวาด",
+    assets: {
+      background: "assets/artwork-carousel/pizza/p4_layer_01.png",
+      foreground: "assets/artwork-carousel/pizza/p4_layer_03.png"
+    },
+    config: {
+      canvas: { width: 2160, height: 2700 },
+      photo: { x: 130, y: 1015, width: 1900, height: 1525, rotate: 0, radius: 96 },
+      chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 }
+    },
+    crop: { scale: 1, offsetX: 0, offsetY: 0 }
   }
 };
 
@@ -181,7 +199,7 @@ function drawPizzaPhoto() {
   ctx.save();
   ctx.translate(frame.x + frame.width / 2, frame.y + frame.height / 2);
   ctx.rotate(frame.rotate || 0);
-  roundedRect(ctx, -frame.width / 2, -frame.height / 2, frame.width, frame.height, 58);
+  roundedRect(ctx, -frame.width / 2, -frame.height / 2, frame.width, frame.height, Number(frame.radius || 58));
   ctx.clip();
   ctx.drawImage(crop, -frame.width / 2, -frame.height / 2);
   ctx.restore();

@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260711-carousel-asset-fallback" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260715-pizza-slide-04" />
 </head>
 <body>
   <main class="teacher-app">
@@ -165,10 +165,10 @@
             </span>
           </label>
           <label>
-            รูปเพิ่มเติม: กำลังวาด / ลงมือทำ
+            รูปที่ 4: กำลังวาด / ลงมือทำ
             <input id="posterDrawPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
             <span class="field-assist">
-              <span>เตรียมไว้สำหรับภาพถัดไปใน carousel</span>
+              <span>ระบบจะวางรูปนี้ในกรอบ “ลงมือทำ”</span>
             </span>
           </label>
           <div class="poster-upload-tips">
@@ -180,6 +180,7 @@
             <button class="is-active" type="button" data-poster-preview="1">ภาพที่ 1</button>
             <button type="button" data-poster-preview="2">ภาพที่ 2</button>
             <button type="button" data-poster-preview="3">ภาพที่ 3</button>
+            <button type="button" data-poster-preview="4">ภาพที่ 4</button>
           </section>
           <p class="poster-preview-hint" id="posterPreviewHint">กำลังดูภาพที่ 1: ถือผลงานหน้าตรง</p>
 
@@ -203,8 +204,8 @@
           <p class="sheet-save-status" id="posterStatus" hidden></p>
 
           <div class="sheet-actions">
-            <button class="ghost-button" id="posterRenderButton" type="submit">สร้าง Carousel 3 รูป</button>
-            <button class="primary-button" id="posterDownloadButton" type="button" disabled>ดาวน์โหลด PNG 3 รูป</button>
+            <button class="ghost-button" id="posterRenderButton" type="submit">สร้าง Carousel 4 รูป</button>
+            <button class="primary-button" id="posterDownloadButton" type="button" disabled>ดาวน์โหลด PNG 4 รูป</button>
           </div>
         </form>
       </section>
@@ -318,6 +319,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260711-carousel-asset-fallback"></script>
+  <script src="teacher-liff.js?v=20260715-pizza-slide-04"></script>
 </body>
 </html>
