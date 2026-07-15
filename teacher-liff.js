@@ -125,6 +125,9 @@ let posterState = {
   drawScale: 1,
   drawOffsetX: 0,
   drawOffsetY: 0,
+  resultMainScale: 1,
+  resultMainOffsetX: 0,
+  resultMainOffsetY: 0,
   isProcessing: false,
   outputBlob: null,
   outputUrl: "",
@@ -202,7 +205,7 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260715-pizza-slide-04",
+  version: "20260715-pizza-slide-05",
   pizza: {
     background: "assets/artwork-carousel/pizza/layer_01.png",
     foreground: "assets/artwork-carousel/pizza/layer_03.png",
@@ -210,11 +213,13 @@ const teacherPosterAssets = {
     planBackground: "assets/artwork-carousel/pizza/p3_layer_01.png",
     planForeground: "assets/artwork-carousel/pizza/p3_layer_03.png",
     drawBackground: "assets/artwork-carousel/pizza/p4_layer_01.png",
-    drawForeground: "assets/artwork-carousel/pizza/p4_layer_03.png"
+    drawForeground: "assets/artwork-carousel/pizza/p4_layer_03.png",
+    resultBackground: "assets/artwork-carousel/pizza/p5_layer_01.png",
+    resultForeground: "assets/artwork-carousel/pizza/p5_layer_04.png"
   }
 };
 
-const teacherPosterSlideCount = 4;
+const teacherPosterSlideCount = 5;
 
 const teacherPosterLayout = {
   canvas: { width: 2160, height: 2700 },
@@ -223,6 +228,10 @@ const teacherPosterLayout = {
   pizzaPlanCrop: { scale: 1, offsetX: -1, offsetY: 37 },
   pizzaDrawPhoto: { x: 130, y: 1015, width: 1900, height: 1525, rotate: 0 },
   pizzaDrawCrop: { scale: 1, offsetX: 0, offsetY: 0 },
+  pizzaResultMainPhoto: { x: 165, y: 345, width: 1168, height: 905, rotate: -0.03054 },
+  pizzaResultMainCrop: { scale: 1, offsetX: 0, offsetY: 0 },
+  pizzaResultPlanPhoto: { x: 1404, y: 548, width: 520, height: 700, rotate: 0.02792 },
+  pizzaResultPlanCrop: { scale: 1, offsetX: 0, offsetY: 0 },
   chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 },
   outline: { size: 16, softness: 2 },
   shadow: { blur: 8, opacity: 0.25, offsetX: 4, offsetY: 6 }
@@ -1448,6 +1457,14 @@ function getPosterPreviewMeta(slide = getPosterPreviewSlide()) {
       scale: posterState.drawScale
     };
   }
+  if (slide === 5) {
+    return {
+      label: "ภาพที่ 5: สิ่งที่เด็ก ๆ ได้ฝึก",
+      controlLabel: "ขนาด / ครอปรูปใหญ่ภาพที่ 5",
+      adjustable: true,
+      scale: posterState.resultMainScale
+    };
+  }
   return {
     label: "ภาพที่ 1: ถือผลงานหน้าตรง",
     controlLabel: "ขนาด / ครอปรูปที่ 1",
@@ -1492,6 +1509,11 @@ function resetPosterTransform(slide = getPosterPreviewSlide()) {
     posterState.drawScale = Number(cropConfig.scale || 1);
     posterState.drawOffsetX = Number(cropConfig.offsetX || 0);
     posterState.drawOffsetY = Number(cropConfig.offsetY || 0);
+  } else if (Number(slide) === 5) {
+    const cropConfig = teacherPosterLayout.pizzaResultMainCrop || {};
+    posterState.resultMainScale = Number(cropConfig.scale || 1);
+    posterState.resultMainOffsetX = Number(cropConfig.offsetX || 0);
+    posterState.resultMainOffsetY = Number(cropConfig.offsetY || 0);
   } else {
     posterState.scale = 1;
     posterState.offsetX = 0;
@@ -1994,6 +2016,44 @@ function drawPizzaDrawPhoto(ctx, image) {
   ctx.restore();
 }
 
+function createPizzaResultPhotoCropCanvas(image, frame, cropConfig = {}, options = {}) {
+  const crop = document.createElement("canvas");
+  crop.width = frame.width;
+  crop.height = frame.height;
+  const ctx = crop.getContext("2d");
+  ctx.fillStyle = "#fffaf2";
+  ctx.fillRect(0, 0, crop.width, crop.height);
+  if (!image) {
+    ctx.fillStyle = "#9a7b4d";
+    ctx.font = "900 56px Kanit, 'Noto Sans Thai', sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(options.placeholder || "อัปโหลดรูป", crop.width / 2, crop.height / 2);
+    return crop;
+  }
+  const scale = Number(options.scale ?? cropConfig.scale ?? 1);
+  const offsetX = Number(options.offsetX ?? cropConfig.offsetX ?? 0);
+  const offsetY = Number(options.offsetY ?? cropConfig.offsetY ?? 0);
+  const fitScale = Math.max(crop.width / image.width, crop.height / image.height) * scale;
+  const drawWidth = image.width * fitScale;
+  const drawHeight = image.height * fitScale;
+  const drawX = crop.width / 2 - drawWidth / 2 + offsetX;
+  const drawY = crop.height / 2 - drawHeight / 2 + offsetY;
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  return crop;
+}
+
+function drawPizzaResultPhoto(ctx, image, frame, cropConfig = {}, options = {}) {
+  const crop = createPizzaResultPhotoCropCanvas(image, frame, cropConfig, options);
+  ctx.save();
+  ctx.translate(frame.x + frame.width / 2, frame.y + frame.height / 2);
+  ctx.rotate(frame.rotate || 0);
+  roundedRect(ctx, -frame.width / 2, -frame.height / 2, frame.width, frame.height, options.radius || 46);
+  ctx.clip();
+  ctx.drawImage(crop, -frame.width / 2, -frame.height / 2, frame.width, frame.height);
+  ctx.restore();
+}
+
 function normalizeChefName(value) {
   return normalizeText(value)
     .replace(/^น้อง\s*/i, "")
@@ -2149,10 +2209,55 @@ async function drawPizzaDrawSlide(ctx, options = {}) {
   return true;
 }
 
+async function drawPizzaResultSlide(ctx, options = {}) {
+  const { width, height } = teacherPosterLayout.canvas;
+  if (options.requirePhoto && !posterState.photoCanvas) {
+    throw new Error("กรุณาอัปโหลดรูปที่ 1: ถือผลงานหน้าตรง");
+  }
+  if (options.requirePhoto && !posterState.planPhotoCanvas) {
+    throw new Error("กรุณาอัปโหลดรูปสำหรับภาพที่ 3: กำลังวางแผนก่อนวาด");
+  }
+  const [background, foreground] = await Promise.all([
+    loadCanvasImage(teacherPosterAssets.pizza.resultBackground),
+    loadCanvasImage(teacherPosterAssets.pizza.resultForeground)
+  ]);
+  if (!background || !foreground) {
+    drawPosterLoadError(ctx, "โหลด layer ภาพที่ 5 ไม่สำเร็จ");
+    return false;
+  }
+  drawCardImage(ctx, background, 0, 0, width, height);
+  drawPizzaResultPhoto(
+    ctx,
+    posterState.photoCanvas,
+    teacherPosterLayout.pizzaResultMainPhoto,
+    teacherPosterLayout.pizzaResultMainCrop,
+    {
+      scale: posterState.resultMainScale,
+      offsetX: posterState.resultMainOffsetX,
+      offsetY: posterState.resultMainOffsetY,
+      placeholder: "รูปถือผลงาน",
+      radius: 44
+    }
+  );
+  drawPizzaResultPhoto(
+    ctx,
+    posterState.planPhotoCanvas,
+    teacherPosterLayout.pizzaResultPlanPhoto,
+    teacherPosterLayout.pizzaResultPlanCrop,
+    {
+      placeholder: "รูปวางแผน",
+      radius: 44
+    }
+  );
+  drawCardImage(ctx, foreground, 0, 0, width, height);
+  return true;
+}
+
 async function drawPizzaPreviewSlide(ctx, slide = getPosterPreviewSlide(), options = {}) {
   if (Number(slide) === 2) return drawPizzaStorySlide(ctx);
   if (Number(slide) === 3) return drawPizzaPlanSlide(ctx, options);
   if (Number(slide) === 4) return drawPizzaDrawSlide(ctx, options);
+  if (Number(slide) === 5) return drawPizzaResultSlide(ctx, options);
   return drawPizzaFirstSlide(ctx);
 }
 
@@ -2162,7 +2267,7 @@ async function createPosterSlideBlob(slide) {
   canvas.width = width;
   canvas.height = height;
   const ctx = preparePosterCanvas(canvas);
-  const success = await drawPizzaPreviewSlide(ctx, slide, { requirePhoto: [3, 4].includes(Number(slide)) });
+  const success = await drawPizzaPreviewSlide(ctx, slide, { requirePhoto: [3, 4, 5].includes(Number(slide)) });
   if (!success) {
     throw new Error(`โหลดภาพที่ ${slide} ของ carousel ไม่สำเร็จ`);
   }
@@ -2211,22 +2316,18 @@ async function renderTeacherPoster(options = {}) {
 
   if (options.createBlob) {
     revokePosterOutputUrl();
-    const firstBlob = await createPosterSlideBlob(1);
-    const secondBlob = await createPosterSlideBlob(2);
-    const thirdBlob = await createPosterSlideBlob(3);
-    const fourthBlob = await createPosterSlideBlob(4);
-    const firstUrl = URL.createObjectURL(firstBlob);
-    const secondUrl = URL.createObjectURL(secondBlob);
-    const thirdUrl = URL.createObjectURL(thirdBlob);
-    const fourthUrl = URL.createObjectURL(fourthBlob);
-    posterState.outputItems = [
-      { blob: firstBlob, url: firstUrl, fileName: getPosterFileName(1) },
-      { blob: secondBlob, url: secondUrl, fileName: getPosterFileName(2) },
-      { blob: thirdBlob, url: thirdUrl, fileName: getPosterFileName(3) },
-      { blob: fourthBlob, url: fourthUrl, fileName: getPosterFileName(4) }
-    ];
-    posterState.outputBlob = firstBlob;
-    posterState.outputUrl = firstUrl;
+    const items = [];
+    for (let slide = 1; slide <= teacherPosterSlideCount; slide += 1) {
+      const blob = await createPosterSlideBlob(slide);
+      items.push({
+        blob,
+        url: URL.createObjectURL(blob),
+        fileName: getPosterFileName(slide)
+      });
+    }
+    posterState.outputItems = items;
+    posterState.outputBlob = items[0]?.blob || null;
+    posterState.outputUrl = items[0]?.url || "";
     if (posterDownloadButton) posterDownloadButton.disabled = false;
   }
 }
@@ -2368,13 +2469,13 @@ async function createPosterOutput(event) {
   }
   try {
     await renderTeacherPoster({ createBlob: true });
-    setPosterStatus("สร้าง Carousel พิซซ่า 4 รูปเรียบร้อย ดาวน์โหลด PNG ได้เลย");
+    setPosterStatus("สร้าง Carousel พิซซ่า 5 รูปเรียบร้อย ดาวน์โหลด PNG ได้เลย");
   } catch (error) {
     setPosterStatus(`สร้างภาพไม่สำเร็จ: ${error.message}`, true);
   } finally {
     if (posterRenderButton) {
       posterRenderButton.disabled = false;
-      posterRenderButton.textContent = "สร้าง Carousel 4 รูป";
+      posterRenderButton.textContent = "สร้าง Carousel 5 รูป";
     }
   }
 }
@@ -3342,7 +3443,7 @@ function bindEvents() {
       document.querySelectorAll("[data-poster-lesson]").forEach((item) => {
         item.classList.toggle("is-active", item === button);
       });
-      setPosterStatus("เลือกบทเรียนแต่งหน้าพิซซ่าแล้ว ตอนนี้สร้าง carousel 4 รูป");
+      setPosterStatus("เลือกบทเรียนแต่งหน้าพิซซ่าแล้ว ตอนนี้สร้าง carousel 5 รูป");
       refreshPosterPreview();
     });
   });
@@ -3405,6 +3506,8 @@ function bindEvents() {
       posterState.planScale = Number(posterScaleInput.value || 1);
     } else if (getPosterPreviewSlide() === 4) {
       posterState.drawScale = Number(posterScaleInput.value || 1);
+    } else if (getPosterPreviewSlide() === 5) {
+      posterState.resultMainScale = Number(posterScaleInput.value || 1);
     } else if (getPosterPreviewSlide() === 1) {
       posterState.scale = Number(posterScaleInput.value || 1);
     }
@@ -3424,6 +3527,11 @@ function bindEvents() {
         if (direction === "down") posterState.drawOffsetY += amount;
         if (direction === "left") posterState.drawOffsetX -= amount;
         if (direction === "right") posterState.drawOffsetX += amount;
+      } else if (getPosterPreviewSlide() === 5) {
+        if (direction === "up") posterState.resultMainOffsetY -= amount;
+        if (direction === "down") posterState.resultMainOffsetY += amount;
+        if (direction === "left") posterState.resultMainOffsetX -= amount;
+        if (direction === "right") posterState.resultMainOffsetX += amount;
       } else if (getPosterPreviewSlide() === 1) {
         if (direction === "up") posterState.offsetY -= amount;
         if (direction === "down") posterState.offsetY += amount;

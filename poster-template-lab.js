@@ -83,6 +83,42 @@ const templateDefinitions = {
       chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 }
     },
     crop: { scale: 1, offsetX: 0, offsetY: 0 }
+  },
+  pizza5main: {
+    label: "ภาพที่ 5 รูปใหญ่",
+    photoLabel: "รูปที่ 5: รูปใหญ่จากภาพที่ 1",
+    photoKey: "pizzaResultMainPhoto",
+    cropKey: "pizzaResultMainCrop",
+    showName: false,
+    placeholder: "อัปโหลดรูปถือผลงาน",
+    assets: {
+      background: "assets/artwork-carousel/pizza/p5_layer_01.png",
+      foreground: "assets/artwork-carousel/pizza/p5_layer_04.png"
+    },
+    config: {
+      canvas: { width: 2160, height: 2700 },
+      photo: { x: 165, y: 345, width: 1168, height: 905, rotate: -0.03054, radius: 44 },
+      chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 }
+    },
+    crop: { scale: 1, offsetX: 0, offsetY: 0 }
+  },
+  pizza5plan: {
+    label: "ภาพที่ 5 รูปเล็ก",
+    photoLabel: "รูปที่ 5: รูปเล็กจากภาพที่ 3",
+    photoKey: "pizzaResultPlanPhoto",
+    cropKey: "pizzaResultPlanCrop",
+    showName: false,
+    placeholder: "อัปโหลดรูปวางแผน",
+    assets: {
+      background: "assets/artwork-carousel/pizza/p5_layer_01.png",
+      foreground: "assets/artwork-carousel/pizza/p5_layer_04.png"
+    },
+    config: {
+      canvas: { width: 2160, height: 2700 },
+      photo: { x: 1404, y: 548, width: 520, height: 700, rotate: 0.02792, radius: 44 },
+      chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 }
+    },
+    crop: { scale: 1, offsetX: 0, offsetY: 0 }
   }
 };
 
