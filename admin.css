@@ -1524,6 +1524,14 @@ body { font-size: 16px; }
   font-family: var(--font-ui);
 }
 
+.branch-request-section-title {
+  margin: 8px 0 2px;
+  color: #4f3b32;
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1.25;
+}
+
 .login-art h1,
 .login-card h2,
 .topbar h1,

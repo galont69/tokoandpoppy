@@ -11,6 +11,7 @@ const teacherNameInput = document.querySelector("#teacherNameInput");
 const teacherPhoneInput = document.querySelector("#teacherPhoneInput");
 const branchSelect = document.querySelector("#branchSelect");
 const registerButton = document.querySelector("#registerButton");
+const registerNameLabel = document.querySelector("#registerNameLabel");
 const refreshButton = document.querySelector("#refreshButton");
 const reloadDashboardButton = document.querySelector("#reloadDashboardButton");
 const pendingEyebrow = document.querySelector("#pendingEyebrow");
@@ -87,12 +88,58 @@ const posterCanvas = document.querySelector("#posterCanvas");
 const posterStatus = document.querySelector("#posterStatus");
 const posterRenderButton = document.querySelector("#posterRenderButton");
 const posterDownloadButton = document.querySelector("#posterDownloadButton");
+const adminDashboardView = document.querySelector("#adminDashboardView");
+const adminBranchLabel = document.querySelector("#adminBranchLabel");
+const adminNameLabel = document.querySelector("#adminNameLabel");
+const adminMetaLabel = document.querySelector("#adminMetaLabel");
+const adminReloadButton = document.querySelector("#adminReloadButton");
+const adminPendingCount = document.querySelector("#adminPendingCount");
+const adminStudentCount = document.querySelector("#adminStudentCount");
+const adminCourseCount = document.querySelector("#adminCourseCount");
+const adminOverviewApplications = document.querySelector("#adminOverviewApplications");
+const adminOverviewSchedule = document.querySelector("#adminOverviewSchedule");
+const adminApplicationList = document.querySelector("#adminApplicationList");
+const adminStudentList = document.querySelector("#adminStudentList");
+const adminAddStudentForm = document.querySelector("#adminAddStudentForm");
+const adminStudentNameInput = document.querySelector("#adminStudentNameInput");
+const adminStudentNicknameInput = document.querySelector("#adminStudentNicknameInput");
+const adminStudentAgeInput = document.querySelector("#adminStudentAgeInput");
+const adminStudentBirthDateInput = document.querySelector("#adminStudentBirthDateInput");
+const adminParentNameInput = document.querySelector("#adminParentNameInput");
+const adminParentPhoneInput = document.querySelector("#adminParentPhoneInput");
+const adminCourseTypeInput = document.querySelector("#adminCourseTypeInput");
+const adminCourseTotalInput = document.querySelector("#adminCourseTotalInput");
+const adminCourseCompletedInput = document.querySelector("#adminCourseCompletedInput");
+const adminStudentNoteInput = document.querySelector("#adminStudentNoteInput");
+const adminStudentFormStatus = document.querySelector("#adminStudentFormStatus");
+const adminAddStudentButton = document.querySelector("#adminAddStudentButton");
+const adminScheduleSheet = document.querySelector("#adminScheduleSheet");
+const adminScheduleForm = document.querySelector("#adminScheduleForm");
+const adminScheduleTitle = document.querySelector("#adminScheduleTitle");
+const adminScheduleSubtitle = document.querySelector("#adminScheduleSubtitle");
+const adminScheduleRows = document.querySelector("#adminScheduleRows");
+const adminAddScheduleRowButton = document.querySelector("#adminAddScheduleRowButton");
+const adminScheduleStatus = document.querySelector("#adminScheduleStatus");
+const adminSaveScheduleButton = document.querySelector("#adminSaveScheduleButton");
+const adminCourseSheet = document.querySelector("#adminCourseSheet");
+const adminCourseForm = document.querySelector("#adminCourseForm");
+const adminCourseTitle = document.querySelector("#adminCourseTitle");
+const adminCourseSubtitle = document.querySelector("#adminCourseSubtitle");
+const adminAddCourseTypeInput = document.querySelector("#adminAddCourseTypeInput");
+const adminAddCourseTotalInput = document.querySelector("#adminAddCourseTotalInput");
+const adminAddCourseCompletedInput = document.querySelector("#adminAddCourseCompletedInput");
+const adminAddCourseNoteInput = document.querySelector("#adminAddCourseNoteInput");
+const adminCourseStatus = document.querySelector("#adminCourseStatus");
+const adminSaveCourseButton = document.querySelector("#adminSaveCourseButton");
 
 let lineProfile = null;
 let lineContext = {};
 let lineUserId = "";
 let branches = [];
 let portalData = null;
+let adminPortalData = null;
+let activeAdminCourse = null;
+let activeAdminStudent = null;
 let activeReminder = null;
 let activeSessionEnrollment = null;
 let activeShareData = null;
@@ -148,7 +195,8 @@ const courseMeta = {
   art: { label: "Creative Art", icon: "🎨", color: "#fff0e5" },
   creative_art: { label: "Creative Art", icon: "🎨", color: "#fff0e5" },
   water_color: { label: "Water Color", icon: "💧", color: "#eaf7fa" },
-  clay: { label: "ปั้นดินเบา (CLAY)", icon: "🧱", color: "#fff1df" }
+  clay: { label: "ปั้นดินเบา (CLAY)", icon: "🧱", color: "#fff1df" },
+  pending: { label: "ยังไม่ระบุคอร์ส", icon: "📝", color: "#f4efe7" }
 };
 
 const afterClassAssets = {
@@ -375,7 +423,7 @@ function setSheetStatus(message, isError = false) {
 }
 
 function showOnly(view) {
-  [registerView, pendingView, dashboardView].forEach((element) => {
+  [registerView, pendingView, dashboardView, adminDashboardView].forEach((element) => {
     if (element) element.hidden = element !== view;
   });
 }
@@ -533,11 +581,60 @@ async function loadBranches() {
   ].join("");
 }
 
+function getSelectedLiffRole() {
+  return document.querySelector('input[name="liffRole"]:checked')?.value || "teacher";
+}
+
+function updateRegisterRoleCopy() {
+  const role = getSelectedLiffRole();
+  const isAdmin = role === "branch_admin";
+  if (registerNameLabel) registerNameLabel.textContent = isAdmin ? "ชื่อผู้ดูแลสาขา" : "ชื่อครู";
+  if (teacherNameInput) {
+    teacherNameInput.placeholder = isAdmin ? "เช่น คุณเอ" : "เช่น ครูพลอย";
+  }
+  if (branchSelect?.options?.[0]) {
+    branchSelect.options[0].textContent = isAdmin ? "เลือกสาขาที่ดูแล" : "เลือกสาขาที่สอน";
+  }
+}
+
+async function tryLoadAdminPortal() {
+  const { data, error } = await supabaseClient.rpc("get_branch_admin_liff_portal", {
+    p_line_user_id: lineUserId
+  });
+  if (error) {
+    const missingFunction = /get_branch_admin_liff_portal|Could not find|schema cache/i.test(error.message || "");
+    if (!missingFunction) {
+      setMessage(`โหลดข้อมูลผู้ดูแลสาขาไม่สำเร็จ: ${error.message}`, true);
+    }
+    return false;
+  }
+
+  adminPortalData = data || {};
+  if (adminPortalData.status === "approved") {
+    renderAdminDashboard();
+    showOnly(adminDashboardView);
+    return true;
+  }
+
+  if (adminPortalData.status && adminPortalData.status !== "not_registered") {
+    renderPending({
+      ...adminPortalData,
+      liffRole: "branch_admin"
+    });
+    showOnly(pendingView);
+    return true;
+  }
+
+  return false;
+}
+
 async function loadPortal() {
   if (!lineUserId) {
     showOnly(registerView);
     return;
   }
+
+  if (await tryLoadAdminPortal()) return;
 
   const tomorrow = toLocalDateInputValue(addDays(new Date(), 1));
   const { data, error } = await supabaseClient.rpc("get_teacher_liff_portal", {
@@ -570,6 +667,8 @@ async function loadPortal() {
 function renderPending(data = {}) {
   const profile = data.profile || {};
   const branch = data.branch || {};
+  const isAdminRequest = data.liffRole === "branch_admin" || Boolean(profile.admin_name);
+  const roleLabel = isAdminRequest ? "ผู้ดูแลสาขา" : "ครู";
   pendingEyebrow.textContent = profile.status === "rejected"
     ? "ไม่อนุมัติ"
     : profile.status === "suspended"
@@ -582,7 +681,7 @@ function renderPending(data = {}) {
       : "ส่งคำขอแล้ว";
   pendingText.textContent = profile.status === "rejected"
     ? (profile.rejection_reason || "กรุณาติดต่อแอดมินสาขาเพื่อสมัครใหม่")
-    : `สาขา ${branch.name || "-"} กำลังรอแอดมินอนุมัติ`;
+    : `คำขอ${roleLabel}ของสาขา ${branch.name || "-"} กำลังรออนุมัติ`;
 }
 
 function renderDashboard() {
@@ -611,6 +710,583 @@ function renderDashboard() {
   renderTodayCenter(todayItems, reminders);
   renderReminderList(reminders);
   renderSessionList(portalData.today_enrollments || []);
+}
+
+function getAdminStats() {
+  return adminPortalData?.stats || {};
+}
+
+function getAdminApplications() {
+  return adminPortalData?.applications || [];
+}
+
+function getAdminStudents() {
+  return adminPortalData?.students || [];
+}
+
+function getAdminScheduleItems() {
+  return adminPortalData?.schedule_items || [];
+}
+
+function getAdminCourseLabel(course = {}) {
+  const meta = getCourseMeta(course.course_type);
+  const program = normalizeText(course.program_label);
+  const level = normalizeText(course.level_label);
+  const base = program || meta.label || course.course_type || "คอร์ส";
+  if (level && !base.includes(level)) return `${base} · ${level}`;
+  return base;
+}
+
+function getApplicationCourseSummary(application = {}) {
+  const requested = Array.isArray(application.requested_courses)
+    ? application.requested_courses
+    : [];
+  const courseList = requested.length ? requested : [application.course].filter(Boolean);
+  if (!courseList.length) return "ยังไม่ระบุคอร์ส";
+  return courseList.map((courseType) => {
+    if (courseType === "both") return "Robot + ศิลปะ";
+    return getCourseMeta(courseType).label || courseType;
+  }).join(" · ");
+}
+
+function getAdminStatusText(status) {
+  const copy = {
+    pending: "รออนุมัติ",
+    approved: "อนุมัติแล้ว",
+    rejected: "ไม่อนุมัติ",
+    suspended: "พักสิทธิ์"
+  };
+  return copy[status] || status || "-";
+}
+
+function getAdminStudentName(student = {}) {
+  return normalizeText(student.student_nickname) ||
+    normalizeText(student.student_name) ||
+    "น้อง";
+}
+
+function renderAdminDashboard() {
+  const profile = adminPortalData?.profile || {};
+  const branch = adminPortalData?.branch || {};
+  const stats = getAdminStats();
+  const pending = Number(stats.pending_applications || 0);
+  const students = Number(stats.students || 0);
+  const courses = Number(stats.active_courses || 0);
+
+  if (adminBranchLabel) adminBranchLabel.textContent = `สาขา ${branch.name || "-"}`;
+  if (adminNameLabel) adminNameLabel.textContent = profile.admin_name || profile.line_display_name || "ผู้ดูแลสาขา";
+  if (adminMetaLabel) adminMetaLabel.textContent = `${pending} ใบสมัครรออนุมัติ · ${students} นักเรียน · ${courses} คอร์สกำลังเรียน`;
+  if (adminPendingCount) adminPendingCount.textContent = pending;
+  if (adminStudentCount) adminStudentCount.textContent = students;
+  if (adminCourseCount) adminCourseCount.textContent = courses;
+
+  renderAdminApplications();
+  renderAdminStudents();
+  renderAdminOverview();
+}
+
+function setAdminTab(tabName = "overview") {
+  document.querySelectorAll("[data-admin-liff-tab]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.adminLiffTab === tabName);
+  });
+  const panels = {
+    overview: document.querySelector("#adminOverviewPanel"),
+    applications: document.querySelector("#adminApplicationsPanel"),
+    students: document.querySelector("#adminStudentsPanel"),
+    addStudent: document.querySelector("#adminAddStudentPanel")
+  };
+  Object.entries(panels).forEach(([name, panel]) => {
+    if (panel) panel.hidden = name !== tabName;
+  });
+}
+
+function renderAdminOverview() {
+  const pendingApplications = getAdminApplications()
+    .filter((application) => application.status === "pending")
+    .slice(0, 3);
+  if (adminOverviewApplications) {
+    adminOverviewApplications.innerHTML = pendingApplications.length
+      ? pendingApplications.map(renderAdminApplicationCard).join("")
+      : '<div class="empty-box">ยังไม่มีใบสมัครที่ต้องอนุมัติ</div>';
+  }
+
+  const scheduleItems = getAdminScheduleItems().slice(0, 8);
+  if (adminOverviewSchedule) {
+    adminOverviewSchedule.innerHTML = scheduleItems.length
+      ? scheduleItems.map((item) => `
+        <article class="mobile-card">
+          <div class="card-top">
+            <span class="course-icon">${getCourseMeta(item.course_type).icon}</span>
+            <div>
+              <h3>${escapeHtml(weekdayLabels[Number(item.class_weekday)] || "วันเรียน")}</h3>
+              <p>${escapeHtml(normalizeTimeLabel(item.class_start_time))}${item.class_end_time ? `-${escapeHtml(normalizeTimeLabel(item.class_end_time))}` : ""}</p>
+            </div>
+          </div>
+          <div class="meta-row">
+            <span class="pill green">${escapeHtml(getChildLabel(item))}</span>
+            <span class="pill">${escapeHtml(getAdminCourseLabel(item))}</span>
+          </div>
+        </article>
+      `).join("")
+      : '<div class="empty-box">ยังไม่มีตารางเรียนที่ตั้งไว้</div>';
+  }
+}
+
+function renderAdminApplicationCard(application = {}) {
+  const status = application.status || "pending";
+  const isPending = status === "pending";
+  return `
+    <article class="mobile-card admin-application-card">
+      <div class="card-top">
+        <span class="course-icon">📝</span>
+        <div>
+          <h3>${escapeHtml(getChildLabel(application))}</h3>
+          <p>${escapeHtml(getApplicationCourseSummary(application))}</p>
+        </div>
+      </div>
+      <div class="meta-row">
+        <span class="admin-status-badge ${escapeHtml(status)}">${escapeHtml(getAdminStatusText(status))}</span>
+        <span class="pill">${application.created_at ? escapeHtml(formatThaiDate(String(application.created_at).slice(0, 10))) : "ไม่ทราบวันที่"}</span>
+      </div>
+      <p class="admin-card-note">
+        ผู้ปกครอง: ${escapeHtml(application.parent_name || "-")}
+        ${application.parent_phone ? ` · ${escapeHtml(application.parent_phone)}` : ""}
+      </p>
+      ${isPending ? `
+        <div class="admin-card-actions">
+          <button class="reject" type="button" data-admin-review-application="${application.id}" data-decision="rejected">ไม่อนุมัติ</button>
+          <button class="approve" type="button" data-admin-review-application="${application.id}" data-decision="approved">อนุมัติ</button>
+        </div>
+      ` : ""}
+    </article>
+  `;
+}
+
+function renderAdminApplications() {
+  if (!adminApplicationList) return;
+  const applications = getAdminApplications();
+  if (!applications.length) {
+    adminApplicationList.innerHTML = '<div class="empty-box">ยังไม่มีใบสมัครในสาขานี้</div>';
+    return;
+  }
+  adminApplicationList.innerHTML = applications.map(renderAdminApplicationCard).join("");
+}
+
+function renderAdminStudents() {
+  if (!adminStudentList) return;
+  const students = getAdminStudents();
+  if (!students.length) {
+    adminStudentList.innerHTML = '<div class="empty-box">ยังไม่มีนักเรียนที่อนุมัติแล้วในสาขานี้</div>';
+    return;
+  }
+
+  adminStudentList.innerHTML = students.map((student) => {
+    const courses = student.courses || [];
+    return `
+      <article class="mobile-card admin-student-card">
+        <div class="card-top">
+          <span class="course-icon">👧</span>
+          <div>
+            <h3>${escapeHtml(getChildLabel(student))}</h3>
+            <p>${escapeHtml(student.parent_name || "ยังไม่ได้ผูกผู้ปกครอง")}</p>
+          </div>
+        </div>
+        <div class="meta-row">
+          <span class="pill green">${courses.length} คอร์ส</span>
+          <span class="pill">${escapeHtml(student.parent_link_status === "linked" ? "ผูกผู้ปกครองแล้ว" : "รอผูกผู้ปกครอง")}</span>
+        </div>
+        <div class="admin-course-list">
+          ${courses.length ? courses.map((course) => renderAdminCourseRow(student, course)).join("") : '<div class="empty-box">ยังไม่ได้เปิดคอร์ส</div>'}
+        </div>
+        <div class="admin-card-actions">
+          <button class="schedule full" type="button" data-admin-open-course="${student.application_id}">เพิ่มคอร์สให้เด็ก</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderAdminCourseRow(student = {}, course = {}) {
+  const schedules = Array.isArray(course.schedules) ? course.schedules : [];
+  const scheduleLabel = schedules.length
+    ? schedules.map((schedule) => {
+      const day = weekdayLabels[Number(schedule.class_weekday)] || "";
+      const time = [normalizeTimeLabel(schedule.class_start_time), normalizeTimeLabel(schedule.class_end_time)].filter(Boolean).join("-");
+      return `${day} ${time}`;
+    }).join(" · ")
+    : course.class_start_time
+      ? `${weekdayLabels[Number(course.class_weekday)] || ""} ${normalizeTimeLabel(course.class_start_time)}${course.class_end_time ? `-${normalizeTimeLabel(course.class_end_time)}` : ""}`
+      : "ยังไม่ตั้งตารางเรียน";
+
+  return `
+    <section class="admin-course-row">
+      <header>
+        <b>${escapeHtml(getAdminCourseLabel(course))}</b>
+        <span class="pill green">${Number(course.completed_sessions || 0)}/${Number(course.total_sessions || 0)}</span>
+      </header>
+      <small>${escapeHtml(scheduleLabel)}</small>
+      <div class="admin-mini-actions">
+        <button class="schedule" type="button" data-admin-open-schedule="${course.id}" data-application-id="${student.application_id}">ตั้งตารางเรียน</button>
+      </div>
+    </section>
+  `;
+}
+
+async function reviewAdminApplication(applicationId, decision) {
+  if (!applicationId || !decision) return;
+  let reason = null;
+  if (decision === "rejected") {
+    reason = window.prompt("เหตุผลที่ไม่อนุมัติใบสมัครนี้") || "";
+    if (!reason.trim()) return;
+  } else {
+    const confirmed = window.confirm("ยืนยันอนุมัติใบสมัครนี้ใช่ไหม?");
+    if (!confirmed) return;
+  }
+
+  const { error } = await supabaseClient.rpc("review_branch_admin_liff_enrollment", {
+    p_line_user_id: lineUserId,
+    p_application_id: applicationId,
+    p_decision: decision,
+    p_rejection_reason: reason
+  });
+  if (error) {
+    setMessage(`บันทึกใบสมัครไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+  setMessage(decision === "approved" ? "อนุมัติใบสมัครแล้ว" : "บันทึกการไม่อนุมัติแล้ว");
+  await loadPortal();
+}
+
+function buildAdminStudentCoursePayload() {
+  const total = Number.parseInt(adminCourseTotalInput?.value || "0", 10);
+  const completed = Number.parseInt(adminCourseCompletedInput?.value || "0", 10);
+  if (!Number.isInteger(total) || total < 1 || total > 120) {
+    throw new Error("จำนวนครั้งต้องอยู่ระหว่าง 1 ถึง 120");
+  }
+  if (!Number.isInteger(completed) || completed < 0 || completed > total) {
+    throw new Error("จำนวนครั้งที่เรียนแล้วไม่ถูกต้อง");
+  }
+  return [{
+    course_type: adminCourseTypeInput?.value || "creative_art",
+    total_sessions: total,
+    completed_sessions: completed,
+    level_label: null,
+    package_note: adminStudentNoteInput?.value.trim() || null
+  }];
+}
+
+function setAdminFormStatus(message, isError = false) {
+  if (!adminStudentFormStatus) return;
+  adminStudentFormStatus.hidden = !message;
+  adminStudentFormStatus.textContent = message || "";
+  adminStudentFormStatus.classList.toggle("error", isError);
+}
+
+async function submitAdminStudent(event) {
+  event.preventDefault();
+  if (!lineUserId) return;
+  let courses = [];
+  try {
+    courses = buildAdminStudentCoursePayload();
+  } catch (error) {
+    setAdminFormStatus(error.message, true);
+    return;
+  }
+
+  const studentName = adminStudentNameInput?.value.trim() || "";
+  if (studentName.length < 2) {
+    setAdminFormStatus("กรุณากรอกชื่อนักเรียนอย่างน้อย 2 ตัวอักษร", true);
+    adminStudentNameInput?.focus();
+    return;
+  }
+
+  adminAddStudentButton.disabled = true;
+  adminAddStudentButton.textContent = "กำลังเพิ่มเด็ก...";
+  setAdminFormStatus("");
+  const { error } = await supabaseClient.rpc("create_branch_admin_liff_student", {
+    p_line_user_id: lineUserId,
+    p_student_name: studentName,
+    p_student_nickname: adminStudentNicknameInput?.value.trim() || null,
+    p_parent_name: adminParentNameInput?.value.trim() || null,
+    p_parent_phone: adminParentPhoneInput?.value.trim() || null,
+    p_birth_date: adminStudentBirthDateInput?.value || null,
+    p_age_years: adminStudentAgeInput?.value ? Number.parseInt(adminStudentAgeInput.value, 10) : null,
+    p_note: adminStudentNoteInput?.value.trim() || null,
+    p_courses: courses
+  });
+  adminAddStudentButton.disabled = false;
+  adminAddStudentButton.textContent = "เพิ่มเด็กเข้าระบบ";
+
+  if (error) {
+    setAdminFormStatus(`เพิ่มเด็กไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+
+  adminAddStudentForm.reset();
+  if (adminCourseTotalInput) adminCourseTotalInput.value = "12";
+  if (adminCourseCompletedInput) adminCourseCompletedInput.value = "0";
+  setAdminFormStatus("เพิ่มเด็กเข้าระบบแล้ว");
+  await loadPortal();
+  setAdminTab("students");
+}
+
+function findAdminStudent(applicationId) {
+  return getAdminStudents().find((student) => student.application_id === applicationId) || null;
+}
+
+function getAdminCoursePayload(course = {}) {
+  return {
+    course_type: course.course_type || "pending",
+    total_sessions: Number(course.total_sessions || 1),
+    completed_sessions: Number(course.completed_sessions || 0),
+    level_label: course.level_label || null,
+    package_note: course.package_note || course.session_package_note || null
+  };
+}
+
+function setAdminCourseStatus(message, isError = false) {
+  if (!adminCourseStatus) return;
+  adminCourseStatus.hidden = !message;
+  adminCourseStatus.textContent = message || "";
+  adminCourseStatus.classList.toggle("error", isError);
+}
+
+function openAdminCourse(applicationId) {
+  const student = findAdminStudent(applicationId);
+  if (!student) return;
+  activeAdminStudent = student;
+  if (adminCourseTitle) adminCourseTitle.textContent = `เพิ่มคอร์ส: ${getChildLabel(student)}`;
+  if (adminCourseSubtitle) {
+    const courseCount = Array.isArray(student.courses) ? student.courses.length : 0;
+    adminCourseSubtitle.textContent = courseCount
+      ? `เด็กคนนี้มี ${courseCount} คอร์สแล้ว เพิ่มหรืออัปเดตคอร์สได้จากตรงนี้`
+      : "เลือกคอร์สแรกให้เด็กคนนี้";
+  }
+  if (adminAddCourseTypeInput) adminAddCourseTypeInput.value = "creative_art";
+  if (adminAddCourseTotalInput) adminAddCourseTotalInput.value = "12";
+  if (adminAddCourseCompletedInput) adminAddCourseCompletedInput.value = "0";
+  if (adminAddCourseNoteInput) adminAddCourseNoteInput.value = "";
+  setAdminCourseStatus("");
+  if (adminCourseSheet) {
+    adminCourseSheet.hidden = false;
+    document.body.style.overflow = "hidden";
+  }
+}
+
+function closeAdminCourse() {
+  if (adminCourseSheet) adminCourseSheet.hidden = true;
+  document.body.style.overflow = "";
+  activeAdminStudent = null;
+}
+
+function buildAdminCoursePayloadForStudent() {
+  if (!activeAdminStudent?.application_id) throw new Error("ไม่พบนักเรียนที่เลือก");
+  const total = Number.parseInt(adminAddCourseTotalInput?.value || "0", 10);
+  const completed = Number.parseInt(adminAddCourseCompletedInput?.value || "0", 10);
+  if (!Number.isInteger(total) || total < 1 || total > 120) {
+    throw new Error("จำนวนครั้งต้องอยู่ระหว่าง 1 ถึง 120");
+  }
+  if (!Number.isInteger(completed) || completed < 0 || completed > total) {
+    throw new Error("จำนวนครั้งที่เรียนแล้วไม่ถูกต้อง");
+  }
+
+  const nextCourse = {
+    course_type: adminAddCourseTypeInput?.value || "creative_art",
+    total_sessions: total,
+    completed_sessions: completed,
+    level_label: null,
+    package_note: adminAddCourseNoteInput?.value.trim() || null
+  };
+  const existingCourses = (activeAdminStudent.courses || []).map(getAdminCoursePayload);
+  const sameCourseIndex = existingCourses.findIndex((course) => (
+    course.course_type === nextCourse.course_type &&
+    (course.level_label || "") === (nextCourse.level_label || "")
+  ));
+  if (sameCourseIndex >= 0) {
+    existingCourses[sameCourseIndex] = nextCourse;
+    return existingCourses;
+  }
+  return [...existingCourses, nextCourse];
+}
+
+async function saveAdminCourse(event) {
+  event.preventDefault();
+  if (!activeAdminStudent?.application_id) return;
+  let courses = [];
+  try {
+    courses = buildAdminCoursePayloadForStudent();
+  } catch (error) {
+    setAdminCourseStatus(error.message, true);
+    return;
+  }
+
+  adminSaveCourseButton.disabled = true;
+  adminSaveCourseButton.textContent = "กำลังบันทึก...";
+  const { error } = await supabaseClient.rpc("save_branch_admin_liff_student_courses", {
+    p_line_user_id: lineUserId,
+    p_application_id: activeAdminStudent.application_id,
+    p_courses: courses
+  });
+  adminSaveCourseButton.disabled = false;
+  adminSaveCourseButton.textContent = "บันทึกคอร์ส";
+  if (error) {
+    setAdminCourseStatus(`บันทึกคอร์สไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+  setAdminCourseStatus("บันทึกคอร์สแล้ว");
+  await loadPortal();
+  closeAdminCourse();
+  setAdminTab("students");
+}
+
+function findAdminCourse(courseId) {
+  for (const student of getAdminStudents()) {
+    const course = (student.courses || []).find((item) => item.id === courseId);
+    if (course) return { student, course };
+  }
+  return { student: null, course: null };
+}
+
+function getBlankAdminScheduleRow() {
+  return {
+    class_weekday: "6",
+    class_start_time: "",
+    class_end_time: "",
+    class_schedule_note: "",
+    class_reminder_enabled: true
+  };
+}
+
+function openAdminSchedule(courseId) {
+  const { student, course } = findAdminCourse(courseId);
+  if (!course) return;
+  activeAdminCourse = { student, course };
+  const studentName = getChildLabel(student);
+  if (adminScheduleTitle) adminScheduleTitle.textContent = `ตารางเรียน: ${studentName}`;
+  if (adminScheduleSubtitle) adminScheduleSubtitle.textContent = getAdminCourseLabel(course);
+  const schedules = Array.isArray(course.schedules) && course.schedules.length
+    ? course.schedules
+    : course.class_start_time
+      ? [{
+        class_weekday: course.class_weekday,
+        class_start_time: normalizeTimeLabel(course.class_start_time),
+        class_end_time: normalizeTimeLabel(course.class_end_time),
+        class_schedule_note: course.class_schedule_note || "",
+        class_reminder_enabled: course.class_reminder_enabled !== false
+      }]
+      : [getBlankAdminScheduleRow()];
+  renderAdminScheduleRows(schedules);
+  if (adminScheduleStatus) adminScheduleStatus.hidden = true;
+  adminScheduleSheet.hidden = false;
+  document.body.style.overflow = "hidden";
+}
+
+function closeAdminSchedule() {
+  adminScheduleSheet.hidden = true;
+  document.body.style.overflow = "";
+  activeAdminCourse = null;
+}
+
+function renderAdminScheduleRows(schedules = []) {
+  if (!adminScheduleRows) return;
+  const rows = schedules.length ? schedules : [getBlankAdminScheduleRow()];
+  adminScheduleRows.innerHTML = rows.map((schedule, index) => `
+    <article class="admin-schedule-row" data-admin-schedule-row>
+      <strong>เวลาเรียนที่ ${index + 1}</strong>
+      <div class="form-row">
+        <label>
+          วันเรียน
+          <select data-admin-schedule-weekday required>
+            <option value="1" ${String(schedule.class_weekday) === "1" ? "selected" : ""}>วันจันทร์</option>
+            <option value="2" ${String(schedule.class_weekday) === "2" ? "selected" : ""}>วันอังคาร</option>
+            <option value="3" ${String(schedule.class_weekday) === "3" ? "selected" : ""}>วันพุธ</option>
+            <option value="4" ${String(schedule.class_weekday) === "4" ? "selected" : ""}>วันพฤหัสบดี</option>
+            <option value="5" ${String(schedule.class_weekday) === "5" ? "selected" : ""}>วันศุกร์</option>
+            <option value="6" ${String(schedule.class_weekday) === "6" ? "selected" : ""}>วันเสาร์</option>
+            <option value="0" ${String(schedule.class_weekday) === "0" ? "selected" : ""}>วันอาทิตย์</option>
+          </select>
+        </label>
+        <label>
+          เวลาเริ่ม
+          <input data-admin-schedule-start type="time" required value="${escapeHtml(normalizeTimeLabel(schedule.class_start_time))}" />
+        </label>
+      </div>
+      <div class="form-row">
+        <label>
+          เวลาเลิก
+          <input data-admin-schedule-end type="time" value="${escapeHtml(normalizeTimeLabel(schedule.class_end_time))}" />
+        </label>
+        <label>
+          หมายเหตุ
+          <input data-admin-schedule-note type="text" maxlength="160" value="${escapeHtml(schedule.class_schedule_note || "")}" placeholder="ไม่บังคับ" />
+        </label>
+      </div>
+      <label class="schedule-toggle">
+        <input data-admin-schedule-reminder type="checkbox" ${schedule.class_reminder_enabled === false ? "" : "checked"} />
+        เปิดใช้สำหรับแจ้งเตือนผู้ปกครอง
+      </label>
+      <button type="button" data-remove-admin-schedule-row ${rows.length <= 1 ? "disabled" : ""}>ลบเวลานี้</button>
+    </article>
+  `).join("");
+}
+
+function readAdminScheduleRows() {
+  const rows = [...(adminScheduleRows?.querySelectorAll("[data-admin-schedule-row]") || [])];
+  return rows.map((row) => {
+    const weekday = row.querySelector("[data-admin-schedule-weekday]")?.value || "";
+    const start = row.querySelector("[data-admin-schedule-start]")?.value || "";
+    const end = row.querySelector("[data-admin-schedule-end]")?.value || "";
+    if (!weekday || !start) {
+      throw new Error("กรุณาระบุวันเรียนและเวลาเริ่มให้ครบ");
+    }
+    if (end && end <= start) {
+      throw new Error("เวลาเลิกเรียนต้องมากกว่าเวลาเริ่มเรียน");
+    }
+    return {
+      class_weekday: Number(weekday),
+      class_start_time: start,
+      class_end_time: end || null,
+      class_schedule_note: row.querySelector("[data-admin-schedule-note]")?.value.trim() || null,
+      class_reminder_enabled: Boolean(row.querySelector("[data-admin-schedule-reminder]")?.checked)
+    };
+  });
+}
+
+function setAdminScheduleStatus(message, isError = false) {
+  if (!adminScheduleStatus) return;
+  adminScheduleStatus.hidden = !message;
+  adminScheduleStatus.textContent = message || "";
+  adminScheduleStatus.classList.toggle("error", isError);
+}
+
+async function saveAdminSchedule(event) {
+  event.preventDefault();
+  if (!activeAdminCourse?.course?.id) return;
+  let schedules = [];
+  try {
+    schedules = readAdminScheduleRows();
+  } catch (error) {
+    setAdminScheduleStatus(error.message, true);
+    return;
+  }
+
+  adminSaveScheduleButton.disabled = true;
+  adminSaveScheduleButton.textContent = "กำลังบันทึก...";
+  const { error } = await supabaseClient.rpc("replace_branch_admin_liff_course_schedules", {
+    p_line_user_id: lineUserId,
+    p_course_enrollment_id: activeAdminCourse.course.id,
+    p_schedules: schedules
+  });
+  adminSaveScheduleButton.disabled = false;
+  adminSaveScheduleButton.textContent = "บันทึกตารางเรียน";
+  if (error) {
+    setAdminScheduleStatus(`บันทึกตารางเรียนไม่สำเร็จ: ${error.message}`, true);
+    return;
+  }
+  setAdminScheduleStatus("บันทึกตารางเรียนแล้ว");
+  await loadPortal();
+  closeAdminSchedule();
+  setAdminTab("students");
 }
 
 function renderTodayCenter(todayItems = [], reminders = []) {
@@ -3469,23 +4145,40 @@ async function submitRegistration(event) {
     setMessage("ยังไม่มี LINE user id กรุณาเปิดจาก LINE OA", true);
     return;
   }
+  const role = getSelectedLiffRole();
+  const isAdmin = role === "branch_admin";
+  const displayName = lineProfile?.displayName || null;
+  const pictureUrl = lineProfile?.pictureUrl || null;
+  const personName = teacherNameInput.value.trim();
+  const phone = teacherPhoneInput.value.trim() || null;
+  const branchId = branchSelect.value || null;
+
   registerButton.disabled = true;
-  registerButton.textContent = "กำลังส่งคำขอ...";
-  const { error } = await supabaseClient.rpc("submit_teacher_liff_application", {
-    p_line_user_id: lineUserId,
-    p_line_display_name: lineProfile?.displayName || null,
-    p_line_picture_url: lineProfile?.pictureUrl || null,
-    p_teacher_name: teacherNameInput.value,
-    p_teacher_phone: teacherPhoneInput.value || null,
-    p_branch_id: branchSelect.value || null
-  });
+  registerButton.textContent = isAdmin ? "กำลังส่งคำขอ Admin..." : "กำลังส่งคำขอ...";
+  const { error } = isAdmin
+    ? await supabaseClient.rpc("submit_branch_admin_liff_application", {
+      p_line_user_id: lineUserId,
+      p_line_display_name: displayName,
+      p_line_picture_url: pictureUrl,
+      p_admin_name: personName,
+      p_admin_phone: phone,
+      p_branch_id: branchId
+    })
+    : await supabaseClient.rpc("submit_teacher_liff_application", {
+      p_line_user_id: lineUserId,
+      p_line_display_name: displayName,
+      p_line_picture_url: pictureUrl,
+      p_teacher_name: personName,
+      p_teacher_phone: phone,
+      p_branch_id: branchId
+    });
   registerButton.disabled = false;
   registerButton.textContent = "ส่งคำขอให้แอดมินอนุมัติ";
   if (error) {
     setMessage(`ส่งคำขอไม่สำเร็จ: ${error.message}`, true);
     return;
   }
-  setMessage("ส่งคำขอเรียบร้อย รอแอดมินสาขาอนุมัติ");
+  setMessage(isAdmin ? "ส่งคำขอ Admin สาขาแล้ว รอแอดมินหลักอนุมัติ" : "ส่งคำขอเรียบร้อย รอแอดมินสาขาอนุมัติ");
   await loadPortal();
 }
 
@@ -3493,6 +4186,53 @@ function bindEvents() {
   teacherRegisterForm?.addEventListener("submit", submitRegistration);
   refreshButton?.addEventListener("click", loadPortal);
   reloadDashboardButton?.addEventListener("click", loadPortal);
+  adminReloadButton?.addEventListener("click", loadPortal);
+  document.querySelectorAll('input[name="liffRole"]').forEach((input) => {
+    input.addEventListener("change", updateRegisterRoleCopy);
+  });
+  document.querySelectorAll("[data-admin-liff-tab]").forEach((button) => {
+    button.addEventListener("click", () => setAdminTab(button.dataset.adminLiffTab || "overview"));
+  });
+  const handleAdminApplicationClick = (event) => {
+    const button = event.target.closest("[data-admin-review-application]");
+    if (!button) return;
+    reviewAdminApplication(button.dataset.adminReviewApplication, button.dataset.decision);
+  };
+  adminOverviewApplications?.addEventListener("click", handleAdminApplicationClick);
+  adminApplicationList?.addEventListener("click", handleAdminApplicationClick);
+  adminStudentList?.addEventListener("click", (event) => {
+    const scheduleButton = event.target.closest("[data-admin-open-schedule]");
+    if (scheduleButton) {
+      openAdminSchedule(scheduleButton.dataset.adminOpenSchedule);
+      return;
+    }
+    const courseButton = event.target.closest("[data-admin-open-course]");
+    if (courseButton) {
+      openAdminCourse(courseButton.dataset.adminOpenCourse);
+    }
+  });
+  adminAddStudentForm?.addEventListener("submit", submitAdminStudent);
+  adminCourseForm?.addEventListener("submit", saveAdminCourse);
+  adminScheduleForm?.addEventListener("submit", saveAdminSchedule);
+  adminAddScheduleRowButton?.addEventListener("click", () => {
+    const currentRows = [...(adminScheduleRows?.querySelectorAll("[data-admin-schedule-row]") || [])].map((row) => ({
+      class_weekday: row.querySelector("[data-admin-schedule-weekday]")?.value || "6",
+      class_start_time: row.querySelector("[data-admin-schedule-start]")?.value || "",
+      class_end_time: row.querySelector("[data-admin-schedule-end]")?.value || "",
+      class_schedule_note: row.querySelector("[data-admin-schedule-note]")?.value || "",
+      class_reminder_enabled: Boolean(row.querySelector("[data-admin-schedule-reminder]")?.checked)
+    }));
+    renderAdminScheduleRows([...currentRows, getBlankAdminScheduleRow()]);
+  });
+  adminScheduleRows?.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-admin-schedule-row]");
+    if (!removeButton) return;
+    removeButton.closest("[data-admin-schedule-row]")?.remove();
+    const rows = [...adminScheduleRows.querySelectorAll("[data-admin-schedule-row]")];
+    if (rows.length <= 1) rows[0]?.querySelector("[data-remove-admin-schedule-row]")?.setAttribute("disabled", "");
+  });
+  document.querySelectorAll("[data-close-admin-schedule]").forEach((element) => element.addEventListener("click", closeAdminSchedule));
+  document.querySelectorAll("[data-close-admin-course]").forEach((element) => element.addEventListener("click", closeAdminCourse));
   document.querySelectorAll("[data-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       document.querySelectorAll("[data-tab]").forEach((item) => item.classList.toggle("active", item === button));
@@ -3725,6 +4465,7 @@ async function init() {
   bindEvents();
   try {
     await Promise.all([initLine(), loadBranches()]);
+    updateRegisterRoleCopy();
     await loadPortal();
   } catch (error) {
     setMessage(`เริ่มต้นระบบไม่สำเร็จ: ${error.message}`, true);

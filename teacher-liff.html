@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260808-donut-layer01-by" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260808-mobile-admin-liff" />
 </head>
 <body>
   <main class="teacher-app">
@@ -26,12 +26,29 @@
     <section class="register-card" id="registerView" hidden>
       <div class="section-title">
         <p>สมัครใช้งาน</p>
-        <h2>ขอสิทธิ์คุณครูผ่าน LINE</h2>
-        <span>เลือกสาขาที่สอน แล้วรอแอดมินสาขาอนุมัติครั้งแรก</span>
+        <h2>ขอสิทธิ์ใช้งานผ่าน LINE</h2>
+        <span>เลือกบทบาทและสาขา ระบบจะพาเข้าหน้าครูหรือหน้าแอดมินตามสิทธิ์ที่ได้รับอนุมัติ</span>
       </div>
       <form id="teacherRegisterForm" class="stack-form">
+        <fieldset class="role-choice-group" aria-label="เลือกบทบาทที่ต้องการสมัคร">
+          <legend>ต้องการสมัครเป็น</legend>
+          <label>
+            <input type="radio" name="liffRole" value="teacher" checked />
+            <span>
+              <strong>คุณครู</strong>
+              <small>บันทึกหลังเรียน แจ้งเตือน และสร้างภาพผลงาน</small>
+            </span>
+          </label>
+          <label>
+            <input type="radio" name="liffRole" value="branch_admin" />
+            <span>
+              <strong>Admin สาขา</strong>
+              <small>ดูใบสมัคร นักเรียน เพิ่มเด็ก และจัดตารางเรียนบนมือถือ</small>
+            </span>
+          </label>
+        </fieldset>
         <label>
-          ชื่อครู
+          <span id="registerNameLabel">ชื่อครู</span>
           <input id="teacherNameInput" name="teacherName" type="text" maxlength="150" required placeholder="เช่น ครูพลอย" />
         </label>
         <label>
@@ -222,6 +239,136 @@
         </form>
       </section>
     </section>
+
+    <section class="dashboard admin-mobile-dashboard" id="adminDashboardView" hidden>
+      <section class="teacher-summary admin-liff-summary">
+        <div>
+          <p id="adminBranchLabel">สาขา</p>
+          <h2 id="adminNameLabel">ผู้ดูแลสาขา</h2>
+          <span id="adminMetaLabel">พร้อมจัดการข้อมูลสาขา</span>
+        </div>
+        <button class="ghost-button" id="adminReloadButton" type="button">รีเฟรช</button>
+      </section>
+
+      <nav class="tab-bar admin-tab-bar" aria-label="เมนูผู้ดูแลสาขา">
+        <button class="active" type="button" data-admin-liff-tab="overview">ภาพรวม</button>
+        <button type="button" data-admin-liff-tab="applications">ใบสมัคร</button>
+        <button type="button" data-admin-liff-tab="students">นักเรียน</button>
+        <button type="button" data-admin-liff-tab="addStudent">เพิ่มเด็ก</button>
+      </nav>
+
+      <section class="tab-panel admin-liff-panel" id="adminOverviewPanel">
+        <div class="section-title">
+          <p>Branch Admin</p>
+          <h2>งานสาขาบนมือถือ</h2>
+          <span>จัดการงานด่วนจาก LINE ได้โดยไม่ต้องเปิดหน้าเว็บใหญ่</span>
+        </div>
+        <div class="summary-grid">
+          <article><strong id="adminPendingCount">0</strong><span>ใบสมัครรออนุมัติ</span></article>
+          <article><strong id="adminStudentCount">0</strong><span>นักเรียนทั้งหมด</span></article>
+          <article><strong id="adminCourseCount">0</strong><span>คอร์สกำลังเรียน</span></article>
+        </div>
+        <div class="teacher-task-stack">
+          <section>
+            <div class="mini-heading">
+              <span>Need Review</span>
+              <strong>ใบสมัครล่าสุด</strong>
+            </div>
+            <div class="mobile-list" id="adminOverviewApplications"></div>
+          </section>
+          <section>
+            <div class="mini-heading">
+              <span>Schedule</span>
+              <strong>ตารางเรียนที่ตั้งไว้</strong>
+            </div>
+            <div class="mobile-list" id="adminOverviewSchedule"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="tab-panel admin-liff-panel" id="adminApplicationsPanel" hidden>
+        <div class="section-title">
+          <p>Applications</p>
+          <h2>ใบสมัครเรียน</h2>
+          <span>ดูรายละเอียดเร็ว ๆ และอนุมัติหรือไม่อนุมัติจากมือถือ</span>
+        </div>
+        <div class="mobile-list" id="adminApplicationList"></div>
+      </section>
+
+      <section class="tab-panel admin-liff-panel" id="adminStudentsPanel" hidden>
+        <div class="section-title">
+          <p>Students</p>
+          <h2>นักเรียนในสาขา</h2>
+          <span>ดูคอร์สที่เปิดอยู่และตั้งวันเวลาเรียนหลายช่วงต่อสัปดาห์</span>
+        </div>
+        <div class="mobile-list" id="adminStudentList"></div>
+      </section>
+
+      <section class="tab-panel admin-liff-panel" id="adminAddStudentPanel" hidden>
+        <div class="section-title">
+          <p>Add Student</p>
+          <h2>เพิ่มเด็กเข้าระบบ</h2>
+          <span>เหมาะกับเด็กที่สมัครหน้าสาขา หรือเด็กเก่าที่ต้องการเริ่มบันทึกในระบบ</span>
+        </div>
+        <form id="adminAddStudentForm" class="stack-form admin-mobile-form">
+          <label>
+            ชื่อนักเรียน
+            <input id="adminStudentNameInput" type="text" maxlength="150" required placeholder="เช่น ภัทร สุวรรณารัตน์" />
+          </label>
+          <label>
+            ชื่อเล่น
+            <input id="adminStudentNicknameInput" type="text" maxlength="80" placeholder="เช่น ภัทร" />
+          </label>
+          <div class="form-row">
+            <label>
+              อายุ
+              <input id="adminStudentAgeInput" type="number" min="1" max="18" placeholder="ถ้าทราบ" />
+            </label>
+            <label>
+              วันเกิด
+              <input id="adminStudentBirthDateInput" type="date" />
+            </label>
+          </div>
+          <label>
+            ผู้ปกครอง
+            <input id="adminParentNameInput" type="text" maxlength="120" placeholder="ไม่บังคับ" />
+          </label>
+          <label>
+            เบอร์ผู้ปกครอง
+            <input id="adminParentPhoneInput" type="tel" maxlength="30" placeholder="ไม่บังคับ" />
+          </label>
+          <section class="admin-course-box">
+            <strong>คอร์สแรก</strong>
+            <div class="form-row">
+              <label>
+                คอร์ส
+                <select id="adminCourseTypeInput">
+                  <option value="creative_art">Creative Art</option>
+                  <option value="water_color">Water Color</option>
+                  <option value="clay">ปั้นดินเบา (CLAY)</option>
+                  <option value="robot">Robot + Coding</option>
+                  <option value="pending">ยังไม่ระบุคอร์ส</option>
+                </select>
+              </label>
+              <label>
+                จำนวนครั้ง
+                <input id="adminCourseTotalInput" type="number" min="1" max="120" value="12" required />
+              </label>
+            </div>
+            <label>
+              เรียนแล้ว
+              <input id="adminCourseCompletedInput" type="number" min="0" max="120" value="0" />
+            </label>
+          </section>
+          <label>
+            หมายเหตุ
+            <textarea id="adminStudentNoteInput" rows="3" maxlength="800" placeholder="เช่น เด็กเก่า / รอผูกบัญชีผู้ปกครอง"></textarea>
+          </label>
+          <p class="sheet-save-status" id="adminStudentFormStatus" hidden></p>
+          <button class="primary-button" id="adminAddStudentButton" type="submit">เพิ่มเด็กเข้าระบบ</button>
+        </form>
+      </section>
+    </section>
   </main>
 
   <section class="bottom-sheet" id="shareSheet" hidden aria-modal="true" role="dialog" aria-labelledby="shareTitle">
@@ -305,6 +452,69 @@
     </div>
   </section>
 
+  <section class="bottom-sheet" id="adminScheduleSheet" hidden aria-modal="true" role="dialog" aria-labelledby="adminScheduleTitle">
+    <div class="sheet-backdrop" data-close-admin-schedule></div>
+    <div class="sheet-card">
+      <button class="close-button" type="button" data-close-admin-schedule aria-label="ปิด">×</button>
+      <p class="sheet-eyebrow">Weekly Schedule</p>
+      <h2 id="adminScheduleTitle">ตั้งตารางเรียน</h2>
+      <p id="adminScheduleSubtitle">เพิ่มได้หลายวันและหลายเวลาในหนึ่งสัปดาห์</p>
+      <form id="adminScheduleForm" class="stack-form">
+        <div class="admin-schedule-rows" id="adminScheduleRows"></div>
+        <button class="ghost-button" id="adminAddScheduleRowButton" type="button">เพิ่มวัน/เวลา</button>
+        <p class="sheet-save-status" id="adminScheduleStatus" hidden></p>
+        <div class="sheet-actions">
+          <button class="ghost-button" type="button" data-close-admin-schedule>ยกเลิก</button>
+          <button class="primary-button" id="adminSaveScheduleButton" type="submit">บันทึกตารางเรียน</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section class="bottom-sheet" id="adminCourseSheet" hidden aria-modal="true" role="dialog" aria-labelledby="adminCourseTitle">
+    <div class="sheet-backdrop" data-close-admin-course></div>
+    <div class="sheet-card">
+      <button class="close-button" type="button" data-close-admin-course aria-label="ปิด">×</button>
+      <p class="sheet-eyebrow">Student Course</p>
+      <h2 id="adminCourseTitle">เพิ่มคอร์สให้เด็ก</h2>
+      <p id="adminCourseSubtitle">เลือกคอร์สและจำนวนครั้ง ระบบจะเปิดสิทธิ์ให้เด็กคนนี้</p>
+      <form id="adminCourseForm" class="stack-form">
+        <section class="admin-course-box">
+          <strong>คอร์สใหม่</strong>
+          <label>
+            คอร์ส
+            <select id="adminAddCourseTypeInput" required>
+              <option value="creative_art">Creative Art</option>
+              <option value="water_color">Water Color</option>
+              <option value="clay">ปั้นดินเบา (CLAY)</option>
+              <option value="robot">Robot + Coding</option>
+              <option value="pending">ยังไม่ระบุคอร์ส</option>
+            </select>
+          </label>
+          <div class="form-row">
+            <label>
+              จำนวนครั้ง
+              <input id="adminAddCourseTotalInput" type="number" min="1" max="120" value="12" required />
+            </label>
+            <label>
+              เรียนแล้ว
+              <input id="adminAddCourseCompletedInput" type="number" min="0" max="120" value="0" />
+            </label>
+          </div>
+          <label>
+            หมายเหตุคอร์ส
+            <input id="adminAddCourseNoteInput" type="text" maxlength="180" placeholder="เช่น เด็กเก่า / แพ็กเกจพิเศษ" />
+          </label>
+        </section>
+        <p class="sheet-save-status" id="adminCourseStatus" hidden></p>
+        <div class="sheet-actions">
+          <button class="ghost-button" type="button" data-close-admin-course>ยกเลิก</button>
+          <button class="primary-button" id="adminSaveCourseButton" type="submit">บันทึกคอร์ส</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
   <section class="crop-modal" id="photoCropModal" hidden aria-modal="true" role="dialog" aria-labelledby="cropTitle">
     <div class="crop-backdrop" data-cancel-crop></div>
     <div class="crop-card">
@@ -331,6 +541,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260808-donut-layer01-by"></script>
+  <script src="teacher-liff.js?v=20260808-mobile-admin-liff"></script>
 </body>
 </html>

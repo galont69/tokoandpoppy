@@ -1019,6 +1019,204 @@ button { cursor: pointer; }
   grid-column: 1 / -1;
 }
 
+.role-choice-group {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.role-choice-group legend {
+  margin-bottom: 4px;
+  color: #5a463b;
+  font-weight: 900;
+}
+
+.role-choice-group label {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #fffdf8;
+  box-shadow: 0 8px 18px rgba(74, 55, 43, .06);
+}
+
+.role-choice-group input {
+  width: 20px;
+  height: 20px;
+  margin-top: 3px;
+  accent-color: var(--green);
+}
+
+.role-choice-group strong {
+  display: block;
+  color: #4f3b32;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.role-choice-group small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.admin-mobile-dashboard .section-title h2 {
+  font-size: 30px;
+}
+
+.admin-tab-bar {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.admin-liff-summary {
+  background: linear-gradient(135deg, #ffffff, #eff8e9 54%, #fff1df);
+}
+
+.admin-liff-panel .mobile-card h3 {
+  margin-bottom: 2px;
+}
+
+.admin-mini-actions,
+.admin-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-card-actions .full,
+.admin-mini-actions .full {
+  grid-column: 1 / -1;
+}
+
+.admin-card-actions button,
+.admin-mini-actions button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 900;
+}
+
+.admin-card-actions .approve,
+.admin-mini-actions .approve {
+  background: linear-gradient(135deg, #6f9d55, #4f7d48);
+  color: #fff;
+}
+
+.admin-card-actions .reject {
+  background: #fff0ed;
+  color: #b55f55;
+}
+
+.admin-card-actions .schedule,
+.admin-mini-actions .schedule {
+  border: 1px solid #d9ead3;
+  background: #f4fbef;
+  color: #4f7d48;
+}
+
+.admin-course-box,
+.admin-schedule-row {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #d9ead3;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ffffff, #f5fbef);
+}
+
+.admin-course-box strong,
+.admin-schedule-row strong {
+  color: #4f3b32;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.admin-status-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f4efe7;
+  color: #6d594d;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.admin-status-badge.pending {
+  background: #fff3d6;
+  color: #a86e12;
+}
+
+.admin-status-badge.approved {
+  background: #e8f5df;
+  color: #4f7d48;
+}
+
+.admin-status-badge.rejected {
+  background: #ffe8e5;
+  color: #b55f55;
+}
+
+.admin-course-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.admin-course-row {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #eadccb;
+  border-radius: 18px;
+  background: #fffdf8;
+}
+
+.admin-course-row header {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.admin-course-row b {
+  color: #4f3b32;
+  font-size: 17px;
+}
+
+.admin-course-row small,
+.admin-card-note {
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.admin-schedule-rows {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-schedule-row button[data-remove-admin-schedule-row] {
+  min-height: 38px;
+  border: 0;
+  border-radius: 14px;
+  background: #fff0ed;
+  color: #b55f55;
+  font: inherit;
+  font-weight: 900;
+}
+
 @media (min-width: 760px) {
   .teacher-app {
     padding-top: 24px;
@@ -1082,5 +1280,14 @@ button { cursor: pointer; }
 
   .poster-preview-tabs {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-tab-bar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-card-actions,
+  .admin-mini-actions {
+    grid-template-columns: 1fr;
   }
 }
