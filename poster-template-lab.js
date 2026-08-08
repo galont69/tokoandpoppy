@@ -60,8 +60,8 @@ const templateDefinitions = {
     showName: true,
     placeholder: "อัปโหลดรูปถือผลงานโดนัท",
     assets: {
-      background: "assets/artwork-carousel/donut/donut_layer_01.png",
-      foreground: "assets/artwork-carousel/donut/donut_layer_03.png"
+      background: "assets/artwork-carousel/donut/donut_layer_01.png?v=20260808-donut-layer01-by",
+      foreground: "assets/artwork-carousel/donut/donut_layer_03.png?v=20260808-donut-layer01-by"
     },
     config: {
       canvas: { width: 2160, height: 2700 },

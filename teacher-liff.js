@@ -208,7 +208,7 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260808-donut-name-align",
+  version: "20260808-donut-layer01-by",
   pizza: {
     background: "assets/artwork-carousel/pizza/layer_01.png",
     foreground: "assets/artwork-carousel/pizza/layer_03.png",
@@ -221,8 +221,8 @@ const teacherPosterAssets = {
     resultForeground: "assets/artwork-carousel/pizza/p5_layer_04.png"
   },
   donut: {
-    background: "assets/artwork-carousel/donut/donut_layer_01.png",
-    foreground: "assets/artwork-carousel/donut/donut_layer_03.png"
+    background: "assets/artwork-carousel/donut/donut_layer_01.png?v=20260808-donut-layer01-by",
+    foreground: "assets/artwork-carousel/donut/donut_layer_03.png?v=20260808-donut-layer01-by"
   }
 };
 
