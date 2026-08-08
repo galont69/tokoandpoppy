@@ -4,9 +4,11 @@ const templateSelect = document.querySelector("#templateSelect");
 const photoInput = document.querySelector("#photoInput");
 const photoInputLabel = document.querySelector("#photoInputLabel");
 const nameField = document.querySelector("#nameField");
+const nameFieldLabel = document.querySelector("#nameFieldLabel");
 const nameInput = document.querySelector("#nameInput");
 const nameTargetButton = document.querySelector("#nameTargetButton");
 const nameControlCard = document.querySelector("#nameControlCard");
+const nameControlTitle = document.querySelector("#nameControlTitle");
 const statusLabel = document.querySelector("#statusLabel");
 const configOutput = document.querySelector("#configOutput");
 const gridToggle = document.querySelector("#gridToggle");
@@ -45,6 +47,26 @@ const templateDefinitions = {
       canvas: { width: 2160, height: 2700 },
       photo: { x: 199, y: 821, width: 1810, height: 1720, rotate: -0.05934 },
       chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 }
+    },
+    crop: { scale: 1, offsetX: 0, offsetY: 0 }
+  },
+  donut1: {
+    label: "โดนัททำไมมีรู? ภาพที่ 1",
+    photoLabel: "รูปที่ 1: ถือผลงานโดนัท",
+    photoKey: "donutPhoto",
+    cropKey: "donutCrop",
+    nameKey: "donutName",
+    nameLabel: "ชื่อเด็กบนช่อง BY",
+    showName: true,
+    placeholder: "อัปโหลดรูปถือผลงานโดนัท",
+    assets: {
+      background: "assets/artwork-carousel/donut/donut_layer_01.png",
+      foreground: "assets/artwork-carousel/donut/donut_layer_03.png"
+    },
+    config: {
+      canvas: { width: 2160, height: 2700 },
+      photo: { x: 286, y: 1042, width: 1584, height: 1355, rotate: 0, radius: 34 },
+      chefName: { x: 1039, y: 791, width: 650, height: 118, fontSize: 106, minFontSize: 54 }
     },
     crop: { scale: 1, offsetX: 0, offsetY: 0 }
   },
@@ -314,7 +336,7 @@ function drawDebugBoxes() {
   if (!state.showGrid) return;
   drawBox(state.config.photo, getTemplate().photoKey, state.activeTarget === "photo" ? "#1677ff" : "rgba(22,119,255,.56)");
   if (getTemplate().showName) {
-    drawBox(state.config.chefName, "chefName", state.activeTarget === "name" ? "#e24f39" : "rgba(226,79,57,.62)");
+    drawBox(state.config.chefName, getTemplate().nameKey || "chefName", state.activeTarget === "name" ? "#e24f39" : "rgba(226,79,57,.62)");
   }
 }
 
@@ -362,6 +384,7 @@ function updateConfigOutput() {
   const name = state.config.chefName;
   const hasCrop = Boolean(template.cropKey);
   const hasName = Boolean(template.showName);
+  const nameKey = template.nameKey || "chefName";
   const lines = [
     `${template.photoKey}: {`,
     `  x: ${Math.round(photo.x)},`,
@@ -382,7 +405,7 @@ function updateConfigOutput() {
   }
   if (hasName) {
     lines.push(
-      "chefName: {",
+      `${nameKey}: {`,
       `  x: ${Math.round(name.x)},`,
       `  y: ${Math.round(name.y)},`,
       `  width: ${Math.round(name.width)},`,
@@ -527,6 +550,8 @@ function updateTemplateUi() {
   if (photoInputLabel) photoInputLabel.textContent = template.photoLabel || "รูปเด็กตัวอย่าง";
   if (nameField) nameField.hidden = !template.showName;
   if (nameControlCard) nameControlCard.hidden = !template.showName;
+  if (nameFieldLabel) nameFieldLabel.textContent = template.nameLabel || "ชื่อเชฟ";
+  if (nameControlTitle) nameControlTitle.textContent = template.nameLabel || "ชื่อหลัง By เชฟ";
   if (nameTargetButton) {
     nameTargetButton.hidden = !template.showName;
     nameTargetButton.disabled = !template.showName;

@@ -73,6 +73,8 @@ const posterPlanPhotoInput = document.querySelector("#posterPlanPhotoInput");
 const posterDrawPhotoInput = document.querySelector("#posterDrawPhotoInput");
 const posterPhotoModeSelect = document.querySelector("#posterPhotoModeSelect");
 const posterNicknameInput = document.querySelector("#posterNicknameInput");
+const posterNicknameAssist = document.querySelector("#posterNicknameAssist");
+const posterPhotoLabel = document.querySelector("#posterPhotoLabel");
 const posterLessonInput = document.querySelector("#posterLessonInput");
 const posterNicknameCounter = document.querySelector("#posterNicknameCounter");
 const posterLessonCounter = document.querySelector("#posterLessonCounter");
@@ -104,6 +106,7 @@ let pendingSessionInput = null;
 let cropState = null;
 let selectedStrengthChoices = [];
 let posterState = {
+  lesson: "pizza",
   photoObjectUrl: "",
   planPhotoObjectUrl: "",
   drawPhotoObjectUrl: "",
@@ -205,7 +208,7 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260715-pizza-slide-05-position",
+  version: "20260808-donut-slide-01-position",
   pizza: {
     background: "assets/artwork-carousel/pizza/layer_01.png",
     foreground: "assets/artwork-carousel/pizza/layer_03.png",
@@ -216,10 +219,31 @@ const teacherPosterAssets = {
     drawForeground: "assets/artwork-carousel/pizza/p4_layer_03.png",
     resultBackground: "assets/artwork-carousel/pizza/p5_layer_01.png",
     resultForeground: "assets/artwork-carousel/pizza/p5_layer_04.png"
+  },
+  donut: {
+    background: "assets/artwork-carousel/donut/donut_layer_01.png",
+    foreground: "assets/artwork-carousel/donut/donut_layer_03.png"
   }
 };
 
-const teacherPosterSlideCount = 5;
+const teacherPosterLessons = {
+  pizza: {
+    label: "แต่งหน้าพิซซ่า",
+    outputLabel: "พิซซ่า",
+    filePrefix: "pizza-carousel",
+    slideCount: 5,
+    needsPlanPhoto: true,
+    needsDrawPhoto: true
+  },
+  donut: {
+    label: "โดนัททำไมมีรู?",
+    outputLabel: "โดนัท",
+    filePrefix: "donut-carousel",
+    slideCount: 1,
+    needsPlanPhoto: false,
+    needsDrawPhoto: false
+  }
+};
 
 const teacherPosterLayout = {
   canvas: { width: 2160, height: 2700 },
@@ -232,10 +256,33 @@ const teacherPosterLayout = {
   pizzaResultMainCrop: { scale: 1, offsetX: -15, offsetY: -54 },
   pizzaResultPlanPhoto: { x: 1386, y: 548, width: 616, height: 871, rotate: 0.09076 },
   pizzaResultPlanCrop: { scale: 1, offsetX: 0, offsetY: 0 },
+  donutPhoto: { x: 286, y: 1042, width: 1584, height: 1355, rotate: 0 },
+  donutCrop: { scale: 1, offsetX: 0, offsetY: 0 },
+  donutName: { x: 1039, y: 791, width: 650, height: 118, fontSize: 106, minFontSize: 54 },
   chefName: { x: 1052, y: 566, width: 500, height: 116, fontSize: 117, minFontSize: 56 },
   outline: { size: 16, softness: 2 },
   shadow: { blur: 8, opacity: 0.25, offsetX: 4, offsetY: 6 }
 };
+
+function getPosterLesson() {
+  return teacherPosterLessons[posterState.lesson] ? posterState.lesson : "pizza";
+}
+
+function getPosterLessonConfig() {
+  return teacherPosterLessons[getPosterLesson()] || teacherPosterLessons.pizza;
+}
+
+function getPosterSlideCount() {
+  return getPosterLessonConfig().slideCount || 1;
+}
+
+function getPosterRenderButtonLabel() {
+  return `สร้าง Carousel ${getPosterSlideCount()} รูป`;
+}
+
+function getPosterDownloadButtonLabel() {
+  return `ดาวน์โหลด PNG ${getPosterSlideCount()} รูป`;
+}
 
 const strengthChoiceConfigs = {
   robot: [
@@ -1429,10 +1476,19 @@ function revokePosterOutputUrl() {
 
 function getPosterPreviewSlide() {
   const slide = Number(posterState.previewSlide || 1);
-  return slide >= 1 && slide <= teacherPosterSlideCount ? slide : 1;
+  const slideCount = getPosterSlideCount();
+  return slide >= 1 && slide <= slideCount ? slide : 1;
 }
 
 function getPosterPreviewMeta(slide = getPosterPreviewSlide()) {
+  if (getPosterLesson() === "donut") {
+    return {
+      label: "ภาพที่ 1: ถือผลงานโดนัท",
+      controlLabel: "ขนาด / ครอปรูปโดนัท",
+      adjustable: true,
+      scale: posterState.scale
+    };
+  }
   if (slide === 2) {
     return {
       label: "ภาพที่ 2: เริ่มด้วยนิทาน",
@@ -1474,10 +1530,17 @@ function getPosterPreviewMeta(slide = getPosterPreviewSlide()) {
 }
 
 function syncPosterPreviewControls() {
+  const slideCount = getPosterSlideCount();
+  if (Number(posterState.previewSlide || 1) > slideCount) posterState.previewSlide = 1;
   const slide = getPosterPreviewSlide();
   const meta = getPosterPreviewMeta(slide);
+  document.querySelector(".poster-preview-tabs")?.classList.toggle("is-single", slideCount === 1);
   document.querySelectorAll("[data-poster-preview]").forEach((button) => {
-    button.classList.toggle("is-active", Number(button.dataset.posterPreview) === slide);
+    const buttonSlide = Number(button.dataset.posterPreview);
+    const isAvailable = buttonSlide <= slideCount;
+    button.hidden = !isAvailable;
+    button.disabled = !isAvailable;
+    button.classList.toggle("is-active", isAvailable && buttonSlide === slide);
   });
   if (posterPreviewHint) posterPreviewHint.textContent = `กำลังดู${meta.label}`;
   if (posterControlLabel) posterControlLabel.textContent = meta.controlLabel;
@@ -1493,7 +1556,8 @@ function syncPosterPreviewControls() {
 
 async function setPosterPreviewSlide(slide) {
   const requestedSlide = Number(slide);
-  posterState.previewSlide = requestedSlide >= 1 && requestedSlide <= teacherPosterSlideCount ? requestedSlide : 1;
+  const slideCount = getPosterSlideCount();
+  posterState.previewSlide = requestedSlide >= 1 && requestedSlide <= slideCount ? requestedSlide : 1;
   syncPosterPreviewControls();
   await refreshPosterPreview();
 }
@@ -1515,11 +1579,41 @@ function resetPosterTransform(slide = getPosterPreviewSlide()) {
     posterState.resultMainOffsetX = Number(cropConfig.offsetX || 0);
     posterState.resultMainOffsetY = Number(cropConfig.offsetY || 0);
   } else {
-    posterState.scale = 1;
-    posterState.offsetX = 0;
-    posterState.offsetY = 0;
+    const cropConfig = getPosterLesson() === "donut" ? teacherPosterLayout.donutCrop || {} : {};
+    posterState.scale = Number(cropConfig.scale || 1);
+    posterState.offsetX = Number(cropConfig.offsetX || 0);
+    posterState.offsetY = Number(cropConfig.offsetY || 0);
   }
   syncPosterPreviewControls();
+}
+
+function syncPosterLessonUi() {
+  const lesson = getPosterLesson();
+  const lessonConfig = getPosterLessonConfig();
+  document.querySelectorAll("[data-poster-lesson]").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.posterLesson === lesson);
+  });
+  document.querySelectorAll("[data-pizza-only]").forEach((element) => {
+    element.hidden = lesson !== "pizza";
+  });
+  document.querySelectorAll("[data-donut-only]").forEach((element) => {
+    element.hidden = lesson !== "donut";
+  });
+  if (posterNicknameAssist) {
+    posterNicknameAssist.textContent = lesson === "donut"
+      ? "ระบบจะวางชื่อบนช่อง BY ของบทโดนัท"
+      : "ระบบจะวางชื่อหลังคำว่า By เชฟ";
+  }
+  if (posterPhotoLabel) {
+    posterPhotoLabel.textContent = lesson === "donut"
+      ? "รูปที่ 1: ถือผลงานโดนัท"
+      : "รูปที่ 1: ถือผลงานหน้าตรง";
+  }
+  if (posterRenderButton && !posterState.isProcessing) posterRenderButton.textContent = getPosterRenderButtonLabel();
+  if (posterDownloadButton) posterDownloadButton.textContent = getPosterDownloadButtonLabel();
+  if (posterPreviewHint) {
+    posterPreviewHint.dataset.lesson = lessonConfig.label;
+  }
 }
 
 function getPosterPhotoMode() {
@@ -2083,6 +2177,28 @@ function drawPizzaChefName(ctx) {
   ctx.restore();
 }
 
+function drawDonutName(ctx) {
+  const name = normalizeChefName(posterNicknameInput?.value || "");
+  if (!name) return;
+  const box = teacherPosterLayout.donutName;
+  let fontSize = Number(box.fontSize || 104);
+  const fontFamily = "'Mali', 'Noto Sans Thai', sans-serif";
+  do {
+    ctx.font = `700 ${fontSize}px ${fontFamily}`;
+    if (ctx.measureText(name).width <= box.width) break;
+    fontSize -= 2;
+  } while (fontSize > Number(box.minFontSize || 54));
+  ctx.save();
+  ctx.fillStyle = "#4a3529";
+  ctx.font = `700 ${fontSize}px ${fontFamily}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.shadowColor = "rgba(255, 255, 255, 0.58)";
+  ctx.shadowBlur = 3;
+  ctx.fillText(name, box.x + box.width / 2, box.y + box.height / 2);
+  ctx.restore();
+}
+
 function drawPosterPhoto(ctx) {
   const mode = getPosterPhotoMode();
   if (mode === "framed" || (!posterState.cutoutCanvas && posterState.photoCanvas)) {
@@ -2157,6 +2273,38 @@ async function drawPizzaFirstSlide(ctx) {
   drawPizzaCarouselPhoto(ctx, posterState.photoCanvas);
   drawCardImage(ctx, foreground, 0, 0, width, height);
   drawPizzaChefName(ctx);
+  return true;
+}
+
+async function drawDonutFirstSlide(ctx, options = {}) {
+  const { width, height } = teacherPosterLayout.canvas;
+  if (options.requirePhoto && !posterState.photoCanvas) {
+    throw new Error("กรุณาอัปโหลดรูปที่ 1: ถือผลงานโดนัท");
+  }
+  const [background, foreground] = await Promise.all([
+    loadCanvasImage(teacherPosterAssets.donut.background),
+    loadCanvasImage(teacherPosterAssets.donut.foreground)
+  ]);
+  if (!background || !foreground) {
+    drawPosterLoadError(ctx, "โหลด layer โดนัทภาพที่ 1 ไม่สำเร็จ");
+    return false;
+  }
+  drawCardImage(ctx, background, 0, 0, width, height);
+  drawPizzaResultPhoto(
+    ctx,
+    posterState.photoCanvas,
+    teacherPosterLayout.donutPhoto,
+    teacherPosterLayout.donutCrop,
+    {
+      scale: posterState.scale,
+      offsetX: posterState.offsetX,
+      offsetY: posterState.offsetY,
+      placeholder: "อัปโหลดรูปถือผลงานโดนัท",
+      radius: 34
+    }
+  );
+  drawCardImage(ctx, foreground, 0, 0, width, height);
+  drawDonutName(ctx);
   return true;
 }
 
@@ -2261,13 +2409,23 @@ async function drawPizzaPreviewSlide(ctx, slide = getPosterPreviewSlide(), optio
   return drawPizzaFirstSlide(ctx);
 }
 
+async function drawPosterPreviewSlide(ctx, slide = getPosterPreviewSlide(), options = {}) {
+  if (getPosterLesson() === "donut") return drawDonutFirstSlide(ctx, options);
+  return drawPizzaPreviewSlide(ctx, slide, options);
+}
+
+function shouldRequirePosterPhotoForSlide(slide) {
+  if (getPosterLesson() === "donut") return Number(slide) === 1;
+  return [3, 4, 5].includes(Number(slide));
+}
+
 async function createPosterSlideBlob(slide) {
   const { width, height } = teacherPosterLayout.canvas;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = preparePosterCanvas(canvas);
-  const success = await drawPizzaPreviewSlide(ctx, slide, { requirePhoto: [3, 4, 5].includes(Number(slide)) });
+  const success = await drawPosterPreviewSlide(ctx, slide, { requirePhoto: shouldRequirePosterPhotoForSlide(slide) });
   if (!success) {
     throw new Error(`โหลดภาพที่ ${slide} ของ carousel ไม่สำเร็จ`);
   }
@@ -2311,13 +2469,14 @@ async function createPizzaPlanSlideBlob(photoCanvas) {
 async function renderTeacherPoster(options = {}) {
   if (!posterCanvas) return;
   const ctx = preparePosterCanvas(posterCanvas);
+  syncPosterLessonUi();
   syncPosterPreviewControls();
-  await drawPizzaPreviewSlide(ctx);
+  await drawPosterPreviewSlide(ctx);
 
   if (options.createBlob) {
     revokePosterOutputUrl();
     const items = [];
-    for (let slide = 1; slide <= teacherPosterSlideCount; slide += 1) {
+    for (let slide = 1; slide <= getPosterSlideCount(); slide += 1) {
       const blob = await createPosterSlideBlob(slide);
       items.push({
         blob,
@@ -2428,8 +2587,9 @@ async function processPosterPhoto(file) {
     resetPosterTransform(1);
     revokePosterOutputUrl();
     await renderTeacherPoster();
+    const photoSubject = getPosterLesson() === "donut" ? "เด็กและผลงานโดนัท" : "เด็กและพิซซ่า";
     const statusText = getPosterPhotoMode() === "framed"
-      ? "เตรียมรูปที่ 1 แล้ว ปรับขนาดหรือเลื่อนตำแหน่งให้เด็กและพิซซ่าอยู่พอดี"
+      ? `เตรียมรูปที่ 1 แล้ว ปรับขนาดหรือเลื่อนตำแหน่งให้${photoSubject}อยู่พอดี`
       : result?.usedExistingAlpha
         ? "ตรวจพบพื้นหลังโปร่งใสอยู่แล้ว สร้างขอบขาวพร้อมใช้งาน"
         : result?.suspicious
@@ -2447,15 +2607,16 @@ async function processPosterPhoto(file) {
 async function createPosterOutput(event) {
   event?.preventDefault?.();
   updatePosterCounters();
+  const lessonConfig = getPosterLessonConfig();
   if (!posterState.photoCanvas && !posterState.cutoutCanvas) {
     setPosterStatus("กรุณาอัปโหลดรูปเด็กก่อนสร้างภาพ", true);
     return;
   }
-  if (!posterState.planPhotoCanvas) {
+  if (lessonConfig.needsPlanPhoto && !posterState.planPhotoCanvas) {
     setPosterStatus("กรุณาอัปโหลดรูปสำหรับภาพที่ 3: กำลังวางแผนก่อนวาด", true);
     return;
   }
-  if (!posterState.drawPhotoCanvas) {
+  if (lessonConfig.needsDrawPhoto && !posterState.drawPhotoCanvas) {
     setPosterStatus("กรุณาอัปโหลดรูปสำหรับภาพที่ 4: กำลังวาด / ลงมือทำ", true);
     return;
   }
@@ -2463,19 +2624,21 @@ async function createPosterOutput(event) {
     preparePosterCutoutForCurrentMode();
   }
   if (document.fonts?.ready) await document.fonts.ready;
+  posterState.isProcessing = true;
   if (posterRenderButton) {
     posterRenderButton.disabled = true;
     posterRenderButton.textContent = "กำลังสร้างภาพ...";
   }
   try {
     await renderTeacherPoster({ createBlob: true });
-    setPosterStatus("สร้าง Carousel พิซซ่า 5 รูปเรียบร้อย ดาวน์โหลด PNG ได้เลย");
+    setPosterStatus(`สร้าง Carousel ${lessonConfig.outputLabel} ${getPosterSlideCount()} รูปเรียบร้อย ดาวน์โหลด PNG ได้เลย`);
   } catch (error) {
     setPosterStatus(`สร้างภาพไม่สำเร็จ: ${error.message}`, true);
   } finally {
+    posterState.isProcessing = false;
     if (posterRenderButton) {
       posterRenderButton.disabled = false;
-      posterRenderButton.textContent = "สร้าง Carousel 5 รูป";
+      posterRenderButton.textContent = getPosterRenderButtonLabel();
     }
   }
 }
@@ -2485,7 +2648,7 @@ function getPosterFileName(index = 1) {
   const safeName = normalizeText(posterNicknameInput?.value || "student")
     .replace(/[^\wก-๙-]+/g, "-")
     .slice(0, 40) || "student";
-  return `toko-poppy-pizza-carousel-${safeIndex}-${safeName}.png`;
+  return `toko-poppy-${getPosterLessonConfig().filePrefix}-${safeIndex}-${safeName}.png`;
 }
 
 async function downloadPosterImage() {
@@ -3439,12 +3602,16 @@ function bindEvents() {
   posterForm?.addEventListener("submit", createPosterOutput);
   posterDownloadButton?.addEventListener("click", downloadPosterImage);
   document.querySelectorAll("[data-poster-lesson]").forEach((button) => {
-    button.addEventListener("click", () => {
-      document.querySelectorAll("[data-poster-lesson]").forEach((item) => {
-        item.classList.toggle("is-active", item === button);
-      });
-      setPosterStatus("เลือกบทเรียนแต่งหน้าพิซซ่าแล้ว ตอนนี้สร้าง carousel 5 รูป");
-      refreshPosterPreview();
+    button.addEventListener("click", async () => {
+      const lesson = button.dataset.posterLesson || "pizza";
+      if (!teacherPosterLessons[lesson]) return;
+      posterState.lesson = lesson;
+      posterState.previewSlide = 1;
+      resetPosterTransform(1);
+      syncPosterLessonUi();
+      syncPosterPreviewControls();
+      setPosterStatus(`เลือกบทเรียน${getPosterLessonConfig().label}แล้ว ตอนนี้สร้าง carousel ${getPosterSlideCount()} รูป`);
+      await refreshPosterPreview();
     });
   });
   document.querySelectorAll("[data-poster-preview]").forEach((button) => {
@@ -3545,6 +3712,7 @@ function bindEvents() {
     resetPosterTransform();
     refreshPosterPreview();
   });
+  syncPosterLessonUi();
   updatePosterCounters();
   renderTeacherPoster();
 }

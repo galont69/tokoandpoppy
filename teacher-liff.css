@@ -784,10 +784,19 @@ button { cursor: pointer; }
   font-weight: 900;
 }
 
+.poster-form [hidden],
+.poster-preview-tabs button[hidden] {
+  display: none !important;
+}
+
 .poster-preview-tabs {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 8px;
+}
+
+.poster-preview-tabs.is-single {
+  grid-template-columns: 1fr;
 }
 
 .poster-preview-tabs button {

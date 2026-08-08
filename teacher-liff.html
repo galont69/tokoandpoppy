@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600;700;800;900&family=Mali:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="teacher-liff.css?v=20260715-pizza-slide-05-position" />
+  <link rel="stylesheet" href="teacher-liff.css?v=20260808-donut-slide-01-position" />
 </head>
 <body>
   <main class="teacher-app">
@@ -139,7 +139,14 @@
               <span>🍕</span>
               <div>
                 <b>แต่งหน้าพิซซ่า</b>
-                <small>ภาพที่ 1: ถือผลงาน + ภาพที่ 2: นิทาน + ภาพที่ 3: วางแผนก่อนวาด</small>
+                <small>Carousel 5 รูป: นิทาน วางแผน ลงมือทำ และสรุปทักษะ</small>
+              </div>
+            </button>
+            <button class="poster-lesson-card" type="button" data-poster-lesson="donut">
+              <span>🍩</span>
+              <div>
+                <b>โดนัททำไมมีรู?</b>
+                <small>ภาพที่ 1: ถือผลงาน วางชื่อเด็กหลังคำว่า BY</small>
               </div>
             </button>
           </section>
@@ -148,32 +155,36 @@
             ชื่อเล่นเด็ก
             <input id="posterNicknameInput" type="text" maxlength="18" placeholder="เช่น ภัทร" />
             <span class="field-assist">
-              <span>ระบบจะวางชื่อหลังคำว่า By เชฟ</span>
+              <span id="posterNicknameAssist">ระบบจะวางชื่อหลังคำว่า By เชฟ</span>
               <strong id="posterNicknameCounter">0/18</strong>
             </span>
           </label>
 
           <label>
-            รูปที่ 1: ถือผลงานหน้าตรง
+            <span id="posterPhotoLabel">รูปที่ 1: ถือผลงานหน้าตรง</span>
             <input id="posterPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
           </label>
-          <label>
+          <label data-pizza-only>
             รูปสำหรับภาพที่ 3: กำลังวางแผนก่อนวาด
             <input id="posterPlanPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
             <span class="field-assist">
               <span>ระบบจะวางรูปนี้ในกรอบ “วางแผนก่อนวาด”</span>
             </span>
           </label>
-          <label>
+          <label data-pizza-only>
             รูปที่ 4: กำลังวาด / ลงมือทำ
             <input id="posterDrawPhotoInput" type="file" accept="image/png,image/jpeg,image/webp" />
             <span class="field-assist">
               <span>ระบบจะวางรูปนี้ในกรอบ “ลงมือทำ”</span>
             </span>
           </label>
-          <div class="poster-upload-tips">
+          <div class="poster-upload-tips" data-pizza-only>
             <strong>แนะนำการถ่ายรูป</strong>
             <span>รูปที่ 1 ควรถ่ายแนวตั้ง เห็นเด็กและพิซซ่าครบ หัว/มือไม่ชิดขอบ ระบบจะครอปเป็น 1800 x 1700 px ให้อัตโนมัติ</span>
+          </div>
+          <div class="poster-upload-tips" data-donut-only hidden>
+            <strong>แนะนำการถ่ายรูป</strong>
+            <span>บทโดนัทใช้รูปถือผลงาน 1 รูป ควรถ่ายให้เห็นเด็กและผลงานครบ แล้วจูนตำแหน่งใน preview ก่อนดาวน์โหลด</span>
           </div>
 
           <section class="poster-preview-tabs" aria-label="เลือกภาพตัวอย่างใน Carousel">
@@ -320,6 +331,6 @@
   <script src="supabase.js?v=2"></script>
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script src="supabase-config.js?v=20260630-today-center"></script>
-  <script src="teacher-liff.js?v=20260715-pizza-slide-05-position"></script>
+  <script src="teacher-liff.js?v=20260808-donut-slide-01-position"></script>
 </body>
 </html>
