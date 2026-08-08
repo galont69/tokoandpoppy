@@ -17,6 +17,7 @@ const reloadDashboardButton = document.querySelector("#reloadDashboardButton");
 const pendingEyebrow = document.querySelector("#pendingEyebrow");
 const pendingTitle = document.querySelector("#pendingTitle");
 const pendingText = document.querySelector("#pendingText");
+const retryRegistrationButton = document.querySelector("#retryRegistrationButton");
 const teacherBranchLabel = document.querySelector("#teacherBranchLabel");
 const teacherNameLabel = document.querySelector("#teacherNameLabel");
 const teacherMetaLabel = document.querySelector("#teacherMetaLabel");
@@ -140,6 +141,7 @@ let portalData = null;
 let adminPortalData = null;
 let activeAdminCourse = null;
 let activeAdminStudent = null;
+let pendingRetryData = null;
 let activeReminder = null;
 let activeSessionEnrollment = null;
 let activeShareData = null;
@@ -665,6 +667,7 @@ async function loadPortal() {
 }
 
 function renderPending(data = {}) {
+  pendingRetryData = data;
   const profile = data.profile || {};
   const branch = data.branch || {};
   const isAdminRequest = data.liffRole === "branch_admin" || Boolean(profile.admin_name);
@@ -680,8 +683,37 @@ function renderPending(data = {}) {
       ? "บัญชีถูกพักสิทธิ์"
       : "ส่งคำขอแล้ว";
   pendingText.textContent = profile.status === "rejected"
-    ? (profile.rejection_reason || "กรุณาติดต่อแอดมินสาขาเพื่อสมัครใหม่")
+    ? `${profile.rejection_reason || "คำขอนี้ไม่ผ่านการอนุมัติ"} หากเลือกบทบาทผิด สามารถกดสมัครใหม่แล้วเลือกบทบาท/สาขาอีกครั้ง`
     : `คำขอ${roleLabel}ของสาขา ${branch.name || "-"} กำลังรออนุมัติ`;
+  if (retryRegistrationButton) {
+    retryRegistrationButton.hidden = profile.status !== "rejected";
+  }
+}
+
+function showRegistrationRetry() {
+  const data = pendingRetryData || {};
+  const profile = data.profile || {};
+  const branch = data.branch || {};
+  const isAdminRequest = data.liffRole === "branch_admin" || Boolean(profile.admin_name);
+  const roleValue = isAdminRequest ? "branch_admin" : "teacher";
+  const roleInput = document.querySelector(`input[name="liffRole"][value="${roleValue}"]`);
+  if (roleInput) roleInput.checked = true;
+  if (teacherNameInput) {
+    teacherNameInput.value = profile.admin_name ||
+      profile.teacher_name ||
+      profile.line_display_name ||
+      lineProfile?.displayName ||
+      "";
+  }
+  if (teacherPhoneInput) {
+    teacherPhoneInput.value = profile.admin_phone || profile.teacher_phone || "";
+  }
+  if (branchSelect && branch.id) {
+    branchSelect.value = branch.id;
+  }
+  updateRegisterRoleCopy();
+  setMessage("เลือกบทบาทที่ถูกต้อง แล้วส่งคำขอใหม่ได้เลย");
+  showOnly(registerView);
 }
 
 function renderDashboard() {
@@ -4185,6 +4217,7 @@ async function submitRegistration(event) {
 function bindEvents() {
   teacherRegisterForm?.addEventListener("submit", submitRegistration);
   refreshButton?.addEventListener("click", loadPortal);
+  retryRegistrationButton?.addEventListener("click", showRegistrationRetry);
   reloadDashboardButton?.addEventListener("click", loadPortal);
   adminReloadButton?.addEventListener("click", loadPortal);
   document.querySelectorAll('input[name="liffRole"]').forEach((input) => {
