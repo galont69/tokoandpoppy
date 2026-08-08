@@ -6386,6 +6386,12 @@ function renderTeacherLiffApplications() {
               data-admin-liff-review="${application.id}" data-decision="suspended">
               พักสิทธิ์
             </button>
+          ` : application.status === "rejected" ? `
+            <strong>${statusText[application.status] || application.status}</strong>
+            <button class="approve-button" type="button"
+              data-admin-liff-review="${application.id}" data-decision="pending">
+              เปิดพิจารณาใหม่
+            </button>
           ` : `<strong>${statusText[application.status] || application.status}</strong>`}
         </div>
       </article>
@@ -6434,6 +6440,12 @@ function renderTeacherLiffApplications() {
               data-teacher-liff-review="${application.id}" data-decision="suspended">
               พักสิทธิ์
             </button>
+          ` : application.status === "rejected" ? `
+            <strong>${statusText[application.status] || application.status}</strong>
+            <button class="approve-button" type="button"
+              data-teacher-liff-review="${application.id}" data-decision="pending">
+              เปิดพิจารณาใหม่
+            </button>
           ` : `<strong>${statusText[application.status] || application.status}</strong>`}
         </div>
       </article>
@@ -6450,6 +6462,10 @@ function renderTeacherLiffApplications() {
 async function reviewTeacherLiffApplication(profileId, decision) {
   if (!canManageBranchStaff()) return;
   let rejectionReasonText = null;
+  if (decision === "pending") {
+    const confirmed = window.confirm("เปิดคำขอครูจาก LINE ให้กลับไปรออนุมัติอีกครั้งใช่ไหม?");
+    if (!confirmed) return;
+  }
   if (decision === "rejected") {
     rejectionReasonText = window.prompt("ระบุเหตุผลที่ไม่อนุมัติครูจาก LINE") || "";
     if (!rejectionReasonText.trim()) return;
@@ -6468,7 +6484,9 @@ async function reviewTeacherLiffApplication(profileId, decision) {
 
   showToast(decision === "approved"
     ? "อนุมัติครูจาก LINE เรียบร้อย"
-    : "บันทึกสถานะครูจาก LINE แล้ว");
+    : decision === "pending"
+      ? "เปิดคำขอครูจาก LINE ให้พิจารณาใหม่แล้ว"
+      : "บันทึกสถานะครูจาก LINE แล้ว");
   await loadTeacherLiffApplications();
 }
 
@@ -6478,6 +6496,10 @@ async function reviewBranchAdminLiffApplication(profileId, decision) {
     return;
   }
   let rejectionReasonText = null;
+  if (decision === "pending") {
+    const confirmed = window.confirm("เปิดคำขอ Admin สาขาจาก LINE ให้กลับไปรออนุมัติอีกครั้งใช่ไหม?");
+    if (!confirmed) return;
+  }
   if (decision === "rejected") {
     rejectionReasonText = window.prompt("ระบุเหตุผลที่ไม่อนุมัติ Admin สาขาจาก LINE") || "";
     if (!rejectionReasonText.trim()) return;
@@ -6496,7 +6518,9 @@ async function reviewBranchAdminLiffApplication(profileId, decision) {
 
   showToast(decision === "approved"
     ? "อนุมัติ Admin สาขาจาก LINE เรียบร้อย"
-    : "บันทึกสถานะ Admin จาก LINE แล้ว");
+    : decision === "pending"
+      ? "เปิดคำขอ Admin สาขาจาก LINE ให้พิจารณาใหม่แล้ว"
+      : "บันทึกสถานะ Admin จาก LINE แล้ว");
   await loadTeacherLiffApplications();
 }
 
