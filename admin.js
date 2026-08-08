@@ -6299,17 +6299,20 @@ async function loadTeacherLiffApplications() {
 
   teacherLiffApplications = data || [];
   branchAdminLiffApplications = [];
-  if (!isBranchAdmin()) {
-    const { data: adminLiffData, error: adminLiffError } = await supabaseClient
-      .from("branch_admin_liff_profiles")
-      .select("*, branches(name, code)")
-      .order("submitted_at", { ascending: false });
+  let adminLiffQuery = supabaseClient
+    .from("branch_admin_liff_profiles")
+    .select("*, branches(name, code)")
+    .order("submitted_at", { ascending: false });
 
-    if (adminLiffError) {
-      branchAdminLiffError = adminLiffError;
-    } else {
-      branchAdminLiffApplications = adminLiffData || [];
-    }
+  if (isBranchAdmin() && currentBranchAssignment?.branch_id) {
+    adminLiffQuery = adminLiffQuery.eq("branch_id", currentBranchAssignment.branch_id);
+  }
+
+  const { data: adminLiffData, error: adminLiffError } = await adminLiffQuery;
+  if (adminLiffError) {
+    branchAdminLiffError = adminLiffError;
+  } else {
+    branchAdminLiffApplications = adminLiffData || [];
   }
   updateBranchTeacherBadge();
   renderTeacherLiffApplications();
@@ -6491,8 +6494,8 @@ async function reviewTeacherLiffApplication(profileId, decision) {
 }
 
 async function reviewBranchAdminLiffApplication(profileId, decision) {
-  if (isBranchAdmin()) {
-    showToast("การอนุมัติ Admin สาขาต้องใช้สิทธิ์แอดมินหลัก", true);
+  if (!canManageBranchStaff()) {
+    showToast("บัญชีนี้ไม่มีสิทธิ์อนุมัติ Admin สาขา", true);
     return;
   }
   let rejectionReasonText = null;

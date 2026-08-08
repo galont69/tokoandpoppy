@@ -684,7 +684,9 @@ function renderPending(data = {}) {
       : "ส่งคำขอแล้ว";
   pendingText.textContent = profile.status === "rejected"
     ? `${profile.rejection_reason || "คำขอนี้ไม่ผ่านการอนุมัติ"} หากเลือกบทบาทผิด สามารถกดสมัครใหม่แล้วเลือกบทบาท/สาขาอีกครั้ง`
-    : `คำขอ${roleLabel}ของสาขา ${branch.name || "-"} กำลังรออนุมัติ`;
+    : isAdminRequest
+      ? `คำขอ${roleLabel}ของสาขา ${branch.name || "-"} กำลังรอผู้ดูแลสาขาหรือแอดมินหลักอนุมัติ`
+      : `คำขอ${roleLabel}ของสาขา ${branch.name || "-"} กำลังรออนุมัติ`;
   if (retryRegistrationButton) {
     retryRegistrationButton.hidden = profile.status !== "rejected";
   }
@@ -4210,7 +4212,7 @@ async function submitRegistration(event) {
     setMessage(`ส่งคำขอไม่สำเร็จ: ${error.message}`, true);
     return;
   }
-  setMessage(isAdmin ? "ส่งคำขอ Admin สาขาแล้ว รอแอดมินหลักอนุมัติ" : "ส่งคำขอเรียบร้อย รอแอดมินสาขาอนุมัติ");
+  setMessage(isAdmin ? "ส่งคำขอ Admin สาขาแล้ว รอผู้ดูแลสาขาหรือแอดมินหลักอนุมัติ" : "ส่งคำขอเรียบร้อย รอแอดมินสาขาอนุมัติ");
   await loadPortal();
 }
 
