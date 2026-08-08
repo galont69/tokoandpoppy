@@ -208,7 +208,7 @@ const afterClassWowAssets = {
 };
 
 const teacherPosterAssets = {
-  version: "20260808-donut-slide-01-position",
+  version: "20260808-donut-name-align",
   pizza: {
     background: "assets/artwork-carousel/pizza/layer_01.png",
     foreground: "assets/artwork-carousel/pizza/layer_03.png",
@@ -2191,11 +2191,11 @@ function drawDonutName(ctx) {
   ctx.save();
   ctx.fillStyle = "#4a3529";
   ctx.font = `700 ${fontSize}px ${fontFamily}`;
-  ctx.textAlign = "center";
+  ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   ctx.shadowColor = "rgba(255, 255, 255, 0.58)";
   ctx.shadowBlur = 3;
-  ctx.fillText(name, box.x + box.width / 2, box.y + box.height / 2);
+  ctx.fillText(name, box.x, box.y + box.height / 2);
   ctx.restore();
 }
 
